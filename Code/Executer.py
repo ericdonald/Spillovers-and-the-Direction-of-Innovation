@@ -1,7 +1,7 @@
 """""""""""
-Executor
+Executor for "Spillovers and the Direction of Innovation"
 
-Last Modified: Eric Donald 2/25
+Last Modified: Eric Donald 8/25
 
 Notes:
     
