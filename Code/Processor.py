@@ -36,6 +36,7 @@ Output: Results/Figures/Carbon_Match.csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from pathlib import Path
 import Production_Functions as pf
 import SteadyState_Functions as ssf
 import Objective_Functions as of
@@ -49,7 +50,7 @@ class Processor:
     def __init__(self, E):
         "Initialize Processor Object"
         
-        self.Directory = '/projectnb/econdept/ericdon/Spillovers and the Direction of Innovation'
+        self.Directory = Path(__file__).resolve().parent
         
         'Load in the Economy Object'
         self.E = E
@@ -388,7 +389,7 @@ class Processor:
         Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
         κ_low = np.linalg.eig(Jake_low)[0]
         
-        'Record Results'
+        "Record Results"
         Tens_Results['Variable'].append('2010s Input Subsidy for Clean Transport')
         Tens_Results['Value'].append(pf.clean_round(self.E.ξbar_0[0], 3))
         Tens_Results['Variable'].append('2010s Input Subsidy for Clean Electricity')
