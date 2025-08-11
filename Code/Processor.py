@@ -1287,7 +1287,6 @@ class Processor:
         xs = np.array([[1],[0]])
         Xs = np.ascontiguousarray(np.kron(np.eye(self.E.Θ+1), xs)[:-1,:-1])
         
-        'Low ES'
         'Load Policy Path'
         (τ_CES, C_CES, ξtilde_CES, A_CES) = self.E.CES_IAM(Periods, T_time, o)        
 
