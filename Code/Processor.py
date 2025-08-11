@@ -1,8 +1,6 @@
 """""""""""
 Processor Module
 
-Last Modified: Eric Donald 8/25
-
 Notes:
     
 Output: Results/Figures/Carbon_Match.csv

@@ -1,8 +1,6 @@
 """""""""""
 Economy Module
 
-Last Modified: Eric Donald 8/25
-
 Notes:
     
 Output:

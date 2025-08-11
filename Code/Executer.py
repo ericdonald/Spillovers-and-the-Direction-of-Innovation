@@ -1,8 +1,6 @@
 """""""""""
 Executor
 
-Last Modified: Eric Donald 8/25
-
 Notes: This file executes the code for "Spillovers and the Direction of Innovation".
     
 Output:
