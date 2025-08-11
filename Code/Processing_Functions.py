@@ -1,7 +1,7 @@
 """""""""""
 Processing Functions
 
-Notes: This file defines the general processing functions for the project.
+Notes: Functions that accomplish basic processing for the project.
     
 Output:
 """""""""""

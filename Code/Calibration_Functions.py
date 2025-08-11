@@ -1,7 +1,7 @@
 """""""""""
 Calibration Functions
 
-Notes: This file defines the roots for calibrating the economy.
+Notes: Functions the define the calibration roots of the economy.
     
 Output:
 """""""""""

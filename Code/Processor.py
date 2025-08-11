@@ -1,7 +1,7 @@
 """""""""""
 Processor Module
 
-Notes:
+Notes: This file defines a class for processing the economy of "Spillovers and the Direction of Innovation".
     
 Output: Results/Figures/Carbon_Match.csv
         Results/Tables/Calibrate_Results.csv

@@ -1,7 +1,7 @@
 """""""""""
 Steady-State Functions
 
-Notes:
+Notes: Functions that describe the steady-state of the economy.
     
 Output:
 """""""""""

@@ -1,7 +1,7 @@
 """""""""""
 Production Functions
 
-Notes: This file defines the production functions of the economy.
+Notes: Functions that describe the production block of the economy.
     
 Output:
 """""""""""

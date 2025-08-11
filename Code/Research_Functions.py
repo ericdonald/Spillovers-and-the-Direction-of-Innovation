@@ -1,7 +1,7 @@
 """""""""""
 Research Functions
 
-Notes:
+Notes: Functions that describe the research block of the economy.
     
 Output:
 """""""""""

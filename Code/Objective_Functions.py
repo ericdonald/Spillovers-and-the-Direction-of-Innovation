@@ -1,7 +1,7 @@
 """""""""""
 Objective Functions
 
-Notes: This file defines the objective functions and optimality conditions of the economy.
+Notes: Functions that describe the objectives and optimality conditions of the economy.
     
 Output:
 """""""""""
