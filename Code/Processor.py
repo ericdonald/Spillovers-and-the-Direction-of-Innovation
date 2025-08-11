@@ -61,13 +61,15 @@ class Processor:
         "Calibrate Parameters and Initial Conditions"
         
         self.E.Calibrate()
-        Calibrate_Results = {'Variable':[], 'Value':[]}
+        Calibrate_Results = []
         
         ω_prop = ((self.E.ω[3]-self.E.ω[1])/self.E.ω[1])*100
         Calibrate_Results['Variable'].append('Relative Increase in Elec Carbon Intensity')
         Calibrate_Results['Value'].append(pf.clean_round(ω_prop, 1))
         
-        'Plot Match of Climate Parameters'
+        ########################################
+        ### Plot Match of Climate Parameters ###
+        ########################################
         clim_cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
         
         Em = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
@@ -89,28 +91,30 @@ class Processor:
                              columns=['Year', 'Data', 'Model'])
         DF_CM.to_csv(f'{self.Directory}/Results/Figures/Carbon_Match.csv', index=False)
         
-        'Record Results'
-        Calibrate_Results['Variable'].append('Climate Persistence Parameter')
-        Calibrate_Results['Value'].append(pf.clean_round(self.E.ψ, 3))
-        Calibrate_Results['Variable'].append('Climate Absorption Parameter')
-        Calibrate_Results['Value'].append(pf.clean_round(self.E.ψ_0, 3))
+        ######################
+        ### Record Results ###
+        ######################
+        Calibrate_Results.append({'Variable':'Climate Persistence Parameter', 
+                                  'Value':pf.clean_round(self.E.ψ, 3)})
+        Calibrate_Results.append({'Variable':'Climate Absorption Parameter', 
+                                  'Value':pf.clean_round(self.E.ψ_0, 3)})
         
-        Calibrate_Results['Variable'].append('General to General Citation Share')
-        Calibrate_Results['Value'].append(pf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
+        Calibrate_Results.append({'Variable':'General to General Citation Share', 
+                                  'Value':pf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1)})
         
         cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
         cal_panel['year'] = cal_panel['year'].dt.year
         S_θ_nu = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
         Mom_nu = np.mean(S_θ_nu, 0)
         
-        Calibrate_Results['Variable'].append('Average Income Share for Transport')
-        Calibrate_Results['Value'].append(pf.clean_round(Mom_nu[0]*100, 1))
-        Calibrate_Results['Variable'].append('Average Income Share for Electricity')
-        Calibrate_Results['Value'].append(pf.clean_round(Mom_nu[1]*100, 1))
-        Calibrate_Results['Variable'].append('CES Share for Transport')
-        Calibrate_Results['Value'].append(pf.clean_round(self.E.ν[0], 3))
-        Calibrate_Results['Variable'].append('CES Share for Electricity')
-        Calibrate_Results['Value'].append(pf.clean_round(self.E.ν[1], 3))
+        Calibrate_Results.append({'Variable':'Average Income Share for Transport', 
+                                  'Value':pf.clean_round(Mom_nu[0]*100, 1)})
+        Calibrate_Results.append({'Variable':'Average Income Share for Electricity', 
+                                  'Value':pf.clean_round(Mom_nu[1]*100, 1)})
+        Calibrate_Results.append({'Variable':'CES Share for Transport', 
+                                  'Value':pf.clean_round(self.E.ν[0], 3)})
+        Calibrate_Results.append({'Variable':'CES Share for Electricity', 
+                                  'Value':pf.clean_round(self.E.ν[1], 3)})
         
         Calibrate_Results_df = pd.DataFrame(Calibrate_Results)
         Calibrate_Results_df.to_csv(f'{self.Directory}/Results/Tables/Calibrate_Results.csv', index=False)

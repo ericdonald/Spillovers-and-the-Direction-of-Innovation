@@ -30,9 +30,9 @@ class Economy:
         
         self.Directory = Path(__file__).resolve().parent
         
-        ######################
+        ###############################################
         ### Define Externally Calibrated Parameters ###
-        ######################
+        ###############################################
         self.Θ = 2 #Number of Climate-Specific Sectors
         self.T = 1 #Years per period
         self.σ = 1.86 #Elasticity of Substitution between Clean & Dirty
