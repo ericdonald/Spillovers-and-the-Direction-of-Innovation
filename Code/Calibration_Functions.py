@@ -1,9 +1,7 @@
 """""""""""
 Calibration Functions
 
-Last Modified: Eric Donald 2/25
-
-Notes:
+Notes: This file defines the roots for calibrating the economy.
     
 Output:
 """""""""""

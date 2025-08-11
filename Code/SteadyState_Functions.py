@@ -1,8 +1,6 @@
 """""""""""
 Steady-State Functions
 
-Last Modified: Eric Donald 2/25
-
 Notes:
     
 Output:

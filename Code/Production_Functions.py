@@ -1,9 +1,7 @@
 """""""""""
 Production Functions
 
-Last Modified: Eric Donald 8/24
-
-Notes:
+Notes: This file defines the production functions of the economy.
     
 Output:
 """""""""""
@@ -325,19 +323,7 @@ def var_bar(v, J):
     return v_bar
     
     
-    
-def clean_round(number, decimals):
-    "Cut a Hanging Zero"
-    
-    rounded_number = np.round(number, decimals)
-    if decimals == 0:
-        if rounded_number == int(rounded_number):
-            return int(rounded_number)
-    elif decimals > 0:
-        if rounded_number == np.round(rounded_number, decimals-1):
-            return np.round(rounded_number, decimals-1)
-    return rounded_number
-    
+
     
     
     

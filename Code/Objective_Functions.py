@@ -1,9 +1,7 @@
 """""""""""
 Objective Functions
 
-Last Modified: Eric Donald 8/24
-
-Notes:
+Notes: This file defines the objective functions and optimality conditions of the economy.
     
 Output:
 """""""""""

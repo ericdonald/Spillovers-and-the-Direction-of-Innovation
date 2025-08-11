@@ -535,9 +535,7 @@ class Economy:
         Term[0,-1] = ς2_ss
         
         'Solve'
-        qe.tic()
         X = srs.SRS(X_g, Funcs, Init, Term, args, N_lag, N_t, N_lead)
-        qe.toc()
     
         'Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology'
         τ = (np.exp(X[:T_time,0]) + np.exp(X[:T_time,1])).reshape((T_time,1))
