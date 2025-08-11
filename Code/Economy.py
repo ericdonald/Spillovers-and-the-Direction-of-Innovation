@@ -1,7 +1,7 @@
 """""""""""
 Economy Module
 
-Last Modified: Eric Donald 2/25
+Last Modified: Eric Donald 8/25
 
 Notes:
     
@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import scipy as sp
 import quantecon as qe
+from pathlib import Path
 import SteadyState_Functions as ssf
 import Calibration_Functions as cf
 import Production_Functions as pf
@@ -27,9 +28,11 @@ class Economy:
     def __init__(self):
         "Initialize Economy Object"
         
-        self.Directory = '/projectnb/econdept/ericdon/Spillovers and the Direction of Innovation'
+        self.Directory = Path(__file__).resolve().parent
         
-        "Define Externally Calibrated Parameters"
+        ######################
+        ### Define Externally Calibrated Parameters ###
+        ######################
         self.Θ = 2 #Number of Climate-Specific Sectors
         self.T = 1 #Years per period
         self.σ = 1.86 #Elasticity of Substitution between Clean & Dirty
@@ -49,13 +52,17 @@ class Economy:
         
         J = 2*self.Θ+1
         
-        'Define Calibration Moments'
+        ##################################
+        ### Define Calibration Moments ###
+        ##################################
         self.g = 0.02 #Steady State Growth
         self.Y0 = 100 #Normalized Initial Output
         self.Year_0 = 2021 #Initial Calibration Year
         self.φ_tilde_0 = np.zeros((J,J)) #Empirical Gross Spillover Network
         
-        'Define Internally Calibrated Parameters'
+        ###############################################
+        ### Define Internally Calibrated Parameters ###
+        ###############################################
         self.r = np.zeros(J) #Input Prices
         self.ν = np.zeros(self.Θ+1) #CES Sector Share
         self.ξbar_0 = np.zeros(J) #Initial Input Subsidies
