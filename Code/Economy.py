@@ -415,7 +415,12 @@ class Economy:
         J = 2*self.Θ + 1
         N = 6 + 2*J
         
-        'Recalibrate Research Parameters'
+        
+        ###################################################################
+
+        # Recalibrate research parameters.
+
+        ###################################################################
         
         'Spillover Network'        
         φ_hatg = self.φ_tilde_0.ravel()
@@ -438,7 +443,12 @@ class Economy:
         
         self.χ = chi.x
         
-        'IAM'
+        
+        ###################################################################
+
+        # IAM.
+
+        ###################################################################
         
         'Outside Emissions'
         cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')

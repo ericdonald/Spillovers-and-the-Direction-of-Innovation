@@ -20,12 +20,10 @@ class ResultsTable:
         self.rows = []
 
 
-
     def add(self, variable, value):
         "Add Row to Table"
         
         self.rows.append({"Variable": variable, "Value": value})
-
 
 
     def to_csv(self, path):
@@ -47,3 +45,9 @@ def clean_round(number, decimals):
             return np.round(rounded_number, decimals-1)
     return rounded_number
     
+
+
+
+
+
+

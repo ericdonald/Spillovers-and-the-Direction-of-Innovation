@@ -373,7 +373,8 @@ def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
 
 
 
-
+def unpack(x, J, T):
+    "Unpack Allocation Sequence"
 
 
 

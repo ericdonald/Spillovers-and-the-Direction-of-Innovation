@@ -77,7 +77,7 @@ def SpillNet(φ_hat, A, o):
             for j in range(J):
                 φ[t,i,j] = φ_hat[i,j]**(1/o) * A2d[t,j]**((o-1)/o) / phi_inner[t,i]
                 
-        φ[t,:,:] -= I #Make gross network net
+        φ[t,:,:] -= I #Make spillover network net
 
     return φ
 
