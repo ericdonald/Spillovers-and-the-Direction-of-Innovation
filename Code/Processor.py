@@ -25,7 +25,7 @@ Output: Results/Figures/Carbon_Match.csv
         Results/Figures/IAMPolicy_damhigh.csv
         Results/Figures/TempPathIAM.csv
         Results/Tables/IAM_Results.csv
-        SCC with Existential Risk/Clean Data/Clean_Growth.pkl
+        Results/Tables/Clean_Growth.pkl
         Results/Tables/CES_Results.csv
         Results/Figures/IAMPolicy_CES.csv
 
@@ -1330,7 +1330,7 @@ class Processor:
         gc = np.log(A_dischigh_FB_long) - np.log(A_lag)
         df_gc = pd.DataFrame(gc[:,[0,2]])
         df_gc.columns = ['Clean Car Growth', 'Clean Electricity Growth']
-        df_gc.to_pickle('/projectnb/econdept/ericdon/SCC with Existential Risk/Clean Data/Clean_Growth.pkl')
+        df_gc.to_pickle(f'{self.Directory}/Results/Tables/Clean_Growth.pkl')
         
         
 
