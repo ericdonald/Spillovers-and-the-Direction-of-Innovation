@@ -83,13 +83,16 @@ class Economy:
         cal_panel['year'] = cal_panel['year'].dt.year
         clim_cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
         
-        
-        'Input Prices'
+        # ------------ #
+        # Input Prices #
+        # ------------ #
         r_θ = np.array([1, self.r_d])
         self.r = np.concatenate((np.tile(r_θ, self.Θ), np.ones(1)))
         
         
-        'CES Sector Share'
+        # ---------------- #
+        # CES Sector Share #
+        # ----------------- #
         S_θ_nu = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
         nu = np.mean(S_θ_nu, 0)
         nu = np.append(nu, 1-np.sum(nu))
@@ -97,7 +100,9 @@ class Economy:
         self.ν = nu
         
         
-        'Status Quo Clean Input Subsidies'
+        # -------------------------------- #
+        # Status Quo Clean Input Subsidies #
+        # -------------------------------- #
         S_car_ξbar = cal_panel.loc[(cal_panel.year >= 2011) & (cal_panel.year <= 2018), ['car_clean_relsub']].to_numpy()
         Mom_car_ξbar = np.mean(S_car_ξbar, 0) #CRS report on EV tax credit published in 2019
         
@@ -119,7 +124,9 @@ class Economy:
         self.ξbar_0[2] = z_elec/(1+z_elec)
         
         
-        'Carbon Parameters'
+        # ----------------- #
+        # Carbon Parameters #
+        # ----------------- #
         Em_hist = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
         C_hist = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_stock']].to_numpy().reshape(61)
         
@@ -138,12 +145,16 @@ class Economy:
         print(self.ψ_0)
         
         
-        'Carbon Initial Conditions'
+        # ------------------------- #
+        # Carbon Initial Conditions #
+        # ------------------------- #
         self.C1_0 = self.C_bar + self.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year < self.Year_0 + self.T, ['C_em']].to_numpy())
         self.C2_0 = np.mean(clim_cal_panel.loc[(clim_cal_panel.year >= self.Year_0) & (clim_cal_panel.year < self.Year_0 + self.T), ['C_stock']].to_numpy()) - self.C1_0
         
         
-        'Initial Technology'
+        # ------------------ #
+        # Initial Technology #
+        # ------------------ #
         S_A0 = cal_panel.loc[(cal_panel.year >= self.Year_0) & (cal_panel.year < self.Year_0 + self.T), ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
         Mom_A0 = np.mean(S_A0, 0)
         
@@ -161,7 +172,9 @@ class Economy:
         self.A_0 = A_init.x
         
         
-        'Carbon Intensity'
+        # ---------------- #
+        # Carbon Intensity #
+        # ---------------- #
         C_ω = cal_panel.loc[(cal_panel.year >= self.Year_0) & (cal_panel.year < self.Year_0 + self.T), ['car_C_em','elec_C_em']].to_numpy()
         Mom_ω = np.sum(C_ω, 0)
         
@@ -175,7 +188,9 @@ class Economy:
            self.ω[2*θ+1] = omega_d.x[θ]
         
         
-        'Spillover Network'
+        # ----------------- #
+        # Spillover Network #
+        # ----------------- #
         self.φ_tilde_0 = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
         
         φ_hatg = self.φ_tilde_0.ravel()
@@ -187,7 +202,9 @@ class Economy:
         self.φ_hat = phi_hat_init.x.reshape((J,J))
         
         
-        'Research Productivity'  
+        # --------------------- #
+        # Research Productivity #
+        # --------------------- #
         Abar_ss = ssf.Abar_SS(self.η, self.φ_hat, self.α, self.σ, self.λ, self.ν, self.r, ξ_lf, self.Θ, self.o)
         chi_g = 1
     
@@ -207,7 +224,9 @@ class Economy:
         cal_panel['year'] = cal_panel['year'].dt.year
         clim_cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
     
-        'Initial Technology'
+        # ----------------- #
+        # InitialTechnology #
+        # ----------------- #
         S_A0 = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year < Year_start + self.T), ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
         Mom_A0 = np.mean(S_A0, 0)
         
