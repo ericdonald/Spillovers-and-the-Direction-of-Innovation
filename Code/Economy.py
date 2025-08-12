@@ -27,9 +27,9 @@ class Economy:
         
         self.Directory = Path(__file__).resolve().parent
         
-        ###############################################
-        ### Define Externally Calibrated Parameters ###
-        ###############################################
+        # --------------------------------------- #
+        # Define Externally Calibrated Parameters #
+        # --------------------------------------- #
         self.Θ = 2 #Number of Climate-Specific Sectors
         self.T = 1 #Years per period
         self.σ = 1.86 #Elasticity of Substitution between Clean & Dirty
@@ -49,17 +49,17 @@ class Economy:
         
         J = 2*self.Θ+1
         
-        ##################################
-        ### Define Calibration Moments ###
-        ##################################
+        # -------------------------- #
+        # Define Calibration Moments #
+        # -------------------------- #
         self.g = 0.02 #Steady State Growth
         self.Y0 = 100 #Normalized Initial Output
         self.Year_0 = 2021 #Initial Calibration Year
         self.φ_tilde_0 = np.zeros((J,J)) #Empirical Gross Spillover Network
         
-        ###############################################
-        ### Define Internally Calibrated Parameters ###
-        ###############################################
+        # --------------------------------------- #
+        # Define Internally Calibrated Parameters #
+        # --------------------------------------- #
         self.r = np.zeros(J) #Input Prices
         self.ν = np.zeros(self.Θ+1) #CES Sector Share
         self.ξbar_0 = np.zeros(J) #Initial Input Subsidies
@@ -416,11 +416,11 @@ class Economy:
         N = 6 + 2*J
         
         
-        ###################################################################
+        # ----------------------------------------------------------------
 
         # Recalibrate research parameters.
 
-        ###################################################################
+        # ----------------------------------------------------------------
         
         'Spillover Network'        
         φ_hatg = self.φ_tilde_0.ravel()
@@ -444,11 +444,11 @@ class Economy:
         self.χ = chi.x
         
         
-        ###################################################################
+        # ----------------------------------------------------------------
 
         # IAM.
 
-        ###################################################################
+        # ----------------------------------------------------------------
         
         'Outside Emissions'
         cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')

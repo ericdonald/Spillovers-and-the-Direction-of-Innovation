@@ -49,18 +49,18 @@ def chi_root(χ, Abar_ss, g, η, φ_hat, γ, ν, T, Θ, o):
 def A0_root(A_0, Mom_A0, Mom_Y0, r_tilde, α, Θ, σ, λ, ν, L, Ω_0):
     "Root to Calibrate Initial Technology"
     
-    ###############################################
-    ### Moments for Initial Relative Technology ###
-    ###############################################
+    # --------------------------------------- #
+    # Moments for Initial Relative Technology #
+    # --------------------------------------- #
     q = pf.q_c(r_tilde, A_0, α, σ, Θ)
     Q = Mom_A0[:Θ] - q #Clean quantity shares
     
     S_θ = pf.Shares_θ(r_tilde, A_0, α, σ, λ, ν, Θ)[:-1]
     Sh = Mom_A0[Θ:] - S_θ #Sector shares
     
-    ##############################################
-    ### Moment for Initial Absolute Technology ###
-    ##############################################
+    # -------------------------------------- #
+    # Moment for Initial Absolute Technology #
+    # -------------------------------------- #
     Y0 = pf.Output(r_tilde, A_0, α, σ, λ, ν, Ω_0, L, Θ)
     Cal_y = Mom_Y0 - Y0 #Initial output level
     
@@ -110,15 +110,15 @@ def omega_root(ω_d, Mom_ω, A_0, r_tilde, α, σ, λ, ν, Ω_0, L, Θ):
 def psi_root(psi_g, C_data, Em, C1_Start, C2_start, ψ_p):
     "Root to Calibrate Climate Parameters"
     
-    #########################
-    ### Unpack Parameters ###
-    #########################
+    # ----------------- #
+    # Unpack Parameters #
+    # ----------------- #
     ψ = np.exp(psi_g[0]) / (1 + np.exp(psi_g[0]))
     ψ_0 = np.exp(psi_g[1]) / (1 + np.exp(psi_g[1]))
     
-    #####################
-    ### Simulate Path ###
-    #####################
+    # ------------- #
+    # Simulate Path #
+    # ------------- #
     C1 = np.ones(Em.size)*C1_Start
     C2 = np.ones(Em.size)*C2_start
     

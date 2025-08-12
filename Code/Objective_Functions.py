@@ -22,14 +22,14 @@ def Eqbm_Path(A_0, T_plus, η, φ_hat, χ, γ, α, λ, ν, σ, L, r_tilde, ξ, �
     s = np.zeros((T_plus+1,J))
     A = np.zeros((T_plus+1,J))
     
-    ##########################
-    ### Initial Conditions ###
-    ##########################
+    # ------------------ #
+    # Initial Conditions #
+    # ------------------ #
     A[0,:] = A_0
     
-    ########################
-    ### Equilibrium Path ###
-    ########################
+    # ---------------- #
+    # Equilibrium Path #
+    # ---------------- #
     for t in range(1, T_plus+1):
         s[t,:] = rf.ScienceEqbm(A[t-1,:], η, φ_hat, χ, γ, α, λ, ν, σ, L, r_tilde, ξ, Θ, o)
         A[t,:] = rf.A_new(s[t,:], A[t-1,:], η, φ_hat, χ, γ, ν, o)
@@ -44,15 +44,15 @@ def Carb_Path(C1_0, C2_0, T_time, A, sum_Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, 
     J = 2*Θ+1
     C_g = np.zeros((T_time,2))
     
-    ##########################
-    ### Initial Conditions ###
-    ##########################
+    # ------------------ #
+    # Initial Conditions #
+    # ------------------ #
     C_g[0,0] = pf.Perm_Carb(C1_0, sum_Em_out[0,:], ψ_p)
     C_g[0,1] = pf.Tran_Carb(C2_0, sum_Em_out[0,:], ψ_p, ψ_0, ψ)
     
-    ########################
-    ### Equilibrium Path ###
-    ########################
+    # ---------------- #
+    # Equilibrium Path #
+    # ---------------- #
     for t in range(1,T_time):
         C_g[t,0] = pf.Perm_Carb(C_g[t-1,0], sum_Em_out[t,:], ψ_p)
         C_g[t,1] = pf.Tran_Carb(C_g[t-1,1], sum_Em_out[t,:], ψ_p, ψ_0, ψ)
@@ -151,18 +151,18 @@ def CE_root(CE, W_2, c, var_θ, T, ρ, g_ss):
 def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
     "Optimality Condition for Carbon Price"
     
-    ###################################################################################################
-    ### Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess ###
-    ###################################################################################################
+    # ------------------------------------------------------------------------------------------- #
+    # Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess #
+    # ------------------------------------------------------------------------------------------- #
     J = 2*Θ + 1
     
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
     
     (τ_1_lead, τ_2_lead, C_1_lead, C_2_lead, ξtilde_lead, A_lead, ς_1_lead, ς_2_lead) = unpack(x_lead, J, T)
     
-    ################
-    ### Outcomes ###
-    ################
+    # -------- #
+    # Outcomes #
+    # -------- #
     X = np.ones((1,J))
     
     τ_t = (τ_1_t + τ_2_t) @ X
@@ -184,16 +184,16 @@ def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
     τ_1_lead[-1,:] = Y_lead[-1,:] * τ_1_lead[-1,:]
     τ_2_lead[-1,:] = Y_lead[-1,:] * τ_2_lead[-1,:]
     
-    ###########
-    ### MRS ###
-    ###########
+    # --- #
+    # MRS #
+    # --- #
     MU_t = MUtil(con_t, var_θ)
     MU_lead = MUtil(con_lead, var_θ)
     R_inv = MU_lead / MU_t / (1+ρ)
 
-    #############
-    ### Roots ###
-    #############
+    # ----- #
+    # Roots #
+    # ----- #
     RHS_1 = Y_t * var_ρ * ψ_p + R_inv * τ_1_lead
     RHS_2 = Y_t * var_ρ * (1-ψ_p) * ψ_0 + R_inv * ψ * τ_2_lead
     
@@ -207,18 +207,18 @@ def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
 def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
     "Law of Motion for Carbon Concentrations"
     
-    ###################################################################################################
-    ### Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess ###
-    ###################################################################################################
+    # ------------------------------------------------------------------------------------------- #
+    # Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess #
+    # ------------------------------------------------------------------------------------------- #
     J = 2*Θ + 1
     
     (τ_1_lag, τ_2_lag, C_1_lag, C_2_lag, ξtilde_lag, A_lag, ς_1_lag, ς_2_lag) = unpack(x_lag, J, T)
     
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
         
-    ################
-    ### Outcomes ###
-    ################
+    # -------- #
+    # Outcomes #
+    # -------- #
     X = np.ones((1,J))
     
     τ_t = (τ_1_t + τ_2_t) @ X
@@ -229,9 +229,9 @@ def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
     
     Em_t = sum_Em_out + pf.GHG(r_tilde_t, A_t, α, σ, λ, ν, Ω_t, L, ω, Θ)
 
-    #############
-    ### Roots ###
-    #############
+    # ----- #
+    # Roots #
+    # ----- #
     RHS_1 = pf.Perm_Carb(C_1_lag, Em_t, ψ_p)
     RHS_2 = pf.Tran_Carb(C_2_lag, Em_t, ψ_p, ψ_0, ψ)
     
@@ -245,18 +245,18 @@ def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
 def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
     "Optimality Condition for Innovation Subsidies x Shares"
 
-    ###################################################################################################
-    ### Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess ###
-    ###################################################################################################
+    # ------------------------------------------------------------------------------------------- #
+    # Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess #
+    # ------------------------------------------------------------------------------------------- #
     J = 2*Θ + 1
     
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
     
     (τ_1_lead, τ_2_lead, C_1_lead, C_2_lead, ξtilde_lead, A_lead, ς_1_lead, ς_2_lead) = unpack(x_lead, J, T)
     
-    ################
-    ### Outcomes ###
-    ################
+    # -------- #
+    # Outcomes #
+    # -------- #
     X = np.ones((1,J))
     
     τ_t = (τ_1_t + τ_2_t) @ X
@@ -285,16 +285,16 @@ def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, �
     
     φ_lead = rf.SpillNet(φ_hat, A_t, o)
     
-    ###########
-    ### MRS ###
-    ###########
+    # --- #
+    # MRS #
+    # --- #
     MU_t = MUtil(con_t, var_θ)
     MU_lead = MUtil(con_lead, var_θ)
     R_inv = MU_lead / MU_t / (1+ρ)
     
-    #############
-    ### Roots ###
-    #############
+    # ----- #
+    # Roots #
+    # ----- #
     RHS = np.empty((T,J))
     for t in range(T):
         RHS[t,:] = (Sj_t[t,:] - Cal_T_t[t,:]) / (γ-1) + R_inv[t,:] * (Y_lead[t,:]/Y_t[t,:]) * (ξtilde_lead[t,:] + ((ξtilde_lead[t,:]*g_lead[t,:]) @ φ_lead[t,:,:]))
@@ -308,23 +308,23 @@ def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, �
 def A_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
     "Technology Law of Motion"
     
-    ###################################################################################################
-    ### Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess ###
-    ###################################################################################################
+    # ------------------------------------------------------------------------------------------- #
+    # Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess #
+    # ------------------------------------------------------------------------------------------- #
     J = 2*Θ + 1
     
     (τ_1_lag, τ_2_lag, C_1_lag, C_2_lag, ξtilde_lag, A_lag, ς_1_lag, ς_2_lag) = unpack(x_lag, J, T)
     
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
 
-    ################
-    ### Outcomes ###
-    ################
+    # -------- #
+    # Outcomes #
+    # -------- #
     s_t = rf.Science(A_lag, ξtilde_t, η, φ_hat, ν, Θ, o)
     
-    #############
-    ### Roots ###
-    #############
+    # ----- #
+    # Roots #
+    # ----- #
     RHS = rf.A_new(s_t, A_lag, η, φ_hat, χ, γ, ν, o)
     Root = np.log(A_t) - np.log(RHS)
     
@@ -335,18 +335,18 @@ def A_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
 def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
     "Crazy Recursion"
     
-    ###################################################################################################
-    ### Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess ###
-    ###################################################################################################
+    # ------------------------------------------------------------------------------------------- #
+    # Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess #
+    # ------------------------------------------------------------------------------------------- #
     J = 2*Θ + 1
     
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
     
     (τ_1_lead, τ_2_lead, C_1_lead, C_2_lead, ξtilde_lead, A_lead, ς_1_lead, ς_2_lead) = unpack(x_lead, J, T)
     
-    ################
-    ### Outcomes ###
-    ################
+    # -------- #
+    # Outcomes #
+    # -------- #
     X = np.ones((1,J))
     
     τ_t = (τ_1_t + τ_2_t) @ X
@@ -368,16 +368,16 @@ def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
     con_leadss = (1+g_ss) * con_t
     con_lead = np.vstack((con_t[1:,:], con_leadss[-1,:]))
     
-    ###########
-    ### MRS ###
-    ###########
+    # --- #
+    # MRS #
+    # --- #
     MU_t = MUtil(con_t, var_θ)
     MU_lead = MUtil(con_lead, var_θ)
     R_inv = MU_lead / MU_t / (1+ρ)
 
-    #############
-    ### Roots ###
-    #############
+    # ----- #
+    # Roots #
+    # ----- #
     RHS_1 = R_inv * (-Z_lead * var_ρ * ψ_p * (1-SCC_frac) * τ_lead + ς_1_lead - Z_lead * var_ρ * ψ_p * (ς_1_lead+ς_2_lead))
     RHS_2 = R_inv * (-Z_lead * var_ρ * (1-ψ_p) * ψ_0 * ψ * (1-SCC_frac) * τ_lead + ψ * ς_2_lead - Z_lead * var_ρ * (1-ψ_p) * ψ_0 * ψ * (ς_1_lead+ς_2_lead))
     
@@ -391,9 +391,9 @@ def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
 def unpack(x, J, T):
     "Unpack Allocation Sequence"
 
-    ###################################################################################################
-    ### Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess ###
-    ###################################################################################################
+    # ------------------------------------------------------------------------------------------- #
+    # Unpack Carbon Price, Carbon Concentration, Subsidies, Technology, and Crazy Recursion Guess #
+    # ------------------------------------------------------------------------------------------- #
     
     τ_1 = np.exp(x[:,0].reshape((T,1)))
     τ_2 = np.exp(x[:,1].reshape((T,1)))

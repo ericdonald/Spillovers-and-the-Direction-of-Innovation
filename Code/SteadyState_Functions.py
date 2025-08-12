@@ -237,9 +237,9 @@ def Opt_SS(r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
     
     J = 2*Θ+1
     
-    #########################
-    ### Super Smart Guess ###
-    #########################
+    # ----------------- #
+    # Super Smart Guess #
+    # ----------------- #
     Sj_g = np.array([ν[0], 0, ν[1], 0, ν[-1]])
     I = np.eye(J)
     g = 0.02
@@ -258,9 +258,9 @@ def Opt_SS(r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
     
     SS_g = np.concatenate((ξtilde_g, Abar_ss_g))
     
-    #############
-    ### Solve ###
-    #############
+    # ----- #
+    # Solve #
+    # ----- #
     if o==1:
         SS_find = optimize.root(Opt_SS_root, SS_g,
                            args=(r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o),
@@ -315,14 +315,14 @@ def Opt_SS_root(SS, r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
     Abar_ss = SS[J:]
     A_ss = np.append(Abar_ss, 1)
     
-    ###########################
-    ### Steady-State Growth ###
-    ###########################
+    # ------------------- #
+    # Steady-State Growth #
+    # ------------------- #
     g_ss = Growth_SS(Abar_ss, φ_hat, η, ν, γ, χ, Θ, o)
     
-    ###################
-    ### ξtilde Root ###
-    ###################
+    # ----------- #
+    # ξtilde Root #
+    # ----------- #
     φ = rf.SpillNet(φ_hat, A_ss, o)[0,:,:]
     Rtilde_inv = (1+g_ss)**(1-var_θ) / (1+ρ)
     p_j = pf.PseudoP_j(r, A_ss, α)
@@ -336,9 +336,9 @@ def Opt_SS_root(SS, r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
     
     Root1 = ξtilde - RHS1
     
-    #################
-    ### Abar Root ###
-    #################
+    # --------- #
+    # Abar Root #
+    # --------- #
     ν_j = pf.Θ_Expand(ν, Θ)
     V = pf.var_bar(ν_j, J)
     Ξtilde = pf.var_bar(ξtilde, J)
@@ -363,9 +363,9 @@ def Opt_SS_Iterator(SS_g, r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
     Abar_ss = SS_g[J:]
     A_ss = np.append(Abar_ss, 1)
     
-    ###########################
-    ### Steady-State Growth ###
-    ###########################
+    # ------------------- #
+    # Steady-State Growth #
+    # ------------------- #
     phi_spill = rf.Spill(φ_hat, A_ss, o)
     
     x_j = χ * ν**(-η) * phi_spill
@@ -373,9 +373,9 @@ def Opt_SS_Iterator(SS_g, r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
     
     g_ss = np.log(γ) * g_CES
     
-    #####################
-    ### ξtilde Update ###
-    #####################
+    # ------------- #
+    # ξtilde Update #
+    # ------------- #
     φ = rf.SpillNet(φ_hat, A_ss, o)[0,:,:]
     Rtilde_inv = (1+g_ss)**(1-var_θ) / (1+ρ)
     p_j = pf.PseudoP_j(r, A_ss, α)
@@ -385,9 +385,9 @@ def Opt_SS_Iterator(SS_g, r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
     B = np.linalg.inv((1-Rtilde_inv)*I - Rtilde_inv*g_ss*φ)
     ξtilde_new = (S_j @ B)/(γ-1)
     
-    ###################
-    ### Abar Update ###
-    ###################
+    # ----------- #
+    # Abar Update #
+    # ----------- #
     V = pf.var_bar(ν, J)
     Ξtilde = pf.var_bar(ξtilde, J)
     

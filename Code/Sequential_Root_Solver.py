@@ -23,28 +23,28 @@ def SRS(X_g, Funcs, Init, Term, args, N_lag, N_t, N_lead, Maxiter=100, ε=10**(-
     
     for it in range(Maxiter):
         
-        ###########################
-        ### Unpack Lags & Leads ###
-        ###########################
+        # ------------------- #
+        # Unpack Lags & Leads #
+        # ------------------- #
         x_lag = np.vstack((Init, x[:-1,:]))
         x_lead = np.vstack((x[1:,:], Term))
         
-        ################################
-        ### Evaluate Entire Function ###
-        ################################
+        # ------------------------ #
+        # Evaluate Entire Function #
+        # ------------------------ #
         y = func_eval(x_lag, x, x_lead, Funcs, *args)
         
-        #########################
-        ### Check Convergence ###
-        #########################
+        # ----------------- #
+        # Check Convergence #
+        # ----------------- #
         if np.max(np.abs(y)) < ε:
             print("Root Found")
             qe.toc()
             break
         
-        #######################
-        ### Sparse Jacobian ###
-        #######################
+        # --------------- #
+        # Sparse Jacobian #
+        # --------------- #
         Jac = np.zeros((T,N,N,3))
         
         for n in N_lag:
@@ -61,32 +61,32 @@ def SRS(X_g, Funcs, Init, Term, args, N_lag, N_t, N_lead, Maxiter=100, ε=10**(-
         
         Jacob = np.zeros((T*N, T*N))
         
-        ######################
-        ### Initial Period ###
-        ######################
+        # -------------- #
+        # Initial Period #
+        # -------------- #
         for n in range(N):
             Jacob[n, :N] = Jac[0,n,:,1]
             Jacob[n, N:N+N] = Jac[0,n,:,2]
         
-        ############################
-        ### Intermediate Periods ###
-        ############################
+        # -------------------- #
+        # Intermediate Periods #
+        # -------------------- #
         for t in range(1, T-1):
             for n in range(N):
                 Jacob[t*N+n, t*N-N:t*N] = Jac[t,n,:,0]
                 Jacob[t*N+n, t*N:t*N+N] = Jac[t,n,:,1]
                 Jacob[t*N+n, t*N+N:t*N+2*N] = Jac[t,n,:,2]
         
-        ####################
-        ### Final Period ###
-        ####################
+        # ------------ #
+        # Final Period #
+        # ------------ #
         for n in range(N):
             Jacob[(T-1)*N+n, -2*N:-N] = Jac[-1,n,:,0]
             Jacob[(T-1)*N+n, -N:] = Jac[-1,n,:,1]
         
-        ####################
-        ### Update Guess ###
-        ####################
+        # ------------ #
+        # Update Guess #
+        # ------------ #
         x = x.reshape(T*N)
         y = y.reshape(T*N)
         
