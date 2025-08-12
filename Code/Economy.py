@@ -224,9 +224,9 @@ class Economy:
         cal_panel['year'] = cal_panel['year'].dt.year
         clim_cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
     
-        # ----------------- #
-        # InitialTechnology #
-        # ----------------- #
+        # ------------------ #
+        # Initial Technology #
+        # ------------------ #
         S_A0 = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year < Year_start + self.T), ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
         Mom_A0 = np.mean(S_A0, 0)
         
@@ -243,7 +243,9 @@ class Economy:
         
         A_start = A_0.x
         
-        'Status Quo Innovation Subsidies'
+        # ------------------------------- #
+        # Status Quo Innovation Subsidies #
+        # ------------------------------- #
         S_ξ = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= 2015), ['car_clean_RD_relsub', 'car_dirty_RD_relsub', 'elec_clean_RD_relsub', 'elec_dirty_RD_relsub']].to_numpy()
         Mom_ξ = np.mean(S_ξ, 0) #IEA innovation subsidy data stop after 2015
         
@@ -256,7 +258,9 @@ class Economy:
         ξ_0 = np.ones(J)
         ξ_0[:-1] = ξ_init.x
         
-        'Calibration for Low Spillover Model'
+        # ----------------------------------- #
+        # Calibration for Low Spillover Model #
+        # ----------------------------------- #
         φ_hat_low = np.eye(J)
         
         ξ_init_low = sp.optimize.root(cf.ξ0_root, ξ_0[:-1],
@@ -266,7 +270,9 @@ class Economy:
         ξ_0low = np.ones(J)
         ξ_0low[:-1] = ξ_init_low.x
         
-        'Simulate Equilibrium Paths'
+        # -------------------------- #
+        # Simulate Equilibrium Paths #
+        # -------------------------- #
         T_plus = int(np.ceil((Year_end - Year_start)/self.T))
         
         A_ten = of.Eqbm_Path(A_start, T_plus, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0, self.Θ, self.o)[1]
@@ -292,25 +298,33 @@ class Economy:
         J = 2*self.Θ + 1
         N = 6 + 2*J
         
-        'Select Discount Rate'
+        # -------------------- #
+        # Select Discount Rate #
+        # -------------------- #
         if disc_high == 1:
             ρ = (1+self.ρ_h)**self.T - 1
         else:
             ρ = (1+self.ρ_l)**self.T - 1
             
-        'Select Spillover Network'
+        # ------------------------ #
+        # Select Spillover Network #
+        # ------------------------ #
         if spill_low == 1:
             φ_hat_IAM = np.eye(J)
         else:
             φ_hat_IAM = self.φ_hat
             
-        'Select Damages'
+        # -------------- #
+        # Select Damages #
+        # -------------- #
         if dam_high == 1:
             var_ρ = 4*self.var_ρ
         else:
             var_ρ = self.var_ρ
             
-        'Outside Emissions'
+        # ----------------- #
+        # Outside Emissions #
+        # ----------------- #
         cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
         cal_panel['year'] = cal_panel['year'].dt.year
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
@@ -327,7 +341,9 @@ class Economy:
             group_sum = np.sum(Em_out[start_idx:end_idx])
             sum_Em_out[t,:] = group_sum
             
-        'Steady-State Policy'
+        # ------------------- #
+        # Steady-State Policy #
+        # ------------------- #
         if spill_low == 1:
             g_ss = np.log(self.γ) * self.χ
             Rtilde_inv = (1+g_ss)**(1-self.var_θ) / (1+ρ)
@@ -347,7 +363,9 @@ class Economy:
         ς1_ss = 0
         ς2_ss = 0
         
-        'Initial Guess'
+        # ------------- #
+        # Initial Guess #
+        # ------------- #
         τ1_g = τtilde_1ss * self.Y0 * (1+self.g)**(np.arange(Periods)+1)
         τ1_g = τ1_g.reshape((Periods, 1))
         
@@ -387,7 +405,9 @@ class Economy:
         
         X_g = np.hstack((np.log(τ1_g), np.log(τ2_g), np.log(C1_g), np.log(C2_g), ξtilde_g, np.log(A_g), ς1_g, ς2_g))
         
-        'Functions'
+        # --------- #
+        # Functions #
+        # --------- #
         Funcs = (of.τ_root, of.C_root, of.ξtilde_root, of.A_root, of.ς_root)
         
         N_lag = tuple([2,3]) + tuple(range(J + 4, J*2 + 4))
@@ -399,7 +419,9 @@ class Economy:
         ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
         args = (Periods, ρ, self.var_θ, φ_hat_IAM, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, var_ρ, self.ψ_p, self.ψ_0, self.ψ, sum_Em_out, self.Θ, SCC_frac, self.o)
         
-        'Initial & Terminal Conditions'
+        # ----------------------------- #
+        # Initial & Terminal Conditions #
+        # ----------------------------- #
         Init = np.ones((1,N))
         Init[0,2] = np.log(self.C1_0)
         Init[0,3] = np.log(self.C2_0)
@@ -413,10 +435,14 @@ class Economy:
         Term[0,-2] = ς1_ss
         Term[0,-1] = ς2_ss
         
-        'Solve'
+        # ----- #
+        # Solve #
+        # ----- #
         X = srs.SRS(X_g, Funcs, Init, Term, args, N_lag, N_t, N_lead)
     
-        'Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology'
+        # -------------------------------------------------------------------- #
+        # Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology #
+        # -------------------------------------------------------------------- #
         τ = (np.exp(X[:T_time,0]) + np.exp(X[:T_time,1])).reshape((T_time,1))
         C = (np.exp(X[:T_time,2]) + np.exp(X[:T_time,3])).reshape((T_time,1))
         ξtilde = X[:T_time,4:4+J]
@@ -441,7 +467,9 @@ class Economy:
 
         # ----------------------------------------------------------------
         
-        'Spillover Network'        
+        # ----------------- #
+        # Spillover Network #
+        # ----------------- #
         φ_hatg = self.φ_tilde_0.ravel()
     
         phi_hat_init = sp.optimize.root(cf.phi_hat_root, φ_hatg,
@@ -451,7 +479,9 @@ class Economy:
         self.φ_hat = phi_hat_init.x.reshape((J,J))
         
         
-        'Research Productivity'
+        # --------------------- #
+        # Research Productivity #
+        # --------------------- #
         ξ_lf = np.ones(J)
         Abar_ss = ssf.Abar_SS(self.η, self.φ_hat, self.α, self.σ, self.λ, self.ν, self.r, ξ_lf, self.Θ, self.o)
         chi_g = 1
@@ -469,7 +499,9 @@ class Economy:
 
         # ----------------------------------------------------------------
         
-        'Outside Emissions'
+        # ----------------- #
+        # Outside Emissions #
+        # ----------------- #
         cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
         cal_panel['year'] = cal_panel['year'].dt.year
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
@@ -486,7 +518,9 @@ class Economy:
             group_sum = np.sum(Em_out[start_idx:end_idx])
             sum_Em_out[t,:] = group_sum
             
-        'Steady-State Policy'
+        # ------------------- #
+        # Steady-State Policy #
+        # ------------------- #
         ρ = (1+self.ρ_l)**self.T - 1
         (ξtilde_ss, Abar_ss) = ssf.Opt_SS(self.r, self.α, self.λ, self.γ, self.χ, self.ν, self.η, self.φ_hat, ρ, self.var_θ, self.Θ, self.o)
         g_ss = ssf.Growth_SS(Abar_ss, self.φ_hat, self.η, self.ν, self.γ, self.χ, self.Θ, self.o)
@@ -498,7 +532,9 @@ class Economy:
         ς1_ss = 0
         ς2_ss = 0
         
-        'Initial Guess'
+        # ------------- #
+        # Initial Guess #
+        # ------------- #
         τ1_g = τtilde_1ss * self.Y0 * (1+self.g)**(np.arange(Periods)+1)
         τ1_g = τ1_g.reshape((Periods, 1))
         
@@ -534,7 +570,9 @@ class Economy:
         
         X_g = np.hstack((np.log(τ1_g), np.log(τ2_g), np.log(C1_g), np.log(C2_g), ξtilde_g, np.log(A_g), ς1_g, ς2_g))
         
-        'Functions'
+        # --------- #
+        # Functions #
+        # --------- #
         Funcs = (of.τ_root, of.C_root, of.ξtilde_root, of.A_root, of.ς_root)
         
         N_lag = tuple([2,3]) + tuple(range(J + 4, J*2 + 4))
@@ -546,7 +584,9 @@ class Economy:
         ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
         args = (Periods, ρ, self.var_θ, self.φ_hat, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, self.var_ρ, self.ψ_p, self.ψ_0, self.ψ, sum_Em_out, self.Θ, 1, self.o)
         
-        'Initial & Terminal Conditions'
+        # ----------------------------- #
+        # Initial & Terminal Conditions #
+        # ----------------------------- #
         Init = np.ones((1,N))
         Init[0,2] = np.log(self.C1_0)
         Init[0,3] = np.log(self.C2_0)
@@ -560,10 +600,14 @@ class Economy:
         Term[0,-2] = ς1_ss
         Term[0,-1] = ς2_ss
         
-        'Solve'
+        # ----- #
+        # Solve #
+        # ----- #
         X = srs.SRS(X_g, Funcs, Init, Term, args, N_lag, N_t, N_lead)
     
-        'Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology'
+        # -------------------------------------------------------------------- #
+        # Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology #
+        # -------------------------------------------------------------------- #
         τ = (np.exp(X[:T_time,0]) + np.exp(X[:T_time,1])).reshape((T_time,1))
         C = (np.exp(X[:T_time,2]) + np.exp(X[:T_time,3])).reshape((T_time,1))
         ξtilde = X[:T_time,4:4+J]

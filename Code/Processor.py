@@ -51,7 +51,9 @@ class Processor:
         
         self.Directory = Path(__file__).resolve().parent
         
-        'Load in the Economy Object'
+        # -------------------------- #
+        # Load in the Economy Object #
+        # -------------------------- #
         self.E = E
         
         
@@ -65,9 +67,9 @@ class Processor:
         ω_prop = ((self.E.ω[3]-self.E.ω[1])/self.E.ω[1])*100
         Calibrate_Results.add('Relative Increase in Elec Carbon Intensity', gpf.clean_round(ω_prop, 1))
         
-        ########################################
-        ### Plot Match of Climate Parameters ###
-        ########################################
+        # -------------------------------- #
+        # Plot Match of Climate Parameters #
+        # -------------------------------- #
         clim_cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
         
         Em = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
@@ -89,9 +91,9 @@ class Processor:
                              columns=['Year', 'Data', 'Model'])
         DF_CM.to_csv(f'{self.Directory}/Results/Figures/Carbon_Match.csv', index=False)
         
-        ######################
-        ### Record Results ###
-        ######################
+        # -------------- #
+        # Record Results #
+        # -------------- #
         Calibrate_Results.add('Climate Persistence Parameter', gpf.clean_round(self.E.ψ, 3))
         Calibrate_Results.add('Climate Absorption Parameter', gpf.clean_round(self.E.ψ_0, 3))
         
@@ -115,7 +117,12 @@ class Processor:
     def SpillAnalysis(self):
         "Spillover Network Analysis"
         
-        'Heat Map'
+        # ----------------------------------------------------------------
+
+        # Spillover network heat map.
+
+        # ----------------------------------------------------------------
+
         tech_label_list = ['Clean Car', 'Dirty Car', 'Clean Elec', 'Dirty Elec', 'Gen']
         fig, ax = plt.subplots(1,1)
         img = ax.matshow(self.E.φ_tilde_0[:-1,:])
@@ -130,7 +137,12 @@ class Processor:
         plt.show()
         
         
-        'Stability of Clean Centrality'
+        # ----------------------------------------------------------------
+
+        # Stability of clean centrality.
+
+        # ----------------------------------------------------------------
+
         spill_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/spillover_stability.dta')
         
         citer = spill_panel['tech_citer'].unique()
@@ -163,12 +175,17 @@ class Processor:
         DF_cleancent.to_csv(f'{self.Directory}/Results/Figures/Clean_Centrality.csv', index=False)
         
         
-        'Centrality in Disaggregrated Network'
+        # ----------------------------------------------------------------
+
+        # Centrality in disaggregrated network.
+
+        # ----------------------------------------------------------------
         
         Disagg_Results = {'Variable':[], 'Value':[]}
-        # ------------------------------------------------------------------
-        # (i) Load the dataframes from Stata .dta files
-        # ------------------------------------------------------------------
+        
+        # ----------------------- #
+        # Compute Citation Shares #
+        # ----------------------- #
         df_cpc = pd.read_stata(f'{self.Directory}/Empirical/Raw Data/cpc_current.dta')
         df_cpc = df_cpc[['patent_id', 'subsection_id']]
         
@@ -184,11 +201,7 @@ class Processor:
             ]
         ]
         
-        
-        # ------------------------------------------------------------------
-        # (ii) Merge cpc_current and relevant_patents by 'patent_id',
-        #      keeping only certain columns afterward.
-        # ------------------------------------------------------------------
+       
         df_tech = pd.merge(
             df_relevant,
             df_cpc,
@@ -208,15 +221,7 @@ class Processor:
         # Weight general patents for consistency with base case
         df_merged['citee_weight'] = 1 / df_merged.groupby('patent_id')['patent_id'].transform('count')
         
-        
-        # ------------------------------------------------------------------
-        # (iii) Transform into a two-column dataframe: [patent_id, tech_class].
-        #
-        #      - If gen_patent == 1, tech_class = subsection_id.
-        #      - Otherwise, for each of [car_clean_patent, car_dirty_patent,
-        #        elec_clean_patent, elec_dirty_patent] that equals 1, create a
-        #        row with tech_class = that variable's name.
-        # ------------------------------------------------------------------
+     
         long_data = []
         for _, row in df_merged.iterrows():
             if row['gen_patent'] == 1:
@@ -238,10 +243,6 @@ class Processor:
         del df_merged, long_data
         
         
-        # ------------------------------------------------------------------
-        # (iv) Make a dataframe connecting every citation pairwise by
-        #      tech_class.
-        # ------------------------------------------------------------------
         df_citations  = pd.read_stata(f'{self.Directory}/Empirical/Raw Data/uspatentcitation.dta')
         df_citations = df_citations[['patent_id', 'citation_id']]
         
@@ -272,9 +273,6 @@ class Processor:
         df_cite_matrix = df_cite_matrix[['citer_tech_class', 'citee_tech_class', 'cite_weight']]
         
         
-        # ------------------------------------------------------------------
-        # (v) Compute citation shares by tech_class pairs.
-        # ------------------------------------------------------------------
         df_cite_matrix['total_cites'] = df_cite_matrix.groupby('citer_tech_class')['cite_weight'].transform('sum')
         df_cite_matrix['pairwise_cites'] = df_cite_matrix.groupby(['citer_tech_class', 'citee_tech_class'])['cite_weight'].transform('sum')
         df_cite_matrix['pairwise_cite_share'] = df_cite_matrix['pairwise_cites'] / df_cite_matrix['total_cites']
@@ -283,11 +281,9 @@ class Processor:
         df_cite_matrix = df_cite_matrix.drop_duplicates()
         
         
-        # ------------------------------------------------------------------
-        # (vi) Produce the gross spillover matrix.
-        # ------------------------------------------------------------------
-        
-        # 1) Define the priority ordering for the first four classes
+        # ------------------------ #
+        # Gross Spillover Matrices #
+        # ------------------------ #
         priority_order = [
             'car_clean_patent',
             'car_dirty_patent',
@@ -295,37 +291,28 @@ class Processor:
             'elec_dirty_patent'
         ]
         
-        # 2) Determine all tech classes present as either citer or citee
         all_tech_classes = set(df_cite_matrix['citer_tech_class']).union(
             df_cite_matrix['citee_tech_class']
         )
         
-        # 3) Build a final list of classes (rows/columns) by placing 
-        #    the four priority classes first, then the rest in sorted order.
         non_priority_classes = sorted(all_tech_classes - set(priority_order))
         ordered_classes = priority_order + non_priority_classes
         
-        # 4) Pivot df_cite_matrix into a wide format. 
-        #    Index = citer_tech_class, Columns = citee_tech_class, Values = pairwise_cite_share
         df_pivot = df_cite_matrix.pivot(
             index='citer_tech_class',
             columns='citee_tech_class',
             values='pairwise_cite_share'
         )
         
-        # 5) Reindex the pivot so it has the same classes in rows and columns 
-        #    (in the exact order we want), filling missing pairs with zero.
         df_pivot = df_pivot.reindex(index=ordered_classes, columns=ordered_classes, fill_value=0)
         df_pivot.fillna(0, inplace=True)
         
-        # 6) Convert the final pivot to a NumPy array
         disagg_spill_matrix = df_pivot.values
         
         
-        # -----------------------------------------------
-        # (vii) Record eigenvector centrality.
-        # -----------------------------------------------
-        
+        # ---------------------- #
+        # Eigenvector Centrality #
+        # ---------------------- #
         κ = np.linalg.eig(disagg_spill_matrix.T)[0]
         unit = np.argmin(np.abs(κ-1))
         Cent = np.real(np.linalg.eig(disagg_spill_matrix.T)[1][:,unit])
@@ -349,23 +336,31 @@ class Processor:
         
         Tens_Results = {'Variable':[], 'Value':[]}
         
-        'Derive Simulated Paths'
+        # ---------------------- #
+        # Derive Simulated Paths #
+        # ---------------------- #
         (q_θc, q_θc_low, A_start, ξ_0, ξ_0low) = self.E.TensMatch(Year_start, Year_end)
         
-        'Empirical Path'
+        # -------------- #
+        # Empirical Path #
+        # -------------- #
         cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
         cal_panel['year'] = cal_panel['year'].dt.year
         
         q_car_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_car_clean']].to_numpy()
         q_elec_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_elec_clean']].to_numpy()
         
-        'Plot Quantity Share Predictions'
+        # ------------------------------- #
+        # Plot Quantity Share Predictions #
+        # ------------------------------- #
         DF_tens = pd.DataFrame(np.hstack((np.arange(Year_start, Year_end+1).reshape((-1,1)), q_car_clean.reshape((-1,1)), q_elec_clean.reshape((-1,1)), q_θc, q_θc_low)), 
                              columns=['Year', 'Data_Transport', 'Data_Electricity', 'Model_Transport', 'Model_Electricity', 'Model_Transport_Low', 'Model_Electricity_Low'])
         DF_tens.to_csv(f'{self.Directory}/Results/Figures/2010s_Transition.csv', index=False)
 
         
-        'Spectral Analysis'
+        # ----------------- #
+        # Spectral Analysis #
+        # ----------------- #
         J = 2*self.E.Θ + 1
         r_tilde = (1-self.E.ξbar_0)*self.E.r
         Abar_start = pf.var_bar(A_start, J)
@@ -384,7 +379,9 @@ class Processor:
         Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
         κ_low = np.linalg.eig(Jake_low)[0]
         
-        "Record Results"
+        # -------------- #
+        # Record Results #
+        # -------------- #
         Tens_Results['Variable'].append('2010s Input Subsidy for Clean Transport')
         Tens_Results['Value'].append(gpf.clean_round(self.E.ξbar_0[0], 3))
         Tens_Results['Variable'].append('2010s Input Subsidy for Clean Electricity')
@@ -448,7 +445,9 @@ class Processor:
         PolicyX_Results = {'Variable':[], 'Value':[]}
         
         
-        'Derive Hypothetical Policies'
+        # ---------------------------- #
+        # Derive Hypothetical Policies #
+        # ---------------------------- #
         cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
         cal_panel['year'] = cal_panel['year'].dt.year
         
@@ -470,7 +469,9 @@ class Processor:
         cases = ["Low Biden Carbon Price", "High Biden Carbon Price"]
         
         
-        'Alternative Spillover Network'
+        # ------------------------------ #
+        # Alternative Spillover Networks #
+        # ------------------------------ #
         φ_hat_low = np.eye(J)
         
         φtilde_noθ = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
@@ -489,7 +490,9 @@ class Processor:
         φ_Dub = 2*self.E.φ_tilde_0 + (1-2) * np.eye(J) #Only works for Cobb-Douglas
             
         
-        'Comparison of Linearized Model'
+        # ------------------------------ #
+        # Comparison of Linearized Model #
+        # ------------------------------ #
         Abar_ss = ssf.Abar_SS(self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
         Jake = ssf.Jacob(Abar_ss, self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
         A_fan_0 = np.log(Abar_0) - np.log(Abar_ss)
@@ -512,7 +515,9 @@ class Processor:
         DF_Lin.to_csv(f'{self.Directory}/Results/Figures/LinearCompare.csv', index=False)
 
         
-        'Tables of Policy Impacts'
+        # ------------------------ #
+        # Tables of Policy Impacts #
+        # ------------------------ #
         Abar_ss_lf = ssf.Abar_SS(self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, self.E.ν, self.E.r, ξ_lf, self.E.Θ, self.E.o)
         Amy_lf = ssf.Amp(Abar_ss_lf, self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, self.E.r, self.E.Θ, self.E.o)
         Σ_lf = ssf.Sigma(Abar_ss_lf, self.E.r, self.E.α, self.E.σ, self.E.λ, self.E.Θ)
@@ -644,7 +649,9 @@ class Processor:
             PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_Dub_impact)), 3))
         
         
-        'Figures of Technology Paths'
+        # --------------------------- #
+        # Figures of Technology Paths #
+        # --------------------------- #
         A_lf = of.Eqbm_Path(self.E.A_0, T_time, self.E.η, self.E.φ_hat, self.E.χ, self.E.γ, self.E.α, self.E.λ, self.E.ν, self.E.σ, self.E.L, self.E.r, ξ_lf, self.E.Θ, self.E.o)[1]
         Abar_lf = pf.var_bar(A_lf, J)
         lnBbar_lf = np.log(Abar_lf) @ X.T
@@ -684,7 +691,9 @@ class Processor:
             DF_techpath.to_csv(f'{self.Directory}/Results/Figures/TechPath{file}.csv', index=False)
             
             
-        'Spectral Radius for Applicant Only Citation Network'
+        # --------------------------------------------------- #
+        # Spectral Radius for Applicant Only Citation Network #
+        # --------------------------------------------------- #
         φ_tilde_ao = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares_applicant.dta').to_numpy()
         
         Abar_ss_ao = ssf.Abar_SS(self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
@@ -695,7 +704,10 @@ class Processor:
         PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_ao)), 3))
         
         
-        'Basins of Attraction by Policy Tool'
+        # ----------------------------------- #
+        # Basins of Attraction by Policy Tool #
+        # ----------------------------------- #
+        
         #Carbon Price
         P = 2000
         τ_dollar_pd = np.linspace(0, P, P)
@@ -755,7 +767,9 @@ class Processor:
         DF_subbasin.to_csv(f'{self.Directory}/Results/Figures/BasinsSub.csv', index=False)
         
         
-        'Plot Half-Life Charts' 
+        # --------------------- #
+        # Plot Half-Life Charts #
+        # --------------------- #
         Abar_ss = ssf.Abar_SS(self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
         Jake = ssf.Jacob(Abar_ss, self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
         κ = np.linalg.eig(Jake)[0]
@@ -869,7 +883,9 @@ class Processor:
         PolicyX_Results['Value'].append(int(t_half_tech_Dub_high[1]))
         
         
-        'Determinants of Amplification Matrix & Transition Matrix'
+        # -------------------------------------------------------- #
+        # Determinants of Amplification Matrix & Transition Matrix #
+        # -------------------------------------------------------- #
         P = 200
         dlnR = np.log(pf.var_bar(r_tilde_low, J)) - np.log(pf.var_bar(self.E.r, J))
         dlnΞ = np.log(pf.var_bar(ξ_cleansub, J)) - np.log(pf.var_bar(ξ_lf, J))
@@ -927,7 +943,9 @@ class Processor:
         PolicyX_Results['Value'].append(gpf.clean_round(σ_var_J[np.argmin(np.abs(spec_sub-1))], 2))
         
         
-        'Policy Effect on Transition Matrix'
+        # ---------------------------------- #
+        # Policy Effect on Transition Matrix #
+        # ---------------------------------- #
         P = 500
         
         τ_var = np.linspace(0, 500, P)
@@ -965,12 +983,22 @@ class Processor:
         J = 2*self.E.Θ + 1
         IAM_Results = {'Variable':[], 'Value':[]}
         
-        'Load Policy Paths'
+        # ----------------------------------------------------------------
+
+        # Benchmark policy paths.
+
+        # ----------------------------------------------------------------
+        
+        # ----------------- #
+        # Load Policy Paths #
+        # ----------------- #
         (τ_FB, C_FB, ξtilde_FB, A_FB) = self.E.IAM(Periods, T_time, 1, 0, 0, 0)
         (τ_ten, C_ten, ξtilde_ten, A_ten) = self.E.IAM(Periods, T_time, 0.1, 0, 0, 0)
         (τ_zero, C_zero, ξtilde_zero, A_zero) = self.E.IAM(Periods, T_time, 0, 0, 0, 0)
         
-        'Parameters'
+        # ---------- #
+        # Parameters #
+        # ---------- #
         ρ_h = (1+self.E.ρ_h)**self.E.T - 1
         ρ_l = (1+self.E.ρ_l)**self.E.T - 1
         
@@ -988,7 +1016,9 @@ class Processor:
         IAM_Results['Variable'].append('Average US Emission Share of Transport and Electricity')
         IAM_Results['Value'].append(gpf.clean_round(relEm*100, 1))
 
-        'Make Policy Comprehensible'
+        # -------------------------- #
+        # Make Policy Comprehensible #
+        # -------------------------- #
         τ_FB_dollar = τ_FB * (Y_start / self.E.Y0) * (12/44)
         
         X_τ = np.ones((1,J))
@@ -1020,7 +1050,9 @@ class Processor:
         R_tilde_inv_zero = (1+g_ss_zero)**(1-self.E.var_θ) / (1+ρ_l)
         ξ_hat_zero = ((self.E.γ-1) * (1-R_tilde_inv_zero) * ξtilde_zero / S_j_zero) @ Xs
         
-        'Record Results'
+        # -------------- #
+        # Record Results #
+        # -------------- #
         κ = np.linalg.eig(self.E.φ_tilde_0.T)[0]
         unit = np.argmin(np.abs(κ-1))
         Cent = np.linalg.eig(self.E.φ_tilde_0.T)[1][:,unit]
@@ -1052,12 +1084,16 @@ class Processor:
         IAM_Results['Variable'].append('Steady-State Clean Electricity Income Share (First-Best)')
         IAM_Results['Value'].append(gpf.clean_round(S_θ[1], 1))
         
-        'Plot Policy Path'
+        # ----------------- #
+        # Plot Policy Paths #
+        # ----------------- #
         DF_policy = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), τ_FB_dollar, ξ_hat_FB, ξ_hat_ten, ξ_hat_zero)), 
                              columns=['Year', 'τ_FB_dollar', 'ξ_hat_FB_Transport', 'ξ_hat_FB_Electricity', 'ξ_hat_ten_Transport', 'ξ_hat_ten_Electricity', 'ξ_hat_zero_Transport', 'ξ_hat_zero_Electricity'])
         DF_policy.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy.csv', index=False)
         
-        'Pollution & Growth Outcomes'
+        # --------------------------- #
+        # Pollution & Growth Outcomes #
+        # --------------------------- #
         Ω_FB = pf.Damage(C_FB, self.E.C_bar, self.E.var_ρ)
         Em_FB = pf.GHG(r_tilde_FB, A_FB, self.E.α, self.E.σ, self.E.λ, ν_adjust, Ω_FB, self.E.L, ω_adjust, self.E.Θ)[1:,:]
         Ygross_FB = pf.Output(r_tilde_FB, A_FB, self.E.α, self.E.σ, self.E.λ, ν_adjust, Ω_FB, self.E.L, self.E.Θ) / Ω_FB
@@ -1086,7 +1122,9 @@ class Processor:
         IAM_Results['Variable'].append('2200 Gross Output Growth (Zero)')
         IAM_Results['Value'].append(gpf.clean_round(g_zero[2200 - (self.E.Year_0+2),0]*100, 2))
         
-        'Emissions Elasticity'
+        # -------------------- #
+        # Emissions Elasticity #
+        # -------------------- #
         ΔlnEm_zero = pf.δGHG_δA(r_tilde_zero, A_zero, self.E.α, self.E.σ, self.E.λ, ν_adjust, ω_adjust, self.E.Θ) / (pf.omega_bar(r_tilde_zero, A_zero, self.E.α, self.E.σ, self.E.λ, ν_adjust, Ω_zero, self.E.L, ω_adjust, self.E.Θ) @ np.ones((1, J)) )
         ΔlnEm_zero_avg = np.mean(ΔlnEm_zero[:100,:],0)
         IAM_Results['Variable'].append('Average 100 Year Clean Transport Emissions Elasticity (Zero)')
@@ -1094,7 +1132,15 @@ class Processor:
         IAM_Results['Variable'].append('Average 100 Year Clean Electricity Emissions Elasticity (Zero)')
         IAM_Results['Value'].append(gpf.clean_round(ΔlnEm_zero_avg[2], 2))
         
-        'Load Alternative Policy Paths'
+        # ----------------------------------------------------------------
+
+        # Alternative policy paths.
+
+        # ----------------------------------------------------------------
+        
+        # ----------------- #
+        # Load Policy Paths #
+        # ----------------- #
         (τ_spilllow, C_spilllow, ξtilde_spilllow, A_spilllow) = self.E.IAM(Periods, T_time, 1, 0, 1, 0)
         
         (τ_dischigh_FB, C_dischigh_FB, ξtilde_dischigh_FB, A_dischigh_FB) = self.E.IAM(Periods, T_time, 1, 1, 0, 0)
@@ -1157,7 +1203,9 @@ class Processor:
         ξ_hat_damhigh = ((self.E.γ-1) * (1-R_tilde_inv_damhigh) * ξtilde_damhigh / S_j_damhigh) @ Xs
         
         
-        'Plot Policy Path'
+        # ----------------- #
+        # Plot Policy Paths #
+        # ----------------- #
         DF_policy_spilllow = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), τ_spilllow_dollar, ξ_hat_spilllow)), 
                              columns=['Year', 'τ_spilllow_dollar', 'ξ_hat_spilllow_Transport', 'ξ_hat_spilllow_Electricity'])
         DF_policy_spilllow.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy_spilllow.csv', index=False)
@@ -1171,14 +1219,22 @@ class Processor:
         DF_policy_damhigh.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy_damhigh.csv', index=False)
         
         
-        'Plot Long-Run Temperature'
+        # ----------------------------------------------------------------
+
+        # Plot long-run temperature.
+
+        # ----------------------------------------------------------------
         
-        'Load Policy Paths'
+        # ----------------- #
+        # Load Policy Paths #
+        # ----------------- #
         (τ_FB_long, C_FB_long, ξtilde_FB_long, A_FB_long) = self.E.IAM(Periods, Periods, 1, 0, 0, 0)
         (τ_ten_long, C_ten_long, ξtilde_ten_long, A_ten_long) = self.E.IAM(Periods, Periods, 0.1, 0, 0, 0)
         (τ_zero_long, C_zero_long, ξtilde_zero_long, A_zero_long) = self.E.IAM(Periods, Periods, 0, 0, 0, 0)
         
-        'Endogenous Outcomes'
+        # ----------------- #
+        # Temperature Paths #
+        # ----------------- #
         Temp_FB = pf.Temp(C_FB_long, self.E.C_bar)
         Temp_ten = pf.Temp(C_ten_long, self.E.C_bar)
         Temp_zero = pf.Temp(C_zero_long, self.E.C_bar)
@@ -1186,8 +1242,16 @@ class Processor:
         DF_temppath = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+Periods+1).reshape((-1,1)), Temp_FB, Temp_ten, Temp_zero)), 
                              columns=['Year', 'Temp_FB', 'Temp_ten', 'Temp_zero'])
         DF_temppath.to_csv(f'{self.Directory}/Results/Figures/TempPathIAM.csv', index=False)
-          
-        'Consumption Equivalence'
+         
+        # ----------------------------------------------------------------
+
+        # Consumption equivalence.
+
+        # ----------------------------------------------------------------
+        
+        # --------------------- #
+        # Low Discounting Paths #
+        # --------------------- #
         r_adjust_long = np.tile(self.E.r.reshape((1,J)), (Periods, 1))
         ν_adjust_long = np.tile(self.E.ν.reshape((1,self.E.Θ+1)), (Periods, 1))
         ω_adjust_long = np.tile(self.E.ω.reshape((1,J)), (Periods, 1))
@@ -1217,7 +1281,9 @@ class Processor:
         IAM_Results['Variable'].append('Second-Best Consumption Equivalent Loss (Zero)')
         IAM_Results['Value'].append(gpf.clean_round(CE_zero[0], 2))
         
-        'High Discounting Paths'
+        # ---------------------- #
+        # High Discounting Paths #
+        # ---------------------- #
         (τ_dischigh_FB_long, C_dischigh_FB_long, ξtilde_dischigh_FB_long, A_dischigh_FB_long) = self.E.IAM(Periods, Periods, 1, 1, 0, 0)
         (τ_dischigh_ten_long, C_dischigh_ten_long, ξtilde_dischigh_ten_long, A_dischigh_ten_long) = self.E.IAM(Periods, Periods, 0.1, 1, 0, 0)
         (τ_dischigh_zero_long, C_dischigh_zero_long, ξtilde_dischigh_zero_long, A_dischigh_zero_long) = self.E.IAM(Periods, Periods, 0, 1, 0, 0)
@@ -1250,7 +1316,16 @@ class Processor:
         IAM_Results_df = pd.DataFrame(IAM_Results)
         IAM_Results_df.to_csv(f'{self.Directory}/Results/Tables/IAM_Results.csv', index=False)
         
-        'Save Clean Technology Growth Rates'
+        
+        # ----------------------------------------------------------------
+
+        # Clean technology growth rates (for X-risk paper).
+
+        # ----------------------------------------------------------------
+        
+        # ---------------------------------- #
+        # Save Clean Technology Growth Rates #
+        # ---------------------------------- #
         A_lag = np.vstack((self.E.A_0.reshape((1,J)), A_dischigh_FB_long[:-1,:]))
         gc = np.log(A_dischigh_FB_long) - np.log(A_lag)
         df_gc = pd.DataFrame(gc[:,[0,2]])
@@ -1278,10 +1353,14 @@ class Processor:
         xs = np.array([[1],[0]])
         Xs = np.ascontiguousarray(np.kron(np.eye(self.E.Θ+1), xs)[:-1,:-1])
         
-        'Load Policy Path'
+        # ---------------- #
+        # Load Policy Path #
+        # ---------------- #
         (τ_CES, C_CES, ξtilde_CES, A_CES) = self.E.CES_IAM(Periods, T_time, o)        
 
-        'Make Policy Comprehensible'        
+        # -------------------------- #
+        # Make Policy Comprehensible #
+        # -------------------------- #
         τ_adjust_CES = τ_CES @ X_τ
         r_tilde_CES = r_adjust + ω_adjust*τ_adjust_CES
         
@@ -1291,7 +1370,9 @@ class Processor:
         R_tilde_inv_CES = (1+g_ss_CES)**(1-self.E.var_θ) / (1+ρ)
         ξ_hat_CES = ((self.E.γ-1) * (1-R_tilde_inv_CES) * ξtilde_CES / S_j_CES) @ Xs
         
-        'Record Results'
+        # -------------- #
+        # Record Results #
+        # -------------- #
         φ_tilde_ss_CES = rf.SpillNet(self.E.φ_hat, np.append(Abar_ss_CES,1), self.E.o)[0,:,:] + np.eye(J)
         κ_CES = np.linalg.eig(φ_tilde_ss_CES.T)[0]
         unit_CES = np.argmin(np.abs(κ_CES-1))
@@ -1317,7 +1398,9 @@ class Processor:
         CES_Results_df.to_csv(f'{self.Directory}/Results/Tables/CES_Results.csv', index=False)
         
         
-        'Plot Policy Path'
+        # ---------------- #
+        # Plot Policy Path #
+        # ---------------- #
         DF_policy_CES = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), ξ_hat_CES)), 
                              columns=['Year', 'ξ_hat_CES_Transport', 'ξ_hat_CES_Electricity'])
         DF_policy_CES.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy_CES.csv', index=False)
