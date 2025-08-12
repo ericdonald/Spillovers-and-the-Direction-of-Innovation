@@ -49,12 +49,8 @@ class Processor:
     def __init__(self, E):
         "Initialize Processor Object"
         
-        self.Directory = Path(__file__).resolve().parent
-        
-        # -------------------------- #
-        # Load in the Economy Object #
-        # -------------------------- #
         self.E = E
+        self.Directory = Path(__file__).resolve().parent
         
         
         
@@ -181,7 +177,7 @@ class Processor:
 
         # ----------------------------------------------------------------
         
-        Disagg_Results = {'Variable':[], 'Value':[]}
+        Disagg_Results = gpf.ResultsTable()
         
         # ----------------------- #
         # Compute Citation Shares #
@@ -317,24 +313,20 @@ class Processor:
         unit = np.argmin(np.abs(κ-1))
         Cent = np.real(np.linalg.eig(disagg_spill_matrix.T)[1][:,unit])
         Cent = np.round(Cent / np.sum(Cent)*100, 2)
-        Disagg_Results['Variable'].append('Disaggregated Eigenvector Centrality for Clean Transport')
-        Disagg_Results['Value'].append(Cent[0])
-        Disagg_Results['Variable'].append('Disaggregated Eigenvector Centrality for Dirty Transport')
-        Disagg_Results['Value'].append(Cent[1])
-        Disagg_Results['Variable'].append('Disaggregated Eigenvector Centrality for Clean Electricity')
-        Disagg_Results['Value'].append(Cent[2])
-        Disagg_Results['Variable'].append('Disaggregated Eigenvector Centrality for Dirty Electricity')
-        Disagg_Results['Value'].append(Cent[3])
         
-        Disagg_Results_df = pd.DataFrame(Disagg_Results)
-        Disagg_Results_df.to_csv(f'{self.Directory}/Results/Tables/Disagg_Results.csv', index=False)
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Transport', Cent[0])
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Transport', Cent[1])
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Electricity', Cent[2])
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Electricity', Cent[3])
+        
+        Disagg_Results.to_csv(f'{self.Directory}/Results/Tables/Disagg_Results.csv')
         
         
         
     def TensGraph(self, Year_start, Year_end):
         "Graph Match of 2010s Experience"
         
-        Tens_Results = {'Variable':[], 'Value':[]}
+        Tens_Results = gpf.ResultsTable()
         
         # ---------------------- #
         # Derive Simulated Paths #
@@ -382,55 +374,32 @@ class Processor:
         # -------------- #
         # Record Results #
         # -------------- #
-        Tens_Results['Variable'].append('2010s Input Subsidy for Clean Transport')
-        Tens_Results['Value'].append(gpf.clean_round(self.E.ξbar_0[0], 3))
-        Tens_Results['Variable'].append('2010s Input Subsidy for Clean Electricity')
-        Tens_Results['Value'].append(gpf.clean_round(self.E.ξbar_0[2], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Clean Transport')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0[0], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Dirty Transport')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0[1], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Clean Electricity')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0[2], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Dirty Electricity')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0[3], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Clean Transport (No Spillover)')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0low[0], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Dirty Transport (No Spillover)')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0low[1], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Clean Electricity (No Spillover)')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0low[2], 3))
-        Tens_Results['Variable'].append('2010s Innovation Subsidy for Dirty Electricity (No Spillover)')
-        Tens_Results['Value'].append(gpf.clean_round(ξ_0low[3], 3))
+        Tens_Results.add('2010s Input Subsidy for Clean Transport', gpf.clean_round(self.E.ξbar_0[0], 3))
+        Tens_Results.add('2010s Input Subsidy for Clean Electricity', gpf.clean_round(self.E.ξbar_0[2], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Clean Transport', gpf.clean_round(ξ_0[0], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Dirty Transport', gpf.clean_round(ξ_0[1], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Clean Electricity', gpf.clean_round(ξ_0[2], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Dirty Electricity', gpf.clean_round(ξ_0[3], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Clean Transport (No Spillover)', gpf.clean_round(ξ_0low[0], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Dirty Transport (No Spillover)', gpf.clean_round(ξ_0low[1], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Clean Electricity (No Spillover)', gpf.clean_round(ξ_0low[2], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Dirty Electricity (No Spillover)', gpf.clean_round(ξ_0low[3], 3))
         
-        Tens_Results['Variable'].append('2021 Clean Quantity Share for Transport (Data)')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_car_clean[-1,0], 1))
-        Tens_Results['Variable'].append('2021 Clean Quantity Share for Electricity (Data)')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_elec_clean[-1,0], 1))
-        Tens_Results['Variable'].append('2010 Clean Quantity Share for Transport (Data)')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_car_clean[0,0], 1))
-        Tens_Results['Variable'].append('2010 Clean Quantity Share for Electricity (Data)')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_elec_clean[0,0], 1))
-        Tens_Results['Variable'].append('2021 Clean Quantity Share for Transport')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_θc[-1,0], 1))
-        Tens_Results['Variable'].append('2021 Clean Quantity Share for Electricity')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_θc[-1,1], 1))
-        Tens_Results['Variable'].append('2021 Clean Quantity Share for Transport (No Spillover)')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_θc_low[-1,0], 1))
-        Tens_Results['Variable'].append('2021 Clean Quantity Share for Electricity (No Spillover)')
-        Tens_Results['Value'].append(gpf.clean_round(100*q_θc_low[-1,1], 1))
+        Tens_Results.add('2021 Clean Quantity Share for Transport (Data)', gpf.clean_round(100*q_car_clean[-1,0], 1))
+        Tens_Results.add('2021 Clean Quantity Share for Electricity (Data)', gpf.clean_round(100*q_elec_clean[-1,0], 1))
+        Tens_Results.add('2010 Clean Quantity Share for Transport (Data)', gpf.clean_round(100*q_car_clean[0,0], 1))
+        Tens_Results.add('2010 Clean Quantity Share for Electricity (Data)', gpf.clean_round(100*q_elec_clean[0,0], 1))
+        Tens_Results.add('2021 Clean Quantity Share for Transport', gpf.clean_round(100*q_θc[-1,0], 1))
+        Tens_Results.add('2021 Clean Quantity Share for Electricity', gpf.clean_round(100*q_θc[-1,1], 1))
+        Tens_Results.add('2021 Clean Quantity Share for Transport (No Spillover)', gpf.clean_round(100*q_θc_low[-1,0], 1))
+        Tens_Results.add('2021 Clean Quantity Share for Electricity (No Spillover)', gpf.clean_round(100*q_θc_low[-1,1], 1))
         
-        Tens_Results['Variable'].append('2010s Spectral Radius')
-        Tens_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ)), 3))
-        Tens_Results['Variable'].append('2010s Half-Life for Transportation')
-        Tens_Results['Value'].append(HL[0])
-        Tens_Results['Variable'].append('2010s Half-Life for Electricity')
-        Tens_Results['Value'].append(HL[1])
-        Tens_Results['Variable'].append('2010s Spectral Radius (No Spillover)')
-        Tens_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_low)), 3))
+        Tens_Results.add('2010s Spectral Radius', gpf.clean_round(np.max(np.abs(κ)), 3))
+        Tens_Results.add('2010s Half-Life for Transportation', HL[0])
+        Tens_Results.add('2010s Half-Life for Electricity', HL[1])
+        Tens_Results.add('2010s Spectral Radius (No Spillover)', gpf.clean_round(np.max(np.abs(κ_low)), 3))
         
-        Tens_Results_df = pd.DataFrame(Tens_Results)
-        Tens_Results_df.to_csv(f'{self.Directory}/Results/Tables/Tens_Results.csv', index=False)
+        Tens_Results.to_csv(f'{self.Directory}/Results/Tables/Tens_Results.csv')
         
         
         
@@ -442,7 +411,7 @@ class Processor:
         I = np.eye(J-1)
         Abar_0 = pf.var_bar(self.E.A_0, J)
         
-        PolicyX_Results = {'Variable':[], 'Value':[]}
+        PolicyX_Results = gpf.ResultsTable()
         
         
         # ---------------------------- #
@@ -609,44 +578,26 @@ class Processor:
             Em_60_Dub = pf.GHG(r_tilde_impact, A_impact_Dub[2060 - self.E.Year_0,:], self.E.α, self.E.σ, self.E.λ, self.E.ν, 1, self.E.L, self.E.ω, self.E.Θ)
             ΔEm_60_Dub = ((Em_60_Dub - Em_60_Dublf)/Em_60_Dublf) * 100
             
-            PolicyX_Results['Variable'].append(f'{c} First-Order Change in Transport Relative Technology')
-            PolicyX_Results['Value'].append(gpf.clean_round(dlnBbar_ss[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} First-Order Change in Electricity Relative Technology')
-            PolicyX_Results['Value'].append(gpf.clean_round(dlnBbar_ss[1], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in Emissions Intensity')
-            PolicyX_Results['Value'].append(gpf.clean_round(Δω_bar[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in 2035 Emissions')
-            PolicyX_Results['Value'].append(gpf.clean_round(ΔEm_35[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in 2060 Emissions')
-            PolicyX_Results['Value'].append(gpf.clean_round(ΔEm_60[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Spectral Radius')
-            PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_impact)), 3))
+            PolicyX_Results.add(f'{c} First-Order Change in Transport Relative Technology', gpf.clean_round(dlnBbar_ss[0], 1))
+            PolicyX_Results.add(f'{c} First-Order Change in Electricity Relative Technology', gpf.clean_round(dlnBbar_ss[1], 1))
+            PolicyX_Results.add(f'{c} Change in Emissions Intensity', gpf.clean_round(Δω_bar[0], 1))
+            PolicyX_Results.add(f'{c} Change in 2035 Emissions', gpf.clean_round(ΔEm_35[0], 1))
+            PolicyX_Results.add(f'{c} Change in 2060 Emissions', gpf.clean_round(ΔEm_60[0], 1))
+            PolicyX_Results.add(f'{c} Spectral Radius', gpf.clean_round(np.max(np.abs(κ_impact)), 3))
             
-            PolicyX_Results['Variable'].append(f'{c} First-Order Change in Transport Relative Technology (No Spillovers)')
-            PolicyX_Results['Value'].append(-gpf.clean_round(dlnBbar_sslow[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} First-Order Change in Electricity Relative Technology (No Spillovers)')
-            PolicyX_Results['Value'].append(-gpf.clean_round(dlnBbar_sslow[1], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in Emissions Intensity (No Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(Δω_bar_low[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in 2035 Emissions (No Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(ΔEm_35low[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in 2060 Emissions (No Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(ΔEm_60low[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Spectral Radius (No Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_low_impact)), 3))
+            PolicyX_Results.add(f'{c} First-Order Change in Transport Relative Technology (No Spillovers)', -gpf.clean_round(dlnBbar_sslow[0], 1))
+            PolicyX_Results.add(f'{c} First-Order Change in Electricity Relative Technology (No Spillovers)', -gpf.clean_round(dlnBbar_sslow[1], 1))
+            PolicyX_Results.add(f'{c} Change in Emissions Intensity (No Spillovers)', gpf.clean_round(Δω_bar_low[0], 1))
+            PolicyX_Results.add(f'{c} Change in 2035 Emissions (No Spillovers)', gpf.clean_round(ΔEm_35low[0], 1))
+            PolicyX_Results.add(f'{c} Change in 2060 Emissions (No Spillovers)', gpf.clean_round(ΔEm_60low[0], 1))
+            PolicyX_Results.add(f'{c} Spectral Radius (No Spillovers)', gpf.clean_round(np.max(np.abs(κ_low_impact)), 3))
             
-            PolicyX_Results['Variable'].append(f'{c} First-Order Change in Transport Relative Technology (Double Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(dlnBbar_ssDub[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} First-Order Change in Electricity Relative Technology (Double Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(dlnBbar_ssDub[1], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in Emissions Intensity (Double Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(Δω_bar_Dub[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in 2035 Emissions (Double Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(ΔEm_35_Dub[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Change in 2060 Emissions (Double Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(ΔEm_60_Dub[0], 1))
-            PolicyX_Results['Variable'].append(f'{c} Spectral Radius (Double Spillovers)')
-            PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_Dub_impact)), 3))
+            PolicyX_Results.add(f'{c} First-Order Change in Transport Relative Technology (Double Spillovers)', gpf.clean_round(dlnBbar_ssDub[0], 1))
+            PolicyX_Results.add(f'{c} First-Order Change in Electricity Relative Technology (Double Spillovers)', gpf.clean_round(dlnBbar_ssDub[1], 1))
+            PolicyX_Results.add(f'{c} Change in Emissions Intensity (Double Spillovers)', gpf.clean_round(Δω_bar_Dub[0], 1))
+            PolicyX_Results.add(f'{c} Change in 2035 Emissions (Double Spillovers)', gpf.clean_round(ΔEm_35_Dub[0], 1))
+            PolicyX_Results.add(f'{c} Change in 2060 Emissions (Double Spillovers)', gpf.clean_round(ΔEm_60_Dub[0], 1))
+            PolicyX_Results.add(f'{c} Spectral Radius (Double Spillovers)', gpf.clean_round(np.max(np.abs(κ_Dub_impact)), 3))
         
         
         # --------------------------- #
@@ -700,8 +651,7 @@ class Processor:
         Jake_ao = ssf.Jacob(Abar_ss_ao, self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
         κ_ao = np.linalg.eig(Jake_ao)[0]
         
-        PolicyX_Results['Variable'].append('Applicant Only Spectral Radius')
-        PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_ao)), 3))
+        PolicyX_Results.add('Applicant Only Spectral Radius', gpf.clean_round(np.max(np.abs(κ_ao)), 3))
         
         
         # ----------------------------------- #
@@ -726,10 +676,9 @@ class Processor:
             A_fan_low_pd[p,:] = np.log(Abar_0) - np.log(Abar_ss_low_pd[p,:])
             ΔB_fan_low_pd[p,:] = X @ (Jake_low_pd[p,:,:] - I) @ A_fan_low_pd[p,:] * 100
         
-        PolicyX_Results['Variable'].append('Carbon Price for Clean Growth in Transport (No Spillover)')
-        PolicyX_Results['Value'].append(int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,0]))]))
-        PolicyX_Results['Variable'].append('Carbon Price for Clean Growth in Electricity (No Spillover)')
-        PolicyX_Results['Value'].append(int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,1]))]))
+        PolicyX_Results.add('Carbon Price for Clean Growth in Transport (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,0]))]))
+        PolicyX_Results.add('Carbon Price for Clean Growth in Electricity (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,1]))]))
+    
         
         τ_dollar_pd = τ_dollar_pd[:500]
         ΔB_fan_low_pd = ΔB_fan_low_pd[:500,:]
@@ -754,10 +703,8 @@ class Processor:
             A_fan_low_subpd[p,:] = np.log(Abar_0) - np.log(Abar_ss_low_subpd[p,:])
             ΔB_fan_low_subpd[p,:] = X @ (Jake_low_subpd[p,:,:] - I) @ A_fan_low_subpd[p,:] * 100
         
-        PolicyX_Results['Variable'].append('Clean Innovation Subsidy for Clean Growth in Transport (No Spillover)')
-        PolicyX_Results['Value'].append(gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,0])),0], 2))
-        PolicyX_Results['Variable'].append('Clean Innovation Subsidy for Clean Growth in Electricity (No Spillover)')
-        PolicyX_Results['Value'].append(gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,1])),0], 2))
+        PolicyX_Results.add('Clean Innovation Subsidy for Clean Growth in Transport (No Spillover)', gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,0])),0], 2))
+        PolicyX_Results.add('Clean Innovation Subsidy for Clean Growth in Electricity (No Spillover)', gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,1])),0], 2))
         
         ξ_clean_pd = ξ_clean_pd[:500]
         ΔB_fan_low_subpd = ΔB_fan_low_subpd[:500,:]
@@ -808,51 +755,31 @@ class Processor:
         Jake_nogen = ssf.Jacob(Abar_ss_nogen, self.E.η, φtilde_nogen, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
         κ_nogen = np.linalg.eig(Jake_nogen)[0]
         
-        PolicyX_Results['Variable'].append('Half-Life for ES1')
-        PolicyX_Results['Value'].append(int(t_half[0]))
-        PolicyX_Results['Variable'].append('Half-Life for ES2')
-        PolicyX_Results['Value'].append(int(t_half[1]))
-        PolicyX_Results['Variable'].append('Half-Life for ES3')
-        PolicyX_Results['Value'].append(int(t_half[2]))
-        PolicyX_Results['Variable'].append('Half-Life for ES4')
-        PolicyX_Results['Value'].append(int(t_half[3]))
-        PolicyX_Results['Variable'].append('Half-Life for Transportation')
-        PolicyX_Results['Value'].append(int(t_half[4]))
-        PolicyX_Results['Variable'].append('Half-Life for Electricity')
-        PolicyX_Results['Value'].append(int(t_half[5]))
-        PolicyX_Results['Variable'].append('Percent Difference in Half-Lives')
-        PolicyX_Results['Value'].append(gpf.clean_round(Δ_half,1))
+        PolicyX_Results.add('Half-Life for ES1', int(t_half[0]))
+        PolicyX_Results.add('Half-Life for ES2', int(t_half[1]))
+        PolicyX_Results.add('Half-Life for ES3', int(t_half[2]))
+        PolicyX_Results.add('Half-Life for ES4', int(t_half[3]))
+        PolicyX_Results.add('Half-Life for Transportation', int(t_half[4]))
+        PolicyX_Results.add('Half-Life for Electricity', int(t_half[5]))
+        PolicyX_Results.add('Percent Difference in Half-Lives', gpf.clean_round(Δ_half,1))
         
-        PolicyX_Results['Variable'].append('Half-Life for ES1 (No Sector Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_noθ[0]))
-        PolicyX_Results['Variable'].append('Half-Life for ES2 (No Sector Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_noθ[1]))
-        PolicyX_Results['Variable'].append('Half-Life for ES3 (No Sector Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_noθ[2]))
-        PolicyX_Results['Variable'].append('Half-Life for ES4 (No Sector Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_noθ[3]))
-        PolicyX_Results['Variable'].append('Half-Life for Transportation (No Sector Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_noθ[4]))
-        PolicyX_Results['Variable'].append('Half-Life for Electricity (No Sector Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_noθ[5]))
+        PolicyX_Results.add('Half-Life for ES1 (No Sector Spillovers)', int(t_half_noθ[0]))
+        PolicyX_Results.add('Half-Life for ES2 (No Sector Spillovers)', int(t_half_noθ[1]))
+        PolicyX_Results.add('Half-Life for ES3 (No Sector Spillovers)', int(t_half_noθ[2]))
+        PolicyX_Results.add('Half-Life for ES4 (No Sector Spillovers)', int(t_half_noθ[3]))
+        PolicyX_Results.add('Half-Life for Transportation (No Sector Spillovers)', int(t_half_noθ[4]))
+        PolicyX_Results.add('Half-Life for Electricity (No Sector Spillovers)', int(t_half_noθ[5]))
         
-        PolicyX_Results['Variable'].append('Half-Life for ES1 (Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_Dub[0]))
-        PolicyX_Results['Variable'].append('Half-Life for ES2 (Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_Dub[1]))
-        PolicyX_Results['Variable'].append('Half-Life for ES3 (Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_Dub[2]))
-        PolicyX_Results['Variable'].append('Half-Life for ES4 (Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_Dub[3]))
-        PolicyX_Results['Variable'].append('Half-Life for Transportation (Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_Dub[4]))
-        PolicyX_Results['Variable'].append('Half-Life for Electricity (Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_Dub[5]))
+        PolicyX_Results.add('Half-Life for ES1 (Double Spillovers)', int(t_half_Dub[0]))
+        PolicyX_Results.add('Half-Life for ES2 (Double Spillovers)', int(t_half_Dub[1]))
+        PolicyX_Results.add('Half-Life for ES3 (Double Spillovers)', int(t_half_Dub[2]))
+        PolicyX_Results.add('Half-Life for ES4 (Double Spillovers)', int(t_half_Dub[3]))
+        PolicyX_Results.add('Half-Life for Transportation (Double Spillovers)', int(t_half_Dub[4]))
+        PolicyX_Results.add('Half-Life for Electricity (Double Spillovers)', int(t_half_Dub[5]))
         
-        PolicyX_Results['Variable'].append('Spectral Radius (No Sector Spillovers)')
-        PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_noθ)), 3))
-        PolicyX_Results['Variable'].append('Spectral Radius (No General Spillovers)')
-        PolicyX_Results['Value'].append(gpf.clean_round(np.max(np.abs(κ_nogen)), 3))
+        PolicyX_Results.add('Spectral Radius (No Sector Spillovers)', gpf.clean_round(np.max(np.abs(κ_noθ)), 3))
+        PolicyX_Results.add('Spectral Radius (No General Spillovers)', gpf.clean_round(np.max(np.abs(κ_nogen)), 3))
+    
         
         Abar_ss_high = ssf.Abar_SS(self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_high, ξ_cleansub, self.E.Θ, self.E.o)
         Jake_high = ssf.Jacob(Abar_ss_high, self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, r_tilde_high, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
@@ -873,15 +800,11 @@ class Processor:
         A_fan_0_Dub_high = np.log(Abar_0) - np.log(Abar_ss_Dub_high)
         β_Dub_high = np.linalg.inv(Q_Dub_high) @ A_fan_0_Dub_high
         t_half_tech_Dub_high = ssf.Half_Life(Q_Dub_high, κ_Dub_high, β_Dub_high, self.E.Θ) * self.E.T
-        PolicyX_Results['Variable'].append('Half-Life for Transportation (High Biden Carbon Price)')
-        PolicyX_Results['Value'].append(int(t_half_tech_high[0]))
-        PolicyX_Results['Variable'].append('Half-Life for Electricity (High Biden Carbon Price)')
-        PolicyX_Results['Value'].append(int(t_half_tech_high[1]))
-        PolicyX_Results['Variable'].append('Half-Life for Transportation (High Biden Carbon Price, Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_tech_Dub_high[0]))
-        PolicyX_Results['Variable'].append('Half-Life for Electricity (High Biden Carbon Price, Double Spillovers)')
-        PolicyX_Results['Value'].append(int(t_half_tech_Dub_high[1]))
-        
+        PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price)', int(t_half_tech_high[0]))
+        PolicyX_Results.add('Half-Life for Electricity (High Biden Carbon Price)', int(t_half_tech_high[1]))
+        PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price, Double Spillovers)', int(t_half_tech_Dub_high[0]))
+        PolicyX_Results.add('Half-Life for Electricity (High Biden Carbon Price, Double Spillovers)', int(t_half_tech_Dub_high[1]))
+    
         
         # -------------------------------------------------------- #
         # Determinants of Amplification Matrix & Transition Matrix #
@@ -937,10 +860,8 @@ class Processor:
                              columns=['ζ_J', 'σ_var_J', 'spec_spill' ,'spec_sub'])
         DF_TD.to_csv(f'{self.Directory}/Results/Figures/TranDeterms.csv', index=False)
         
-        PolicyX_Results['Variable'].append('Spillover Scale for Path Dependence')
-        PolicyX_Results['Value'].append(gpf.clean_round(ζ_J[np.argmin(np.abs(spec_spill-1))]*100, 1))
-        PolicyX_Results['Variable'].append('ES for Path Dependence')
-        PolicyX_Results['Value'].append(gpf.clean_round(σ_var_J[np.argmin(np.abs(spec_sub-1))], 2))
+        PolicyX_Results.add('Spillover Scale for Path Dependence', gpf.clean_round(ζ_J[np.argmin(np.abs(spec_spill-1))]*100, 1))
+        PolicyX_Results.add('ES for Path Dependence', gpf.clean_round(σ_var_J[np.argmin(np.abs(spec_sub-1))], 2))
         
         
         # ---------------------------------- #
@@ -972,8 +893,7 @@ class Processor:
                              columns=['τ_var', 'ξ_clean_var', 'κ_τ0', 'κ_τ1', 'κ_τ2', 'κ_τ3', 'κ_ξ0', 'κ_ξ1', 'κ_ξ2', 'κ_ξ3'])
         DF_ΤP.to_csv(f'{self.Directory}/Results/Figures/TranPolicy.csv', index=False)
         
-        PolicyX_Results_df = pd.DataFrame(PolicyX_Results)
-        PolicyX_Results_df.to_csv(f'{self.Directory}/Results/Tables/PolicyX_Results.csv', index=False)
+        PolicyX_Results.to_csv(f'{self.Directory}/Results/Tables/PolicyX_Results.csv')
         
             
             
@@ -981,7 +901,7 @@ class Processor:
         "Processing of IAM"
         
         J = 2*self.E.Θ + 1
-        IAM_Results = {'Variable':[], 'Value':[]}
+        IAM_Results = gpf.ResultsTable()
         
         # ----------------------------------------------------------------
 
@@ -995,6 +915,7 @@ class Processor:
         (τ_FB, C_FB, ξtilde_FB, A_FB) = self.E.IAM(Periods, T_time, 1, 0, 0, 0)
         (τ_ten, C_ten, ξtilde_ten, A_ten) = self.E.IAM(Periods, T_time, 0.1, 0, 0, 0)
         (τ_zero, C_zero, ξtilde_zero, A_zero) = self.E.IAM(Periods, T_time, 0, 0, 0, 0)
+        
         
         # ---------- #
         # Parameters #
@@ -1013,8 +934,8 @@ class Processor:
         
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
         relEm = np.sum(np.mean(C_ω, 0))
-        IAM_Results['Variable'].append('Average US Emission Share of Transport and Electricity')
-        IAM_Results['Value'].append(gpf.clean_round(relEm*100, 1))
+        IAM_Results.add('Average US Emission Share of Transport and Electricity', gpf.clean_round(relEm*100, 1))
+
 
         # -------------------------- #
         # Make Policy Comprehensible #
@@ -1050,6 +971,7 @@ class Processor:
         R_tilde_inv_zero = (1+g_ss_zero)**(1-self.E.var_θ) / (1+ρ_l)
         ξ_hat_zero = ((self.E.γ-1) * (1-R_tilde_inv_zero) * ξtilde_zero / S_j_zero) @ Xs
         
+        
         # -------------- #
         # Record Results #
         # -------------- #
@@ -1057,32 +979,25 @@ class Processor:
         unit = np.argmin(np.abs(κ-1))
         Cent = np.linalg.eig(self.E.φ_tilde_0.T)[1][:,unit]
         Cent = np.round(Cent / np.sum(Cent)*100, 2)
-        IAM_Results['Variable'].append('Eigenvector Centrality for Clean Transport')
-        IAM_Results['Value'].append(round(Cent[0], 2))
-        IAM_Results['Variable'].append('Eigenvector Centrality for Dirty Transport')
-        IAM_Results['Value'].append(round(Cent[1], 2))
-        IAM_Results['Variable'].append('Eigenvector Centrality for Clean Electricity')
-        IAM_Results['Value'].append(round(Cent[2], 2))
-        IAM_Results['Variable'].append('Eigenvector Centrality for Dirty Electricity')
-        IAM_Results['Value'].append(round(Cent[3], 2))
+        IAM_Results.add('Eigenvector Centrality for Clean Transport', round(Cent[0], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Transport', round(Cent[1], 2))
+        IAM_Results.add('Eigenvector Centrality for Clean Electricity', round(Cent[2], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Electricity', round(Cent[3], 2))
         
         
         ξ_hat_FB_avg = np.mean(ξ_hat_FB[:100,:],0)*100
-        IAM_Results['Variable'].append('Average 100 Year Clean Transport Subsidy (First-Best)')
-        IAM_Results['Value'].append(gpf.clean_round(ξ_hat_FB_avg[0], 1))
-        IAM_Results['Variable'].append('Average 100 Year Clean Electricity Subsidy (First-Best)')
-        IAM_Results['Value'].append(gpf.clean_round(ξ_hat_FB_avg[1], 1))
-        
+        IAM_Results.add('Average 100 Year Clean Transport Subsidy (First-Best)', gpf.clean_round(ξ_hat_FB_avg[0], 1))
+        IAM_Results.add('Average 100 Year Clean Electricity Subsidy (First-Best)', gpf.clean_round(ξ_hat_FB_avg[1], 1))
+   
         
         A_ss_FB = np.append(Abar_ss_FB, 1)
         p_j = pf.PseudoP_j(self.E.r, A_ss_FB, self.E.α)
         p_θ = np.array([p_j[0], p_j[2], p_j[-1]])
         P = (np.sum(self.E.ν * p_θ**(1-self.E.λ)))**(1/(1-self.E.λ))
         S_θ = self.E.ν * (p_θ / P)**(1-self.E.λ) * 100
-        IAM_Results['Variable'].append('Steady-State Clean Transport Income Share (First-Best)')
-        IAM_Results['Value'].append(gpf.clean_round(S_θ[0], 1))
-        IAM_Results['Variable'].append('Steady-State Clean Electricity Income Share (First-Best)')
-        IAM_Results['Value'].append(gpf.clean_round(S_θ[1], 1))
+        IAM_Results.add('Steady-State Clean Transport Income Share (First-Best)', gpf.clean_round(S_θ[0], 1))
+        IAM_Results.add('Steady-State Clean Electricity Income Share (First-Best)', gpf.clean_round(S_θ[1], 1))
+    
         
         # ----------------- #
         # Plot Policy Paths #
@@ -1090,6 +1005,7 @@ class Processor:
         DF_policy = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), τ_FB_dollar, ξ_hat_FB, ξ_hat_ten, ξ_hat_zero)), 
                              columns=['Year', 'τ_FB_dollar', 'ξ_hat_FB_Transport', 'ξ_hat_FB_Electricity', 'ξ_hat_ten_Transport', 'ξ_hat_ten_Electricity', 'ξ_hat_zero_Transport', 'ξ_hat_zero_Electricity'])
         DF_policy.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy.csv', index=False)
+        
         
         # --------------------------- #
         # Pollution & Growth Outcomes #
@@ -1109,28 +1025,22 @@ class Processor:
         Ygross_zero = pf.Output(r_tilde_zero, A_zero, self.E.α, self.E.σ, self.E.λ, ν_adjust, Ω_zero, self.E.L, self.E.Θ) / Ω_zero
         g_zero = np.log(Ygross_zero)[1:,:] - np.log(Ygross_zero)[:-1,:]
         
-        IAM_Results['Variable'].append('2200 Emissions (First-Best)')
-        IAM_Results['Value'].append(gpf.clean_round(Em_FB[2200 - (self.E.Year_0+2),0], 2))
-        IAM_Results['Variable'].append('2200 Gross Output Growth (First-Best)')
-        IAM_Results['Value'].append(gpf.clean_round(g_FB[2200 - (self.E.Year_0+2),0]*100, 2))
-        IAM_Results['Variable'].append('2200 Emissions (Ten)')
-        IAM_Results['Value'].append(gpf.clean_round(Em_ten[2200 - (self.E.Year_0+2),0], 2))
-        IAM_Results['Variable'].append('2200 Gross Output Growth (Ten)')
-        IAM_Results['Value'].append(gpf.clean_round(g_ten[2200 - (self.E.Year_0+2),0]*100, 2))
-        IAM_Results['Variable'].append('2200 Emissions (Zero)')
-        IAM_Results['Value'].append(gpf.clean_round(Em_zero[2200 - (self.E.Year_0+2),0], 2))
-        IAM_Results['Variable'].append('2200 Gross Output Growth (Zero)')
-        IAM_Results['Value'].append(gpf.clean_round(g_zero[2200 - (self.E.Year_0+2),0]*100, 2))
+        IAM_Results.add('2200 Emissions (First-Best)', gpf.clean_round(Em_FB[2200 - (self.E.Year_0+2),0], 2))
+        IAM_Results.add('2200 Gross Output Growth (First-Best)', gpf.clean_round(g_FB[2200 - (self.E.Year_0+2),0]*100, 2))
+        IAM_Results.add('2200 Emissions (Ten)', gpf.clean_round(Em_ten[2200 - (self.E.Year_0+2),0], 2))
+        IAM_Results.add('2200 Gross Output Growth (Ten)', gpf.clean_round(g_ten[2200 - (self.E.Year_0+2),0]*100, 2))
+        IAM_Results.add('2200 Emissions (Zero)', gpf.clean_round(Em_zero[2200 - (self.E.Year_0+2),0], 2))
+        IAM_Results.add('2200 Gross Output Growth (Zero)', gpf.clean_round(g_zero[2200 - (self.E.Year_0+2),0]*100, 2))
+   
         
         # -------------------- #
         # Emissions Elasticity #
         # -------------------- #
         ΔlnEm_zero = pf.δGHG_δA(r_tilde_zero, A_zero, self.E.α, self.E.σ, self.E.λ, ν_adjust, ω_adjust, self.E.Θ) / (pf.omega_bar(r_tilde_zero, A_zero, self.E.α, self.E.σ, self.E.λ, ν_adjust, Ω_zero, self.E.L, ω_adjust, self.E.Θ) @ np.ones((1, J)) )
         ΔlnEm_zero_avg = np.mean(ΔlnEm_zero[:100,:],0)
-        IAM_Results['Variable'].append('Average 100 Year Clean Transport Emissions Elasticity (Zero)')
-        IAM_Results['Value'].append(gpf.clean_round(ΔlnEm_zero_avg[0], 2))
-        IAM_Results['Variable'].append('Average 100 Year Clean Electricity Emissions Elasticity (Zero)')
-        IAM_Results['Value'].append(gpf.clean_round(ΔlnEm_zero_avg[2], 2))
+        IAM_Results.add('Average 100 Year Clean Transport Emissions Elasticity (Zero)', gpf.clean_round(ΔlnEm_zero_avg[0], 2))
+        IAM_Results.add('Average 100 Year Clean Electricity Emissions Elasticity (Zero)', gpf.clean_round(ΔlnEm_zero_avg[2], 2))
+    
         
         # ----------------------------------------------------------------
 
@@ -1174,10 +1084,9 @@ class Processor:
         g_ss_spilllow = np.log(self.E.γ) * self.E.χ
         R_tilde_inv_spilllow = (1+g_ss_spilllow)**(1-self.E.var_θ) / (1+ρ_l)
         ξ_hat_spilllow = ((self.E.γ-1) * (1-R_tilde_inv_spilllow) * ξtilde_spilllow / S_j_spilllow) @ Xs
-        IAM_Results['Variable'].append('Initial Innovation Subsidy for Clean Transport (No Spillovers)')
-        IAM_Results['Value'].append(gpf.clean_round(ξ_hat_spilllow[0,0]*100, 1))
-        IAM_Results['Variable'].append('Initial Innovation Subsidy for Clean Electricity (No Spillovers)')
-        IAM_Results['Value'].append(gpf.clean_round(ξ_hat_spilllow[0,1]*100, 1))
+        IAM_Results.add('Initial Innovation Subsidy for Clean Transport (No Spillovers)', gpf.clean_round(ξ_hat_spilllow[0,0]*100, 1))
+        IAM_Results.add('Initial Innovation Subsidy for Clean Electricity (No Spillovers)', gpf.clean_round(ξ_hat_spilllow[0,1]*100, 1))
+    
         
         S_j_dischigh_FB = pf.Shares_j(r_tilde_dischigh_FB, A_dischigh_FB, self.E.α, self.E.σ, self.E.λ, ν_adjust, self.E.Θ)
         (ξtilde_ss_dischigh_FB, Abar_ss_dischigh_FB) = ssf.Opt_SS(self.E.r, self.E.α, self.E.λ, self.E.γ, self.E.χ, self.E.ν, self.E.η, self.E.φ_hat, ρ_h, self.E.var_θ, self.E.Θ, self.E.o)
@@ -1270,16 +1179,15 @@ class Processor:
         W_ten = of.Welfare(c_ten_long, self.E.var_θ, Periods, ρ_l, g_ss_ten)
     
         CE_ten = 100 - of.Consump_Eq(W_ten, c_FB_long, self.E.var_θ, Periods, ρ_l, g_ss_FB) * 100
-        IAM_Results['Variable'].append('Second-Best Consumption Equivalent Loss (Ten)')
-        IAM_Results['Value'].append(gpf.clean_round(CE_ten[0], 2))
+        IAM_Results.add('Second-Best Consumption Equivalent Loss (Ten)', gpf.clean_round(CE_ten[0], 2))
         
         Ω_zero_long = pf.Damage(C_zero_long, self.E.C_bar, self.E.var_ρ)
         c_zero_long = pf.Consump(r_adjust_long, r_adjust_long, A_zero_long, self.E.α, self.E.σ, self.E.λ, ν_adjust_long, Ω_zero_long, self.E.L, self.E.Θ)
         W_zero = of.Welfare(c_zero_long, self.E.var_θ, Periods, ρ_l, g_ss_zero)
         
         CE_zero = 100 - of.Consump_Eq(W_zero, c_FB_long, self.E.var_θ, Periods, ρ_l, g_ss_FB) * 100
-        IAM_Results['Variable'].append('Second-Best Consumption Equivalent Loss (Zero)')
-        IAM_Results['Value'].append(gpf.clean_round(CE_zero[0], 2))
+        IAM_Results.add('Second-Best Consumption Equivalent Loss (Zero)', gpf.clean_round(CE_zero[0], 2))
+        
         
         # ---------------------- #
         # High Discounting Paths #
@@ -1302,19 +1210,16 @@ class Processor:
         W_dischigh_ten = of.Welfare(c_dischigh_ten_long, self.E.var_θ, Periods, ρ_h, g_ss_dischigh_ten)
         
         CE_dischigh_ten = 100 - of.Consump_Eq(W_dischigh_ten, c_dischigh_FB_long, self.E.var_θ, Periods, ρ_h, g_ss_dischigh_FB) * 100
-        IAM_Results['Variable'].append('Second-Best Consumption Equivalent Loss (Ten, High Disc)')
-        IAM_Results['Value'].append(gpf.clean_round(CE_dischigh_ten[0], 2))
+        IAM_Results.add('Second-Best Consumption Equivalent Loss (Ten, High Disc)', gpf.clean_round(CE_dischigh_ten[0], 2))
         
         Ω_dischigh_zero_long = pf.Damage(C_dischigh_zero_long, self.E.C_bar, self.E.var_ρ)
         c_dischigh_zero_long = pf.Consump(r_adjust_long, r_adjust_long, A_dischigh_zero_long, self.E.α, self.E.σ, self.E.λ, ν_adjust_long, Ω_dischigh_zero_long, self.E.L, self.E.Θ)
         W_dischigh_zero = of.Welfare(c_dischigh_zero_long, self.E.var_θ, Periods, ρ_h, g_ss_zero)
         
         CE_dischigh_zero = 100 - of.Consump_Eq(W_dischigh_zero, c_dischigh_FB_long, self.E.var_θ, Periods, ρ_h, g_ss_dischigh_FB) * 100
-        IAM_Results['Variable'].append('Second-Best Consumption Equivalent Loss (Zero, High Disc)')
-        IAM_Results['Value'].append(gpf.clean_round(CE_dischigh_zero[0], 2))
+        IAM_Results.add('Second-Best Consumption Equivalent Loss (Zero, High Disc)', gpf.clean_round(CE_dischigh_zero[0], 2))
         
-        IAM_Results_df = pd.DataFrame(IAM_Results)
-        IAM_Results_df.to_csv(f'{self.Directory}/Results/Tables/IAM_Results.csv', index=False)
+        IAM_Results.to_csv(f'{self.Directory}/Results/Tables/IAM_Results.csv')
         
         
         # ----------------------------------------------------------------
@@ -1338,7 +1243,7 @@ class Processor:
         "Processing of CES Spillover Robustness"
         
         J = 2*self.E.Θ + 1
-        CES_Results = {'Variable':[], 'Value':[]}
+        CES_Results = gpf.ResultsTable()       
         
         ρ = (1+self.E.ρ_l)**self.E.T - 1
         
@@ -1353,10 +1258,12 @@ class Processor:
         xs = np.array([[1],[0]])
         Xs = np.ascontiguousarray(np.kron(np.eye(self.E.Θ+1), xs)[:-1,:-1])
         
+        
         # ---------------- #
         # Load Policy Path #
         # ---------------- #
         (τ_CES, C_CES, ξtilde_CES, A_CES) = self.E.CES_IAM(Periods, T_time, o)        
+
 
         # -------------------------- #
         # Make Policy Comprehensible #
@@ -1370,6 +1277,7 @@ class Processor:
         R_tilde_inv_CES = (1+g_ss_CES)**(1-self.E.var_θ) / (1+ρ)
         ξ_hat_CES = ((self.E.γ-1) * (1-R_tilde_inv_CES) * ξtilde_CES / S_j_CES) @ Xs
         
+        
         # -------------- #
         # Record Results #
         # -------------- #
@@ -1378,24 +1286,19 @@ class Processor:
         unit_CES = np.argmin(np.abs(κ_CES-1))
         Cent_CES = np.linalg.eig(φ_tilde_ss_CES.T)[1][:,unit_CES]
         Cent_CES = np.round(Cent_CES / np.sum(Cent_CES)*100, 2)
-        CES_Results['Variable'].append('Eigenvector Centrality for Clean Transport (CES)')
-        CES_Results['Value'].append(round(Cent_CES[0], 2))
-        CES_Results['Variable'].append('Eigenvector Centrality for Clean Electricity (CES)')
-        CES_Results['Value'].append(round(Cent_CES[2], 2))
-        
+        CES_Results.add('Eigenvector Centrality for Clean Transport (CES)', round(Cent_CES[0], 2))
+        CES_Results.add('Eigenvector Centrality for Clean Electricity (CES)', round(Cent_CES[2], 2))
+    
         
         A_ss_CES = np.append(Abar_ss_CES, 1)
         p_j = pf.PseudoP_j(self.E.r, A_ss_CES, self.E.α)
         p_θ = np.array([p_j[0], p_j[2], p_j[-1]])
         P = (np.sum(self.E.ν * p_θ**(1-self.E.λ)))**(1/(1-self.E.λ))
         S_θ = self.E.ν * (p_θ / P)**(1-self.E.λ) * 100
-        CES_Results['Variable'].append('Steady-State Clean Transport Income Share (CES)')
-        CES_Results['Value'].append(gpf.clean_round(S_θ[0], 2))
-        CES_Results['Variable'].append('Steady-State Clean Electricity Income Share (CES)')
-        CES_Results['Value'].append(gpf.clean_round(S_θ[1], 2))
+        CES_Results.add('Steady-State Clean Transport Income Share (CES)', gpf.clean_round(S_θ[0], 2))
+        CES_Results.add('Steady-State Clean Electricity Income Share (CES)', gpf.clean_round(S_θ[1], 2))
         
-        CES_Results_df = pd.DataFrame(CES_Results)
-        CES_Results_df.to_csv(f'{self.Directory}/Results/Tables/CES_Results.csv', index=False)
+        CES_Results.to_csv(f'{self.Directory}/Results/Tables/CES_Results.csv')
         
         
         # ---------------- #
