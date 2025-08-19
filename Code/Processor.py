@@ -93,8 +93,7 @@ class Processor:
         Calibrate_Results.add('Climate Persistence Parameter', gpf.clean_round(self.E.ψ, 3))
         Calibrate_Results.add('Climate Absorption Parameter', gpf.clean_round(self.E.ψ_0, 3))
         
-        Calibrate_Results.add({'Variable':'General to General Citation Share', 
-                                  'Value':gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1)})
+        Calibrate_Results.add('General to General Citation Share', gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
         
         cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
         cal_panel['year'] = cal_panel['year'].dt.year
