@@ -50,7 +50,7 @@ class Processor:
         "Initialize Processor Object"
         
         self.E = E
-        self.Directory = Path(__file__).resolve().parent.parent
+        self.Directory = Path(__file__).resolve().parent.parent.parent
         
         
         
