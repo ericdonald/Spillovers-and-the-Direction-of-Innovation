@@ -106,32 +106,7 @@ def omega_root(ω_d, Mom_ω, A_0, r_tilde, α, σ, λ, ν, Ω_0, L, Θ):
 
 
 
-@njit
-def psi_root(psi_g, C_data, Em, C1_Start, C2_start, ψ_p):
-    "Root to Calibrate Climate Parameters"
-    
-    # ----------------- #
-    # Unpack Parameters #
-    # ----------------- #
-    ψ = np.exp(psi_g[0]) / (1 + np.exp(psi_g[0]))
-    ψ_0 = np.exp(psi_g[1]) / (1 + np.exp(psi_g[1]))
-    
-    # ------------- #
-    # Simulate Path #
-    # ------------- #
-    C1 = np.ones(Em.size)*C1_Start
-    C2 = np.ones(Em.size)*C2_start
-    
-    for t in range(1, Em.size):
-        C1[t] = pf.Perm_Carb(C1[t-1], Em[t], ψ_p)
-        C2[t] = pf.Tran_Carb(C2[t-1], Em[t], ψ_p, ψ_0, ψ)
-    
-    C = C1 + C2
-        
-    Δ = np.sum(np.abs(C - C_data))
-    
-    return Δ
-    
+
     
         
         

@@ -42,7 +42,7 @@ class Economy:
         self.ρ_l = 0.001 #Stern Rate of Pure Time Preference
         self.C_bar = 596.4 #Pre-Industrial Carbon Concentration
         self.var_ρ = 5.3 * 10**(-5) #Climate Damage Semi-Elasticity
-        self.ψ_p = 0.20 #Permanent Carbon Fraction
+        self.ψ_p = 0.25 #Permanent Carbon Fraction
         self.var_θ = 1 #Inverse Intertemporal Elasticity of Substitution
         self.r_d = 2.25 #Relative Input Price for Dirty Technology
         self.o = 1 #Elasticity of Substitution of Spillover Function
@@ -56,6 +56,8 @@ class Economy:
         self.Y0 = 100 #Normalized Initial Output
         self.Year_0 = 2021 #Initial Calibration Year
         self.φ_tilde_0 = np.zeros((J,J)) #Empirical Gross Spillover Network
+        self.C_frac_20 = 0.6 #Fraction of Carbon in Atmosphere after 20 Years
+        self.C_frac_100 = 0.41 #Fraction of Carbon in Atmosphere after 100 Years
         
         # --------------------------------------- #
         # Define Internally Calibrated Parameters #
@@ -127,22 +129,15 @@ class Economy:
         # ----------------- #
         # Carbon Parameters #
         # ----------------- #
-        Em_hist = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
-        C_hist = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_stock']].to_numpy().reshape(61)
+        t_1 = 20
+        t_2 = 100
+        dt = t_2 - t_1
         
-        C1hist_Start = self.C_bar + self.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year <= 1960, ['C_em']].to_numpy())
-        C2hist_start = C_hist[0] - C1hist_Start
+        frac_1 = self.C_frac_20 - self.ψ_p
+        frac_2 = self.C_frac_100 - self.ψ_p
         
-        psi_g = np.array([np.log(0.99) - np.log(1 - 0.99), np.log(0.40) - np.log(1 - 0.40)])
-        
-        psi = sp.optimize.minimize(cf.psi_root, psi_g,
-                      args=(C_hist, Em_hist, C1hist_Start, C2hist_start, self.ψ_p))
-        
-        self.ψ  = np.exp(psi.x[0]) / (1 + np.exp(psi.x[0]))
-        self.ψ_0 = np.exp(psi.x[1]) / (1 + np.exp(psi.x[1]))
-        
-        print(self.ψ)
-        print(self.ψ_0)
+        self.ψ_0 = frac_1**(t_2/dt) / frac_2**(t_1/dt) / (1 - self.ψ_p)
+        self.ψ = (frac_1 / self.ψ_0 / (1 - self.ψ_p))**(1/t_1)
         
         
         # ------------------------- #
