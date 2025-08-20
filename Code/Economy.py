@@ -42,7 +42,7 @@ class Economy:
         self.ρ_l = 0.001 #Stern Rate of Pure Time Preference
         self.C_bar = 596.4 #Pre-Industrial Carbon Concentration
         self.var_ρ = 5.3 * 10**(-5) #Climate Damage Semi-Elasticity
-        self.ψ_p = 0.25 #Permanent Carbon Fraction
+        self.ψ_p = 0.20 #Permanent Carbon Fraction
         self.var_θ = 1 #Inverse Intertemporal Elasticity of Substitution
         self.r_d = 2.25 #Relative Input Price for Dirty Technology
         self.o = 1 #Elasticity of Substitution of Spillover Function
@@ -56,8 +56,8 @@ class Economy:
         self.Y0 = 100 #Normalized Initial Output
         self.Year_0 = 2021 #Initial Calibration Year
         self.φ_tilde_0 = np.zeros((J,J)) #Empirical Gross Spillover Network
-        self.C_frac_20 = 0.6 #Fraction of Carbon in Atmosphere after 20 Years
         self.C_frac_100 = 0.41 #Fraction of Carbon in Atmosphere after 100 Years
+        self.C_frac_100 = 0.25 #Fraction of Carbon in Atmosphere after 100 Years
         
         # --------------------------------------- #
         # Define Internally Calibrated Parameters #
@@ -129,8 +129,8 @@ class Economy:
         # ----------------- #
         # Carbon Parameters #
         # ----------------- #
-        t_1 = 20
-        t_2 = 100
+        t_1 = 100
+        t_2 = 1000
         dt = t_2 - t_1
         
         frac_1 = self.C_frac_20 - self.ψ_p
