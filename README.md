@@ -17,6 +17,7 @@ where XX is the user's API key for the relevant data source. All data sources ha
 
 ### API Acessible:
 - FRED
+  - [CPI](https://fred.stlouisfed.org/series/CPIAUCSL)
 - EIA
 - Our World in Data
 - PatentsView
