@@ -52,6 +52,7 @@ class Processor:
         self.E = E
         self.Directory = Path(__file__).resolve().parent.parent.parent
         self.FRED_API = os.getenv("FRED_API")
+        self.EIA_API = os.getenv("EIA_API")
         
         
         
@@ -63,7 +64,9 @@ class Processor:
                 Raw Data/FRED_Vehicle_Revenue.pkl
                 Raw Data/FRED_Total_GDP.pkl
                 Raw Data/FRED_RD.pkl
+                Raw Data/EIA_Electricity_Revenue.pkl
                 Raw Data/TEDB_Car_Clean_qShare.pkl
+                Clean Data/RICE.pkl
         """""
    
     
@@ -78,54 +81,78 @@ class Processor:
         # -------- #
         FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
-        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        filtered_data = [{'year': entry['date'], 'CPI': entry['value']} for entry in data]
         FRED_CPI_df = pd.DataFrame(filtered_data)
         
-        FRED_CPI_df['date'] = pd.to_datetime(FRED_CPI_df['date']).dt.year
-        FRED_CPI_df.rename(columns={'date': 'year', 'value': 'CPI'}, inplace=True)
+        FRED_CPI_df['year'] = pd.to_datetime(FRED_CPI_df['year']).dt.year
         FRED_CPI_df['CPI'] = pd.to_numeric(FRED_CPI_df['CPI'], errors='coerce')
         FRED_CPI_df['CPI'] = FRED_CPI_df['CPI'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
         
         FRED_CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
         
         
-        ### FRED Motor Vehicle Output (Nominal)
+        ### FRED Motor Vehicle Output
         FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA#0&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
-        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        filtered_data = [{'year': entry['date'], 'car_revenue': entry['value']} for entry in data]
         FRED_VR_df = pd.DataFrame(filtered_data)
         
-        FRED_VR_df['date'] = pd.to_datetime(FRED_VR_df['date']).dt.year
-        FRED_VR_df.rename(columns={'date': 'year', 'value': 'car_revenue'}, inplace=True)
+        FRED_VR_df['year'] = pd.to_datetime(FRED_VR_df['year']).dt.year
         FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce')
         
         FRED_VR_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Vehicle_Revenue.pkl') #Nominal US vehicle revenue in billions of dollars
         
         
-        ### FRED Nominal GDP
+        ### FRED GDP
         FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=GDP&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
-        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        filtered_data = [{'year': entry['date'], 'GDP': entry['value']} for entry in data]
         FRED_Y_df = pd.DataFrame(filtered_data)
         
-        FRED_Y_df['date'] = pd.to_datetime(FRED_Y_df['date']).dt.year
-        FRED_Y_df.rename(columns={'date': 'year', 'value': 'GDP'}, inplace=True)
+        FRED_Y_df['year'] = pd.to_datetime(FRED_Y_df['year']).dt.year
         FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce')
         
         FRED_Y_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Total_GDP.pkl') #Nominal US GDP in billions of dollars
         
         
-        ### FRED Total R&D (Nominal)
+        ### FRED Total R&D
         FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=Y694RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
-        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        filtered_data = [{'year': entry['date'], 'RD': entry['value']} for entry in data]
         FRED_RD_df = pd.DataFrame(filtered_data)
         
-        FRED_RD_df['date'] = pd.to_datetime(FRED_RD_df['date']).dt.year
-        FRED_RD_df.rename(columns={'date': 'year', 'value': 'RD'}, inplace=True)
+        FRED_RD_df['year'] = pd.to_datetime(FRED_RD_df['year']).dt.year
         FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce')
         
         FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl') #Nominal US R&D in billions of dollars
+        
+        
+        ### EIA Electricity Revenue
+        EIA = api.get(f'https://api.eia.gov/v2/electricity/retail-sales/data/?api_key={self.EIA_API}&frequency=annual&data[0]=revenue&facets[stateid][]=US&facets[sectorid][]=ALL&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
+        data = EIA.json()["response"]["data"]
+        filtered_data = [{'year': entry['period'], 'elec_revenue': entry['revenue']} for entry in data]
+        EIA_Rev_df = pd.DataFrame(filtered_data)
+        
+        EIA_Rev_df['year'] = pd.to_datetime(EIA_Rev_df['year']).dt.year
+        EIA_Rev_df['elec_revenue'] = pd.to_numeric(EIA_Rev_df['elec_revenue'], errors='coerce')
+        
+        EIA_Rev_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Electricity_Revenue.pkl') #Nominal US electricity revenue in millions of dollars
+        
+        
+        ### EIA Electricity Quantities
+        EIA = api.get(f'https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?api_key={self.EIA_API}&frequency=annual&data[0]=generation&facets[fueltypeid][]=ALL&facets[fueltypeid][]=FOS&facets[location][]=US&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
+        data = EIA.json()["response"]["data"]
+        filtered_data = [{'year': entry['period'], 'type':entry['fueltypeid'], 'MWh': entry['generation']} for entry in data]
+        EIA_Q_df = pd.DataFrame(filtered_data)
+        
+        EIA_Q_df['year'] = pd.to_datetime(EIA_Q_df['year']).dt.year
+        EIA_Q_df['MWh'] = pd.to_numeric(EIA_Q_df['MWh'], errors='coerce')
+        
+        EIA_Q_df = EIA_Q_df.pivot(index="year", columns="type", values="MWh").reset_index()
+        EIA_Q_df['q_elec_clean'] = 1 - EIA_Q_df['FOS'] / EIA_Q_df['ALL']
+        EIA_Q_df = EIA_Q_df[['year', 'q_elec_clean']]
+        
+        EIA_Q_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Electricity_Share.pkl') #US clean electricity quantity share
         
         
         ### Transportation Energy Data Book: Table 6.02
@@ -161,7 +188,45 @@ class Processor:
         
         TEDB_df.to_pickle(f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.pkl')
         
+        
         ### RICE
+        in_path   = Path(f'{self.Directory}/Raw Data/RICE.xlsx')
+        sheet     = "Results"
+        RICE_df = pd.read_excel(in_path, sheet_name=sheet, header=0)
+        
+        RICE_df["year"] = pd.to_numeric(RICE_df["year"], errors="coerce").astype("Int64")
+        
+        needed_years = [2010, 3000]
+        have = set(RICE_df["year"].dropna().tolist())
+        to_add = [y for y in needed_years if y not in have]
+        
+        if to_add:
+            add_df = pd.DataFrame({"year": to_add})
+            RICE_df = pd.concat([RICE_df, add_df], ignore_index=True)
+                
+        RICE_df = RICE_df.sort_values("year")
+        
+        yr_min, yr_max = int(RICE_df["year"].min()), int(RICE_df["year"].max())
+        full_years = pd.Index(range(yr_min, yr_max + 1), name="year")
+        RICE_df = RICE_df.set_index("year").reindex(full_years).reset_index()
+        
+        em_cols = [
+            "Optimal_Global_Em",
+            "Optimal_US_Em",
+            "Baseline_Global_Em",
+            "Baseline_US_Em",
+        ] #Emissions in GtC
+        
+        for c in em_cols:
+            if c in RICE_df.columns:
+                RICE_df[c] = pd.to_numeric(RICE_df[c], errors="coerce")
+                RICE_df.loc[RICE_df["year"] > 2595, c] = 0.0
+        
+        RICE_df[em_cols] = RICE_df[em_cols].interpolate(
+            method="linear", limit_direction="both", axis=0
+        )
+        
+        RICE_df.to_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
         
         
         # ----------------------------------------------------------------

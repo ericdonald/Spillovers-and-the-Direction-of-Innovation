@@ -80,24 +80,6 @@ erase "Empirical/Raw Data/PatentsView/uspatentcitation.tsv"
 
 
 
-*************************************
-***EIA US Electricity Revenue Data***
-*************************************
-import delimited "Empirical/Raw Data/EIA_Electricity_Revenue.csv", clear
-
-rename period year
-
-rename revenue elec_revenue
-label variable elec_revenue "Nominal US electricity revenue in millions of dollars"
-
-keep year elec_revenue
-
-save "Empirical/Raw Data/EIA_Electricity_Revenue.dta", replace
-
-
-
-
-
 
 
 ********************************************
