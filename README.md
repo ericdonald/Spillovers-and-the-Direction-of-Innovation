@@ -27,3 +27,4 @@ where XX is the user's API key for the relevant data source. All data sources ha
 
 ### Contained in Raw Data:
 - [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
+- [2010 RICE](https://www.icpsr.umich.edu/web/ICPSR/studies/28461/summary)
