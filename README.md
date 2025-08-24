@@ -2,7 +2,7 @@
 
 ## Dataset List:
 
-Below is the list of all data sets required for replication. The first set lists though downloaded inside of the code using APIs, and the second set lists those contained within the Raw Data folder. 
+Below is the list of all data sets required for replication. The first set lists those downloaded inside of the code using APIs, and the second set lists those contained within the Raw Data folder. Therefore, the links below are for reference only; a user does not need to visit these sites to extract the data.
 To make use of the API commands, the user will need to make a '.env' file with the following lines:
 
 ```
