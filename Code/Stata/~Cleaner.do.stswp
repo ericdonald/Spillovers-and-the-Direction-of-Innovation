@@ -82,29 +82,6 @@ erase "Empirical/Raw Data/PatentsView/uspatentcitation.tsv"
 
 
 
-********************************************
-***EIA US Electricity Quantity Share Data***
-********************************************
-import delimited "Empirical/Raw Data/EIA_Electricity_Share.csv", clear
-
-rename period year
-
-bysort year: egen Q_elec_dirty = min(generation)
-bysort year: egen Q_elec = max(generation)
-
-
-gen q_elec_clean = 1 - Q_elec_dirty / Q_elec
-
-keep year q_elec_clean
-label variable q_elec_clean "US clean electricity quantity share"
-
-
-duplicates drop
-
-save "Empirical/Raw Data/EIA_Electricity_Share.dta", replace
-
-
-
 
 
 
