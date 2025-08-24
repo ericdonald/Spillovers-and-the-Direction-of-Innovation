@@ -22,6 +22,7 @@ where XX is the user's API key for the relevant data source. All data sources ha
   - [GDP](https://fred.stlouisfed.org/series/GDP)
   - [Total R&D](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
 - EIA
+  - [Electricity Revenue](https://www.eia.gov/opendata/browser/electricity/retail-sales?frequency=annual&data=revenue;&facets=stateid;sectorid;&stateid=US;&sectorid=ALL;&sortColumn=period;&sortDirection=desc;)
 - Our World in Data
 - PatentsView
 
