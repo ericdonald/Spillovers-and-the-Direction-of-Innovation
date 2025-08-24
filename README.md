@@ -23,6 +23,7 @@ where XX is the user's API key for the relevant data source. All data sources ha
   - [Total R&D](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
 - EIA
   - [Electricity Revenue](https://www.eia.gov/opendata/browser/electricity/retail-sales?frequency=annual&data=revenue;&facets=stateid;sectorid;&stateid=US;&sectorid=ALL;&sortColumn=period;&sortDirection=desc;)
+  - [Electricity Quantities](https://www.eia.gov/opendata/browser/electricity/electric-power-operational-data?frequency=annual&data=generation;&facets=fueltypeid;location;sectorid;&fueltypeid=ALL;FOS;&location=US;&sectorid=99;&sortColumn=period;&sortDirection=desc;)
 - Our World in Data
 - PatentsView
 
