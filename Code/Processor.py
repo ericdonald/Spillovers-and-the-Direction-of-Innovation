@@ -56,7 +56,11 @@ class Processor:
         
         
     def Cleaner(self, CPI_year=2012):
-        "Clean Data"
+        """""
+        Clean Data
+        
+        Output: Raw Data/FRED_CPI.pkl
+        """""
    
         
         # -------- #
