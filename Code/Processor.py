@@ -63,6 +63,7 @@ class Processor:
                 Raw Data/FRED_Vehicle_Revenue.pkl
                 Raw Data/FRED_Total_GDP.pkl
                 Raw Data/FRED_RD.pkl
+                Raw Data/TEDB_Car_Clean_qShare.pkl
         """""
    
     
@@ -125,6 +126,40 @@ class Processor:
         FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce')
         
         FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl')
+        
+        
+        ### Transportation Energy Data Book: Table 6.02
+        TEDB_df = pd.read_excel(
+                    f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.xlsx',
+                    sheet_name="TEDB Edition 40",
+                    header=0,        
+                    usecols="B:I",   
+                    skiprows=7,      
+                    nrows=24         
+                )
+        TEDB_df = TEDB_df.rename(columns={
+                    "Calendaryear": "year",
+                    "Alllightvehiclesalesthousan": "Q_car"
+                })
+        
+        TEDB_df["Q_car_clean"] = (
+                        TEDB_df["Hybridvehiclesalesthousands"].fillna(0)
+                      + TEDB_df["Pluginhybridvehiclesalesth"].fillna(0)
+                      + TEDB_df["Allelectricvehiclesalesthou"].fillna(0)
+                    )
+        
+        TEDB_df["q_car_clean"] = (
+                        TEDB_df["Hybridshareofalllightvehicl"].fillna(0)
+                      + TEDB_df["Pluginhybridshareofalllig"].fillna(0)
+                      + TEDB_df["Allelectricshareofalllight"].fillna(0)
+                    )
+        
+        TEDB_df = TEDB_df[["year", "Q_car", "Q_car_clean", "q_car_clean"]]
+        
+        for c in ["year", "Q_car", "Q_car_clean", "q_car_clean"]:
+            TEDB_df[c] = TEDB_df.to_numeric(TEDB_df[c], errors="coerce")
+        
+        TEDB_df.to_pickle(f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.pkl')
         
         
         # ----------------------------------------------------------------
