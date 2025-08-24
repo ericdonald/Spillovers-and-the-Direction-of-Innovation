@@ -3,9 +3,7 @@ Processor Module
 
 Notes: This file defines a class for processing the economy of "Spillovers and the Direction of Innovation".
     
-Output: Results/Figures/Carbon_Match.csv
-        Results/Tables/Calibrate_Results.csv
-        Results/Figures/Spillover_Network.png
+Output: Results/Figures/Spillover_Network.png
         Results/Figures/Clean_Centrality.csv
         Results/Tables/Disagg_Results.csv
         Results/Figures/2010s_Transition.csv
@@ -35,6 +33,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
+import os
+import requests as api
 import Production_Functions as pf
 import SteadyState_Functions as ssf
 import Objective_Functions as of
@@ -51,11 +51,42 @@ class Processor:
         
         self.E = E
         self.Directory = Path(__file__).resolve().parent.parent.parent
+        self.FRED_API = os.getenv("FRED_API")
         
         
         
+    def Cleaner(self, CPI_year=2012):
+        """""
+        Clean Data
+        
+        Output: Raw Data/FRED_CPI.pkl
+        """""
+   
+        
+        # -------- #
+        # FRED CPI #
+        # -------- #
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&observation_start=1980-01-01&observation_end=2016-01-01&api_key={self.FRED_API}&file_type=json')
+        data = FRED.json()['observations']
+        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        CPI_df = pd.DataFrame(filtered_data)
+        
+        CPI_df['date'] = pd.to_datetime(CPI_df['date']).dt.year
+        CPI_df.rename(columns={'date': 'year', 'value': 'CPI'}, inplace=True)
+        CPI_df['CPI'] = pd.to_numeric(CPI_df['CPI'], errors='coerce')
+        CPI_df['CPI'] = CPI_df['CPI'] / CPI_df.loc[CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
+        
+        CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
+         
+         
+         
     def Calibrate(self):
-        "Calibrate Parameters and Initial Conditions"
+        """""
+        Calibrate Parameters and Initial Conditions
+        
+        Output: Results/Figures/Carbon_Match.csv
+                Results/Tables/Calibrate_Results.csv
+        """""
         
         self.E.Calibrate()
         Calibrate_Results = gpf.ResultsTable()
