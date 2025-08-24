@@ -18,9 +18,9 @@ where XX is the user's API key for the relevant data source. All data sources ha
 ### API Acessible:
 - FRED
   - [CPI](https://fred.stlouisfed.org/series/CPIAUCSL)
-  - [Motor Vehicle Output (Nominal)](https://fred.stlouisfed.org/series/A953RC1Q027SBEA#0)
-  - [Nominal GDP](https://fred.stlouisfed.org/series/GDP)
-  - [Total R&D (Nominal)](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
+  - [Motor Vehicle Output](https://fred.stlouisfed.org/series/A953RC1Q027SBEA#0)
+  - [GDP](https://fred.stlouisfed.org/series/GDP)
+  - [Total R&D](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
 - EIA
 - Our World in Data
 - PatentsView
