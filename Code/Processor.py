@@ -60,24 +60,92 @@ class Processor:
         Clean Data
         
         Output: Raw Data/FRED_CPI.pkl
+                Raw Data/FRED_Vehicle_Revenue.pkl
+                Raw Data/FRED_Total_GDP.pkl
+                Raw Data/FRED_RD.pkl
         """""
    
+    
+        # ----------------------------------------------------------------
+
+        # Unpack data sets.
+
+        # ----------------------------------------------------------------
         
         # -------- #
         # FRED CPI #
         # -------- #
-        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&observation_start=1980-01-01&observation_end=2016-01-01&api_key={self.FRED_API}&file_type=json')
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
         filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
-        CPI_df = pd.DataFrame(filtered_data)
+        FRED_CPI_df = pd.DataFrame(filtered_data)
         
-        CPI_df['date'] = pd.to_datetime(CPI_df['date']).dt.year
-        CPI_df.rename(columns={'date': 'year', 'value': 'CPI'}, inplace=True)
-        CPI_df['CPI'] = pd.to_numeric(CPI_df['CPI'], errors='coerce')
-        CPI_df['CPI'] = CPI_df['CPI'] / CPI_df.loc[CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
+        FRED_CPI_df['date'] = pd.to_datetime(FRED_CPI_df['date']).dt.year
+        FRED_CPI_df.rename(columns={'date': 'year', 'value': 'CPI'}, inplace=True)
+        FRED_CPI_df['CPI'] = pd.to_numeric(FRED_CPI_df['CPI'], errors='coerce')
+        FRED_CPI_df['CPI'] = FRED_CPI_df['CPI'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
         
-        CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
-         
+        FRED_CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
+        
+        
+        ### FRED Motor Vehicle Output (Nominal)
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA#0&frequency=a&api_key={self.FRED_API}&file_type=json')
+        data = FRED.json()['observations']
+        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        FRED_VR_df = pd.DataFrame(filtered_data)
+        
+        FRED_VR_df['date'] = pd.to_datetime(FRED_VR_df['date']).dt.year
+        FRED_VR_df.rename(columns={'date': 'year', 'value': 'car_revenue'}, inplace=True)
+        FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce')
+        
+        FRED_VR_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Vehicle_Revenue.pkl')
+        
+        
+        ### FRED Nominal GDP
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=GDP&frequency=a&api_key={self.FRED_API}&file_type=json')
+        data = FRED.json()['observations']
+        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        FRED_Y_df = pd.DataFrame(filtered_data)
+        
+        FRED_Y_df['date'] = pd.to_datetime(FRED_Y_df['date']).dt.year
+        FRED_Y_df.rename(columns={'date': 'year', 'value': 'GDP'}, inplace=True)
+        FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce')
+        
+        FRED_Y_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Total_GDP.pkl')
+        
+        
+        ### FRED Total R&D (Nominal)
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=Y694RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
+        data = FRED.json()['observations']
+        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
+        FRED_RD_df = pd.DataFrame(filtered_data)
+        
+        FRED_RD_df['date'] = pd.to_datetime(FRED_RD_df['date']).dt.year
+        FRED_RD_df.rename(columns={'date': 'year', 'value': 'RD'}, inplace=True)
+        FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce')
+        
+        FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl')
+        
+        
+        # ----------------------------------------------------------------
+
+        # Label patent technology classes.
+
+        # ----------------------------------------------------------------
+        
+        
+        # ----------------------------------------------------------------
+
+        # Create revenue and quantity share series.
+
+        # ----------------------------------------------------------------
+        
+        # ----------------------------------------------------------------
+
+        # Create carbon emissions and atmospheric concentrations series.
+
+        # ----------------------------------------------------------------
+        
          
          
     def Calibrate(self):
