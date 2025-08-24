@@ -65,6 +65,7 @@ class Processor:
                 Raw Data/FRED_Total_GDP.pkl
                 Raw Data/FRED_RD.pkl
                 Raw Data/EIA_Electricity_Revenue.pkl
+                Raw Data/EIA_Electricity_Share.pkl
                 Raw Data/TEDB_Car_Clean_qShare.pkl
                 Clean Data/RICE.pkl
         """""
