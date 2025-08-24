@@ -99,7 +99,7 @@ class Processor:
         FRED_VR_df.rename(columns={'date': 'year', 'value': 'car_revenue'}, inplace=True)
         FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce')
         
-        FRED_VR_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Vehicle_Revenue.pkl')
+        FRED_VR_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Vehicle_Revenue.pkl') #Nominal US vehicle revenue in billions of dollars
         
         
         ### FRED Nominal GDP
@@ -112,7 +112,7 @@ class Processor:
         FRED_Y_df.rename(columns={'date': 'year', 'value': 'GDP'}, inplace=True)
         FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce')
         
-        FRED_Y_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Total_GDP.pkl')
+        FRED_Y_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Total_GDP.pkl') #Nominal US GDP in billions of dollars
         
         
         ### FRED Total R&D (Nominal)
@@ -125,7 +125,7 @@ class Processor:
         FRED_RD_df.rename(columns={'date': 'year', 'value': 'RD'}, inplace=True)
         FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce')
         
-        FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl')
+        FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl') #Nominal US R&D in billions of dollars
         
         
         ### Transportation Energy Data Book: Table 6.02
@@ -139,20 +139,20 @@ class Processor:
                 )
         TEDB_df = TEDB_df.rename(columns={
                     "Calendaryear": "year",
-                    "Alllightvehiclesalesthousan": "Q_car"
+                    "Alllightvehiclesalesthousan": "Q_car" #Light vehicle quantity in thousands
                 })
         
         TEDB_df["Q_car_clean"] = (
                         TEDB_df["Hybridvehiclesalesthousands"].fillna(0)
                       + TEDB_df["Pluginhybridvehiclesalesth"].fillna(0)
                       + TEDB_df["Allelectricvehiclesalesthou"].fillna(0)
-                    )
+                    ) #US clean vehicle quantity in thousands
         
         TEDB_df["q_car_clean"] = (
                         TEDB_df["Hybridshareofalllightvehicl"].fillna(0)
                       + TEDB_df["Pluginhybridshareofalllig"].fillna(0)
                       + TEDB_df["Allelectricshareofalllight"].fillna(0)
-                    )
+                    ) #US clean vehicle quantity share
         
         TEDB_df = TEDB_df[["year", "Q_car", "Q_car_clean", "q_car_clean"]]
         
@@ -160,6 +160,8 @@ class Processor:
             TEDB_df[c] = TEDB_df.to_numeric(TEDB_df[c], errors="coerce")
         
         TEDB_df.to_pickle(f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.pkl')
+        
+        ### RICE
         
         
         # ----------------------------------------------------------------
