@@ -23,3 +23,4 @@ where XX is the user's API key for the relevant data source. All data sources ha
 - PatentsView
 
 ### Contained in Raw Data:
+- [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
