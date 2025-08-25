@@ -8,9 +8,9 @@ To make use of the API commands, the user will need to make a '.env' file with t
 ```
 #API Keys
 FRED_API = 'XX'
-IPUMS_API = 'XX'
-BEA_API = 'XX'
 EIA_API = 'XX'
+OWID_API = 'XX'
+PatentsView_API = 'XX'
 ```
 
 where XX is the user's API key for the relevant data source. All data sources have publicly available APIs that only require registration.
@@ -20,7 +20,7 @@ where XX is the user's API key for the relevant data source. All data sources ha
   - [CPI](https://fred.stlouisfed.org/series/CPIAUCSL)
   - [Motor Vehicle Output](https://fred.stlouisfed.org/series/A953RC1Q027SBEA#0)
   - [GDP](https://fred.stlouisfed.org/series/GDP)
-  - [Total R&D](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
+  - [Total R&D Spending](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
 - EIA
   - [Electricity Revenue](https://www.eia.gov/opendata/browser/electricity/retail-sales?frequency=annual&data=revenue;&facets=stateid;sectorid;&stateid=US;&sectorid=ALL;&sortColumn=period;&sortDirection=desc;)
   - [Electricity Quantities](https://www.eia.gov/opendata/browser/electricity/electric-power-operational-data?frequency=annual&data=generation;&facets=fueltypeid;location;sectorid;&fueltypeid=ALL;FOS;&location=US;&sectorid=99;&sortColumn=period;&sortDirection=desc;)
