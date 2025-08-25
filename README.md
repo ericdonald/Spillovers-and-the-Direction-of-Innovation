@@ -25,8 +25,11 @@ where XX is the user's API key for the relevant data source. All data sources ha
   - [Electricity Revenue](https://www.eia.gov/opendata/browser/electricity/retail-sales?frequency=annual&data=revenue;&facets=stateid;sectorid;&stateid=US;&sectorid=ALL;&sortColumn=period;&sortDirection=desc;)
   - [Electricity Quantities](https://www.eia.gov/opendata/browser/electricity/electric-power-operational-data?frequency=annual&data=generation;&facets=fueltypeid;location;sectorid;&fueltypeid=ALL;FOS;&location=US;&sectorid=99;&sortColumn=period;&sortDirection=desc;)
 - Our World in Data
+  - Global Industrial Emissions
+  - Global Land-Use Emissions
 - PatentsView
 
 ### Contained in Raw Data:
 - [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
-- [2010 RICE](https://www.icpsr.umich.edu/web/ICPSR/studies/28461/summary) Note that the '.xlsx' file in the Raw Data folder comes from running the downloadable sheet from the link and extracting emission paths.
+- Regional Emissions from [2010 RICE](https://www.icpsr.umich.edu/web/ICPSR/studies/28461/summary)
+- NOAA Atmospheric Carbon Concentrations
