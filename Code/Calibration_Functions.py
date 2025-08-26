@@ -3,7 +3,6 @@ Calibration Functions
 
 Notes: Functions the define the calibration roots of the economy.
     
-Output:
 """""""""""
 
 import numpy as np

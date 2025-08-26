@@ -3,7 +3,6 @@ Sequential Root Solver
 
 Notes: A function that solves block recursive root systems using Newton's method.
     
-Output:
 """""""""""
 
 import numpy as np

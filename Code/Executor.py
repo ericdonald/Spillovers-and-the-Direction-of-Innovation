@@ -3,7 +3,6 @@ Executor
 
 Notes: This file executes the code for "Spillovers and the Direction of Innovation".
     
-Output:
 """""""""""
 
 import Economy as e

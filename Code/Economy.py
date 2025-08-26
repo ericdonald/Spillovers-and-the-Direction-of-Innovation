@@ -3,7 +3,6 @@ Economy Module
 
 Notes: This file defines a class for the economy of "Spillovers and the Direction of Innovation".
     
-Output:
 """""""""""
 
 import numpy as np

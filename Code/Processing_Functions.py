@@ -3,7 +3,6 @@ Processing Functions
 
 Notes: Functions that accomplish basic processing for the project.
     
-Output:
 """""""""""
 
 import numpy as np
