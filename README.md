@@ -1,4 +1,4 @@
-# Replication Package for "Spillovers and the Direction of Innovation"
+# Replication Package for "[Spillovers and the Direction of Innovation](https://www.ericdonald.com/research/spillovers-and-the-direction-of-innovation)"
 
 ## Dataset List:
 
@@ -8,9 +8,9 @@ To make use of the API commands, the user will need to make a '.env' file with t
 ```
 #API Keys
 FRED_API = 'XX'
-IPUMS_API = 'XX'
-BEA_API = 'XX'
 EIA_API = 'XX'
+OWID_API = 'XX'
+PatentsView_API = 'XX'
 ```
 
 where XX is the user's API key for the relevant data source. All data sources have publicly available APIs that only require registration.
@@ -20,13 +20,20 @@ where XX is the user's API key for the relevant data source. All data sources ha
   - [CPI](https://fred.stlouisfed.org/series/CPIAUCSL)
   - [Motor Vehicle Output](https://fred.stlouisfed.org/series/A953RC1Q027SBEA#0)
   - [GDP](https://fred.stlouisfed.org/series/GDP)
-  - [Total R&D](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
+  - [Total R&D Spending](https://fred.stlouisfed.org/series/Y694RC1Q027SBEA)
 - EIA
   - [Electricity Revenue](https://www.eia.gov/opendata/browser/electricity/retail-sales?frequency=annual&data=revenue;&facets=stateid;sectorid;&stateid=US;&sectorid=ALL;&sortColumn=period;&sortDirection=desc;)
   - [Electricity Quantities](https://www.eia.gov/opendata/browser/electricity/electric-power-operational-data?frequency=annual&data=generation;&facets=fueltypeid;location;sectorid;&fueltypeid=ALL;FOS;&location=US;&sectorid=99;&sortColumn=period;&sortDirection=desc;)
 - Our World in Data
+  - Global Industrial Emissions
+  - Global Land-Use Emissions
 - PatentsView
+  - CPC Codes
+  - Applications
+  - Citations
 
 ### Contained in Raw Data:
 - [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
-- [2010 RICE](https://www.icpsr.umich.edu/web/ICPSR/studies/28461/summary) Note that the '.xlsx' file in the Raw Data folder comes from running the downloadable sheet from the link and extracting emission paths.
+- Regional Emissions from [2010 RICE](https://www.icpsr.umich.edu/web/ICPSR/studies/28461/summary)
+- NOAA Atmospheric Carbon Concentrations
+- IEA Public R&D Spending
