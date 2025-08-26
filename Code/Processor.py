@@ -53,7 +53,8 @@ class Processor:
         self.Directory = Path(__file__).resolve().parent.parent.parent
         self.FRED_API = os.getenv("FRED_API")
         self.EIA_API = os.getenv("EIA_API")
-        
+        self.PPM_C = 2.13 #Atmospheric PPM of CO2 to GtC
+        self.CO2_C = 12/44 #CO2 to Carbon Conversion
         
         
     def Cleaner(self, CPI_year=2012):
@@ -92,7 +93,9 @@ class Processor:
         FRED_CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
         
         
-        ### FRED Motor Vehicle Output
+        # ------------------------- #
+        # FRED Motor Vehicle Output #
+        # ------------------------- #
         FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA#0&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
         filtered_data = [{'year': entry['date'], 'car_revenue': entry['value']} for entry in data]
@@ -104,7 +107,9 @@ class Processor:
         FRED_VR_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Vehicle_Revenue.pkl') #Nominal US vehicle revenue in billions of dollars
         
         
-        ### FRED GDP
+        # -------- #
+        # FRED GDP #
+        # -------- #
         FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=GDP&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
         filtered_data = [{'year': entry['date'], 'GDP': entry['value']} for entry in data]
@@ -116,7 +121,9 @@ class Processor:
         FRED_Y_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Total_GDP.pkl') #Nominal US GDP in billions of dollars
         
         
-        ### FRED Total R&D
+        # ----------------------- #
+        # FRED Total R&D Spending #
+        # ----------------------- #
         FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=Y694RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
         filtered_data = [{'year': entry['date'], 'RD': entry['value']} for entry in data]
@@ -128,7 +135,9 @@ class Processor:
         FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl') #Nominal US R&D in billions of dollars
         
         
-        ### EIA Electricity Revenue
+        # ----------------------- #
+        # EIA Electricity Revenue #
+        # ----------------------- #
         EIA = api.get(f'https://api.eia.gov/v2/electricity/retail-sales/data/?api_key={self.EIA_API}&frequency=annual&data[0]=revenue&facets[stateid][]=US&facets[sectorid][]=ALL&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
         data = EIA.json()["response"]["data"]
         filtered_data = [{'year': entry['period'], 'elec_revenue': entry['revenue']} for entry in data]
@@ -140,7 +149,9 @@ class Processor:
         EIA_Rev_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Electricity_Revenue.pkl') #Nominal US electricity revenue in millions of dollars
         
         
-        ### EIA Electricity Quantities
+        # -------------------------- #
+        # EIA Electricity Quantities #
+        # -------------------------- #
         EIA = api.get(f'https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?api_key={self.EIA_API}&frequency=annual&data[0]=generation&facets[fueltypeid][]=ALL&facets[fueltypeid][]=FOS&facets[location][]=US&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
         data = EIA.json()["response"]["data"]
         filtered_data = [{'year': entry['period'], 'type':entry['fueltypeid'], 'MWh': entry['generation']} for entry in data]
@@ -156,7 +167,25 @@ class Processor:
         EIA_Q_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Electricity_Share.pkl') #US clean electricity quantity share
         
         
-        ### Transportation Energy Data Book: Table 6.02
+        # -------------------------------- #
+        # OWID Global Industrial Emissions #
+        # -------------------------------- #
+        OWID_IndCO2_df = pd.read_csv("https://ourworldindata.org/grapher/co2-land-use.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+        
+        OWID_IndCO2_df = OWID_IndCO2_df[['Year', 'emissions_from_land_use_change']]
+        OWID_IndCO2_df = OWID_IndCO2_df.rename(columns={"Year": "year", "emissions_from_land_use_change": "C_em_fossil"})
+        
+        OWID_IndCO2_df['C_em_fossil'] = OWID_IndCO2_df['C_em_fossil'] * self.CO2_C / 1000000000 #Global emissions of carbon in gigatons
+        
+        OWID_IndCO2_df.to_pickle(f'{self.Directory}/Raw Data/OWID_C_em_fossil.pkl')
+        
+        
+        # ------------------------------ #
+        # OWID Global Land-Use Emissions #
+        # ------------------------------ #
+        # ------------------------------------------- #
+        # Transportation Energy Data Book: Table 6.02 #
+        # ------------------------------------------- #
         TEDB_df = pd.read_excel(
                     f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.xlsx',
                     sheet_name="TEDB Edition 40",
@@ -190,7 +219,9 @@ class Processor:
         TEDB_df.to_pickle(f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.pkl')
         
         
-        ### RICE
+        # --------- #
+        # 2010 RICE #
+        # --------- #
         in_path   = Path(f'{self.Directory}/Raw Data/RICE.xlsx')
         sheet     = "Results"
         RICE_df = pd.read_excel(in_path, sheet_name=sheet, header=0)
@@ -228,6 +259,19 @@ class Processor:
         )
         
         RICE_df.to_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
+        
+        
+        # -------------------------------------- #
+        # NOAA Atmospheric Carbon Concentrations #
+        # -------------------------------------- #
+        NOAA_df = pd.read_csv(f'{self.Directory}/Raw Data/NOAA_CO2_PPM.csv')
+        
+        NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
+        NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
+        
+        NOAA_df.to_pickle(f'{self.Directory}/Raw Data/NOAA_CO2_PPM.pkl')
+                              
+                             
         
         
         # ----------------------------------------------------------------
