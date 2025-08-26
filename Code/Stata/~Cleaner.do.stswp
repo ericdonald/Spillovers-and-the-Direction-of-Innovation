@@ -85,32 +85,6 @@ erase "Empirical/Raw Data/PatentsView/uspatentcitation.tsv"
 
 
 
-*************************************
-***EPA US Emissions Inventory Data***
-*************************************
-import delimited "Empirical/Raw Data/EPA_CO2e.csv", clear
-
-*Data starts in MMT of CO2e
-
-rename transportation car_C_em
-replace car_C_em = car_C_em / 1000
-replace car_C_em = car_C_em * $CO2_C
-label variable car_C_em "US transport carbon emissions in gigatons"
-
-rename electricpowerindustry elec_C_em
-replace elec_C_em = elec_C_em / 1000
-replace elec_C_em = elec_C_em * $CO2_C
-label variable elec_C_em "US electricity carbon emissions in gigatons"
-
-rename grosstotal total_C_em
-replace total_C_em = total_C_em / 1000
-replace total_C_em = total_C_em * $CO2_C
-label variable total_C_em "US total carbon emissions in gigatons"
-
-keep year car_C_em elec_C_em total_C_em
-
-save "Empirical/Raw Data/EPA_C_Em.dta", replace
-
 
 
 

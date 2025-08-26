@@ -175,7 +175,7 @@ class Processor:
         OWID_IndCO2_df = OWID_IndCO2_df[['Year', 'emissions_total']]
         OWID_IndCO2_df = OWID_IndCO2_df.rename(columns={"Year": "year", "emissions_total": "C_em_fossil"})
         
-        OWID_IndCO2_df['C_em_fossil'] = OWID_IndCO2_df['C_em_fossil'] * self.CO2_C / 1000000000 #Emissions of carbon in gigatons
+        OWID_IndCO2_df['C_em_fossil'] = OWID_IndCO2_df['C_em_fossil'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
         
         OWID_IndCO2_df.to_pickle(f'{self.Directory}/Raw Data/OWID_C_em_fossil.pkl')
         
@@ -188,7 +188,7 @@ class Processor:
         OWID_CO2_LU_df = OWID_CO2_LU_df[['Year', 'emissions_from_land_use_change']]
         OWID_CO2_LU_df = OWID_CO2_LU_df.rename(columns={"Year": "year", "emissions_from_land_use_change": "C_em_LU"})
         
-        OWID_CO2_LU_df['C_em_LU'] = OWID_CO2_LU_df['C_em_LU'] * self.CO2_C / 1000000000 #Emissions of carbon in gigatons
+        OWID_CO2_LU_df['C_em_LU'] = OWID_CO2_LU_df['C_em_LU'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
         
         #Extrapolate linear trend from 1850–1950 back to 1800
         fit_slice = OWID_CO2_LU_df[(OWID_CO2_LU_df['year'] >= 1850) & (OWID_CO2_LU_df['year'] <= 1950)].dropna(subset=['C_em_LU'])
@@ -287,7 +287,7 @@ class Processor:
             "Optimal_US_Em",
             "Baseline_Global_Em",
             "Baseline_US_Em",
-        ] #Emissions in GtC
+        ] #Carbon emissions in gigatons
         
         for c in em_cols:
             if c in RICE_df.columns:
@@ -309,13 +309,27 @@ class Processor:
         NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
         NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
         
-        NOAA_df.to_pickle(f'{self.Directory}/Raw Data/NOAA_CO2_PPM.pkl')
+        NOAA_df.to_pickle(f'{self.Directory}/Raw Data/NOAA_C_con.pkl')
         
         
         ### EPA Emissions Inventory
+        EPA_df = pd.read_csv(f'{self.Directory}/Raw Data/EPA_CO2e.csv')
+        
+        EPA_df = EPA_df.rename(columns={"transportation": "car_C_em",
+                                "electricpowerindustry": "elec_C_em",
+                                "grosstotal": "total_C_em"})
+        
+        EPA_df['car_C_em'] = EPA_df['car_C_em'] * self.CO2_C / 1000
+        EPA_df['elec_C_em'] = EPA_df['elec_C_em'] * self.CO2_C / 1000
+        EPA_df['total_C_em'] = EPA_df['total_C_em'] * self.CO2_C / 1000
+        #Carbon emissions in gigatons
+        
+        EPA_df = EPA_df[["year", "car_C_em", "elec_C_em", "total_C_em"]]
+        
+        EPA_df.to_pickle(f'{self.Directory}/Raw Data/EPA_C_Em.pkl')
         
         
-        ###IEA Public R&D Spending
+        ### IEA Public R&D Spending
                               
                              
         
