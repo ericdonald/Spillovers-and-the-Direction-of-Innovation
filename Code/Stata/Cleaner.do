@@ -87,45 +87,5 @@ erase "Empirical/Raw Data/PatentsView/uspatentcitation.tsv"
 
 
 
-***********************
-***IED R&D Subsidies***
-***********************
-import delimited "Empirical/Raw Data/IED_RD_Sub.csv", clear
-
-drop if flagcodes == "L"
-rename time year
-
-keep flow v6 year value
-
-foreach c in $class {
-	foreach i in $type {
-
-		gen `c'_`i' = 0
-
-		*Classify research classes
-		foreach class in ${`c'_`i'_IED_classes} {
-		replace `c'_`i' = 1 if flow == "`class'"
-		}
-
-	}
-}
-
-replace elec_clean = -1 if flow == "34BIOFUE"
-replace elec_dirty = 1/2 if flow == "21OILGAS"
-replace car_dirty = 1/2 if flow == "21OILGAS"
-
-foreach c in $class {
-	foreach i in $type {
-
-		gen `c'_`i'_class_spend = value * `c'_`i'
-		bysort year: egen `c'_`i'_RD_sub = total(`c'_`i'_class_spend)
-
-	}
-}
-
-keep year *_RD_sub
-duplicates drop
-
-save "Empirical/Raw Data/IED_RD_Sub.dta", replace
 
 

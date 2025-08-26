@@ -56,8 +56,17 @@ class Processor:
         self.PPM_C = 2.13 #Atmospheric PPM of CO2 to GtC
         self.CO2_C = 12/44 #CO2 to Carbon Conversion
         
+        self.classes = ["car", "elec"]
+        self.types = ["clean", "dirty"]
         
-    def Cleaner(self, CPI_year=2012):
+        self.IED_classes = {("elec", "clean"): ["RENEWABLE", "NUCLEAR", "34BIOFUE"],
+                            ("elec", "dirty"): ["21OILGAS", "22COAL"],
+                            ("car",  "clean"): ["1311VBAT", "1312ADVA", "1314INFR"],
+                            ("car",  "dirty"): ["1313ENGI", "21OILGAS"]}
+
+        
+        
+    def Cleaner(self, ind_year=1800, CPI_year=2012):
         """""
         Clean Data
         
@@ -197,7 +206,7 @@ class Processor:
         
         a, b = np.polyfit(x, y, deg=1)
         
-        years_back = np.arange(1800, 1850)
+        years_back = np.arange(ind_year, 1850)
         y_hat_back = a * years_back + b
         
         extrap_df = pd.DataFrame({'year': years_back, 'C_em_LU': y_hat_back})
@@ -214,15 +223,15 @@ class Processor:
         OWID_CO2_LU_df.to_pickle(f'{self.Directory}/Raw Data/OWID_C_em_LU.pkl')
         
         
-        ### PatentsView CPC Codes
-        
-        
-        ### PatentsView Applications
-        
-        
-        ### PatentsView Citations
-        
-        
+        # --------------------- #
+        # PatentsView CPC Codes #
+        # --------------------- #
+        # ------------------------ #
+        # PatentsView Applications #
+        # ------------------------ #
+        # --------------------- #
+        # PatentsView Citations #
+        # --------------------- #
         # ------------------------------------------- #
         # Transportation Energy Data Book: Table 6.02 #
         # ------------------------------------------- #
@@ -312,7 +321,9 @@ class Processor:
         NOAA_df.to_pickle(f'{self.Directory}/Raw Data/NOAA_C_con.pkl')
         
         
-        ### EPA Emissions Inventory
+        # ----------------------- #
+        # EPA Emissions Inventory #
+        # ----------------------- #
         EPA_df = pd.read_csv(f'{self.Directory}/Raw Data/EPA_CO2e.csv')
         
         EPA_df = EPA_df.rename(columns={"transportation": "car_C_em",
@@ -329,9 +340,38 @@ class Processor:
         EPA_df.to_pickle(f'{self.Directory}/Raw Data/EPA_C_Em.pkl')
         
         
-        ### IEA Public R&D Spending
+        # ----------------------- #
+        # IEA Public R&D Spending #
+        # ----------------------- #
+        IEA_df = pd.read_csv(f'{self.Directory}/Raw Data/IED_RD_Sub.csv')
                               
-                             
+        IEA_df = IEA_df[IEA_df["flagcodes"] != "L"]
+        IEA_df = IEA_df.rename(columns={"time": "year"})
+        
+        IEA_df = IEA_df[["flow", "v6", "year", "value"]]
+        
+        for c in self.classes:
+            for t in self.types:
+                col = f"{c}_{t}"
+                codes = self.IED_classes[(c, t)]
+                IEA_df[col] = IEA_df["flow"].isin(codes).astype(float)
+        
+        IEA_df.loc[IEA_df["flow"] == "34BIOFUE", "elec_clean"] = -1.0
+        IEA_df.loc[IEA_df["flow"] == "21OILGAS", "elec_dirty"] = 0.5
+        IEA_df.loc[IEA_df["flow"] == "21OILGAS", "car_dirty"] = 0.5
+        
+        for c in self.classes:
+            for t in self.types:
+                flag_col = f"{c}_{t}"
+                spend_col = f"{c}_{t}_class_spend"
+                out_col = f"{c}_{t}_RD_sub"
+                IEA_df[spend_col] = IEA_df["value"] * IEA_df[flag_col]
+                IEA_df[out_col] = IEA_df.groupby("year")[spend_col].transform("sum")
+        
+        rd_cols = [f"{c}_{t}_RD_sub" for c in self.classes for t in self.types]
+        IEA_df = IEA_df[["year"] + rd_cols].drop_duplicates().sort_values("year").reset_index(drop=True)
+        
+        IEA_df.to_pickle(f'{self.Directory}/Raw Data/IED_RD_Sub.pkl')
         
         
         # ----------------------------------------------------------------
