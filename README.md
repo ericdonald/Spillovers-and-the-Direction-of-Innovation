@@ -35,4 +35,5 @@ where XX is the user's API key for the relevant data source. All data sources ha
 - [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
 - Regional Emissions from [2010 RICE](https://www.icpsr.umich.edu/web/ICPSR/studies/28461/summary)
 - [NOAA Atmospheric Carbon Concentrations](https://gml.noaa.gov/ccgg/trends/data.html)
+- EPA Emissions Inventory
 - IEA Public R&D Spending
