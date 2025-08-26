@@ -37,3 +37,5 @@ where XX is the user's API key for the relevant data source. All data sources ha
 - [NOAA Atmospheric Carbon Concentrations](https://gml.noaa.gov/ccgg/trends/data.html)
 - [EPA Emissions Inventory](https://cfpub.epa.gov/ghgdata/inventoryexplorer/#allsectors/allsectors/allgas/econsect/all)
 - [IEA Public R&D Spending](https://www.iea.org/data-and-statistics/data-product/energy-technology-rd-and-d-budget-database-2)
+- [Congressional Research Service Report IF11017](https://www.congress.gov/crs-product/IF11017)
+- [Congressional Research Service Report IF10479](https://www.congress.gov/crs-product/IF10479)
