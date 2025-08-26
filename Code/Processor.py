@@ -70,14 +70,8 @@ class Processor:
         """""
         Clean Data
         
-        Output: Raw Data/FRED_CPI.pkl
-                Raw Data/FRED_Vehicle_Revenue.pkl
-                Raw Data/FRED_Total_GDP.pkl
-                Raw Data/FRED_RD.pkl
-                Raw Data/EIA_Electricity_Revenue.pkl
-                Raw Data/EIA_Electricity_Share.pkl
-                Raw Data/TEDB_Car_Clean_qShare.pkl
-                Clean Data/RICE.pkl
+        Output: Clean Data/RICE.pkl
+                Clean Data/clim_cal_panel.pkl
         """""
    
     
@@ -179,15 +173,13 @@ class Processor:
         # -------------------------------- #
         # OWID Global Industrial Emissions #
         # -------------------------------- #
-        OWID_IndCO2_df = pd.read_csv("https://ourworldindata.org/grapher/annual-co2-emissions-per-country.csv?v=1&csvType=filtered&useColumnShortNames=true&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+        OWID_CO2_Ind_df = pd.read_csv("https://ourworldindata.org/grapher/annual-co2-emissions-per-country.csv?v=1&csvType=filtered&useColumnShortNames=true&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
         
-        OWID_IndCO2_df = OWID_IndCO2_df[['Year', 'emissions_total']]
-        OWID_IndCO2_df = OWID_IndCO2_df.rename(columns={"Year": "year", "emissions_total": "C_em_fossil"})
+        OWID_CO2_Ind_df = OWID_CO2_Ind_df[['Year', 'emissions_total']]
+        OWID_CO2_Ind_df = OWID_CO2_Ind_df.rename(columns={"Year": "year", "emissions_total": "C_em_fossil"})
         
-        OWID_IndCO2_df['C_em_fossil'] = OWID_IndCO2_df['C_em_fossil'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
-        
-        OWID_IndCO2_df.to_pickle(f'{self.Directory}/Raw Data/OWID_C_em_fossil.pkl')
-        
+        OWID_CO2_Ind_df['C_em_fossil'] = OWID_CO2_Ind_df['C_em_fossil'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
+                
         
         # ------------------------------ #
         # OWID Global Land-Use Emissions #
@@ -219,9 +211,7 @@ class Processor:
               .sort_values('year')
               .reset_index(drop=True)
         )
-        
-        OWID_CO2_LU_df.to_pickle(f'{self.Directory}/Raw Data/OWID_C_em_LU.pkl')
-        
+                
         
         # --------------------- #
         # PatentsView CPC Codes #
@@ -318,8 +308,6 @@ class Processor:
         NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
         NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
         
-        NOAA_df.to_pickle(f'{self.Directory}/Raw Data/NOAA_C_con.pkl')
-        
         
         # ----------------------- #
         # EPA Emissions Inventory #
@@ -393,7 +381,23 @@ class Processor:
 
         # ----------------------------------------------------------------
         
+        clim_cal_panel_df = pd.merge(OWID_CO2_Ind_df,
+                                     OWID_CO2_LU_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        clim_cal_panel_df['C_em'] = clim_cal_panel_df['C_em_fossil'] + clim_cal_panel_df['C_em_LU']
+        
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     NOAA_df,
+                                     on='year',
+                                     how='outer'
+                                     )
+        
+        clim_cal_panel_df.to_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
          
+        
          
     def Calibrate(self):
         """""
