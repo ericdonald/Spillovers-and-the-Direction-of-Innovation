@@ -192,9 +192,6 @@ label variable C_em "Global emissions of carbon in gigatons"
 ********************
 merge 1:1 year using "Empirical/Raw Data/NOAA_CO2_PPM.dta", keep(master match) nogenerate
 
-replace C_stock = C_stock * $PPM_C
-
-label variable C_stock "Atmospheric carbon concentrations in gigatons"
 
 
 

@@ -113,22 +113,6 @@ save "Empirical/Raw Data/EPA_C_Em.dta", replace
 
 
 
-*************************
-***OWID Emissions Data***
-*************************
-
-import delimited "Empirical/Raw Data/OWID_CO2_Em_LU.csv", clear
-
-keep if entity == "World"
-drop entity code annualcoemissions annualcoemissionsincludinglandu
-
-rename annualcoemissionsfromlandusecha C_em_LU_1850
-
-save "Empirical/Raw Data/OWID_CO2_Em_LU.dta", replace
-
-
-
-
 
 ***********************
 ***IED R&D Subsidies***

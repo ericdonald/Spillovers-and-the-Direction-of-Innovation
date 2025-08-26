@@ -170,12 +170,12 @@ class Processor:
         # -------------------------------- #
         # OWID Global Industrial Emissions #
         # -------------------------------- #
-        OWID_IndCO2_df = pd.read_csv("https://ourworldindata.org/grapher/co2-land-use.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+        OWID_IndCO2_df = pd.read_csv("https://ourworldindata.org/grapher/annual-co2-emissions-per-country.csv?v=1&csvType=filtered&useColumnShortNames=true&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
         
-        OWID_IndCO2_df = OWID_IndCO2_df[['Year', 'emissions_from_land_use_change']]
-        OWID_IndCO2_df = OWID_IndCO2_df.rename(columns={"Year": "year", "emissions_from_land_use_change": "C_em_fossil"})
+        OWID_IndCO2_df = OWID_IndCO2_df[['Year', 'emissions_total']]
+        OWID_IndCO2_df = OWID_IndCO2_df.rename(columns={"Year": "year", "emissions_total": "C_em_fossil"})
         
-        OWID_IndCO2_df['C_em_fossil'] = OWID_IndCO2_df['C_em_fossil'] * self.CO2_C / 1000000000 #Global emissions of carbon in gigatons
+        OWID_IndCO2_df['C_em_fossil'] = OWID_IndCO2_df['C_em_fossil'] * self.CO2_C / 1000000000 #Emissions of carbon in gigatons
         
         OWID_IndCO2_df.to_pickle(f'{self.Directory}/Raw Data/OWID_C_em_fossil.pkl')
         
@@ -183,6 +183,46 @@ class Processor:
         # ------------------------------ #
         # OWID Global Land-Use Emissions #
         # ------------------------------ #
+        OWID_CO2_LU_df = pd.read_csv("https://ourworldindata.org/grapher/co2-land-use.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+        
+        OWID_CO2_LU_df = OWID_CO2_LU_df[['Year', 'emissions_from_land_use_change']]
+        OWID_CO2_LU_df = OWID_CO2_LU_df.rename(columns={"Year": "year", "emissions_from_land_use_change": "C_em_LU"})
+        
+        OWID_CO2_LU_df['C_em_LU'] = OWID_CO2_LU_df['C_em_LU'] * self.CO2_C / 1000000000 #Emissions of carbon in gigatons
+        
+        #Extrapolate linear trend from 1850–1950 back to 1800
+        fit_slice = OWID_CO2_LU_df[(OWID_CO2_LU_df['year'] >= 1850) & (OWID_CO2_LU_df['year'] <= 1950)].dropna(subset=['C_em_LU'])
+        x = fit_slice['year'].values.astype(float)
+        y = fit_slice['C_em_LU'].values.astype(float)
+        
+        a, b = np.polyfit(x, y, deg=1)
+        
+        years_back = np.arange(1800, 1850)
+        y_hat_back = a * years_back + b
+        
+        extrap_df = pd.DataFrame({'year': years_back, 'C_em_LU': y_hat_back})
+        
+        have_years = set(OWID_CO2_LU_df['year'])
+        extrap_df = extrap_df[~extrap_df['year'].isin(have_years)]
+        
+        OWID_CO2_LU_df = (
+            pd.concat([OWID_CO2_LU_df, extrap_df], ignore_index=True)
+              .sort_values('year')
+              .reset_index(drop=True)
+        )
+        
+        OWID_CO2_LU_df.to_pickle(f'{self.Directory}/Raw Data/OWID_C_em_LU.pkl')
+        
+        
+        ### PatentsView CPC Codes
+        
+        
+        ### PatentsView Applications
+        
+        
+        ### PatentsView Citations
+        
+        
         # ------------------------------------------- #
         # Transportation Energy Data Book: Table 6.02 #
         # ------------------------------------------- #
@@ -270,6 +310,12 @@ class Processor:
         NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
         
         NOAA_df.to_pickle(f'{self.Directory}/Raw Data/NOAA_CO2_PPM.pkl')
+        
+        
+        ### EPA Emissions Inventory
+        
+        
+        ###IEA Public R&D Spending
                               
                              
         
