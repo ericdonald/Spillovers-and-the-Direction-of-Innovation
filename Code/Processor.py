@@ -66,7 +66,7 @@ class Processor:
 
         
         
-    def Cleaner(self, ind_year=1800, CPI_year=2012):
+    def Cleaner(self, ind_year=1800, CPI_year=2021):
         """""
         Clean Data
         
@@ -774,8 +774,8 @@ class Processor:
         τ_biden_dollar_low = 51
         τ_biden_dollar_high = 190
         
-        τ_biden_low = (self.E.Y0 / Y_start) * τ_biden_dollar_low * (44/12)
-        τ_biden_high = (self.E.Y0 / Y_start) * τ_biden_dollar_high * (44/12)
+        τ_biden_low = (self.E.Y0 / Y_start) * τ_biden_dollar_low * (self.CO2_C**(-1))
+        τ_biden_high = (self.E.Y0 / Y_start) * τ_biden_dollar_high * (self.CO2_C**(-1))
         
         r_tilde_low = self.E.r + self.E.ω * τ_biden_low
         r_tilde_high = self.E.r + self.E.ω * τ_biden_high
@@ -1010,7 +1010,7 @@ class Processor:
         #Carbon Price
         P = 2000
         τ_dollar_pd = np.linspace(0, P, P)
-        τ_pd = (self.E.Y0 / Y_start) * τ_dollar_pd * (44/12)
+        τ_pd = (self.E.Y0 / Y_start) * τ_dollar_pd * (self.CO2_C**(-1))
         
         r_tilde_pd = np.zeros((P, J))
         Abar_ss_low_pd = np.zeros((P, J-1))
@@ -1289,7 +1289,7 @@ class Processor:
         # -------------------------- #
         # Make Policy Comprehensible #
         # -------------------------- #
-        τ_FB_dollar = τ_FB * (Y_start / self.E.Y0) * (12/44)
+        τ_FB_dollar = τ_FB * (Y_start / self.E.Y0) * (self.CO2_C)
         
         X_τ = np.ones((1,J))
         τ_adjust_FB = τ_FB @ X_τ
@@ -1408,13 +1408,13 @@ class Processor:
         
         (τ_damhigh, C_damhigh, ξtilde_damhigh, A_damhigh) = self.E.IAM(Periods, T_time, 1, 0, 0, 1)
         
-        τ_spilllow_dollar = τ_spilllow * (Y_start / self.E.Y0) * (12/44)
+        τ_spilllow_dollar = τ_spilllow * (Y_start / self.E.Y0) * (self.CO2_C)
         
         τ_adjust_spilllow = τ_spilllow @ X_τ
         r_tilde_spilllow = r_adjust + ω_adjust*τ_adjust_spilllow
         
         
-        τ_dischigh_FB_dollar = τ_dischigh_FB * (Y_start / self.E.Y0) * (12/44)
+        τ_dischigh_FB_dollar = τ_dischigh_FB * (Y_start / self.E.Y0) * (self.CO2_C)
         
         τ_adjust_dischigh_FB = τ_dischigh_FB @ X_τ
         r_tilde_dischigh_FB = r_adjust + ω_adjust*τ_adjust_dischigh_FB
@@ -1423,7 +1423,7 @@ class Processor:
         r_tilde_dischigh_ten = r_adjust + ω_adjust*0.1*τ_adjust_dischigh_ten
         
         
-        τ_damhigh_dollar = τ_damhigh * (Y_start / self.E.Y0) * (12/44)
+        τ_damhigh_dollar = τ_damhigh * (Y_start / self.E.Y0) * (self.CO2_C)
         
         τ_adjust_damhigh = τ_damhigh @ X_τ
         r_tilde_damhigh = r_adjust + ω_adjust*τ_adjust_damhigh
