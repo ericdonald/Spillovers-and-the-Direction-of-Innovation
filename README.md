@@ -27,9 +27,9 @@ where XX is the user's API key for the relevant data source. All data sources ha
   - [Global Industrial Emissions](https://ourworldindata.org/grapher/annual-co2-emissions-per-country?country=~OWID_WRL)
   - [Global Land-Use Emissions](https://ourworldindata.org/grapher/co2-land-use?tab=line&country=~OWID_WRL)
 - PatentsView
-  - CPC Codes
-  - Applications
-  - Citations
+  - [CPC Codes](https://patentsview.org/download/data-download-tables)
+  - [Applications](https://patentsview.org/download/data-download-tables)
+  - [Citations](https://patentsview.org/download/data-download-tables)
 
 ### Contained in Raw Data:
 - [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
