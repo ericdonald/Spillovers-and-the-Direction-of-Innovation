@@ -9,7 +9,6 @@ To make use of the API commands, the user will need to make a '.env' file with t
 #API Keys
 FRED_API = 'XX'
 EIA_API = 'XX'
-PatentsView_API = 'XX'
 ```
 
 where XX is the user's API key for the relevant data source. All data sources have publicly available APIs that only require registration.
