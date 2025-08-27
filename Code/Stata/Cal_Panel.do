@@ -90,40 +90,16 @@ label variable elec_C_relem "Proportion of total US emissions in electricity"
 *******************************
 
 *Manually enter EV tax credit expenditures from US Congressional Research Service Report IF11017.
-gen car_clean_sub = 0
-replace car_clean_sub = 0.1 if year == 2011
-replace car_clean_sub = 0.2 if year == 2012
-replace car_clean_sub = 0.4 if year == 2013
-replace car_clean_sub = 0.2 if year == 2014
-replace car_clean_sub = 0.2 if year == 2015
-replace car_clean_sub = 0.3 if year == 2016
-replace car_clean_sub = 0.8 if year == 2017
-replace car_clean_sub = 1.2 if year == 2018
-replace car_clean_sub = 1.5 if year == 2019
-replace car_clean_sub = 1.7 if year == 2020
-replace car_clean_sub = 1.7 if year == 2021
+
 replace car_clean_sub = car_clean_sub * 100 / CPI
-label variable car_clean_sub "EV tax credit expenditures in billions of 2012 dollars"
 
 gen car_clean_relsub = car_clean_sub / Y_car
 label variable car_clean_relsub "Proportion of US vehicle revenue funded by EV tax credit"
 
 
 *Manually enter energy investment tax credit expenditures from US Congressional Research Service Report IF10479.
-gen elec_clean_sub = 0
-replace elec_clean_sub = 0.5 if year == 2011
-replace elec_clean_sub = 0.5 if year == 2012
-replace elec_clean_sub = 0.5 if year == 2013
-replace elec_clean_sub = 0.6 if year == 2014
-replace elec_clean_sub = 1.2 if year == 2015
-replace elec_clean_sub = 2.5 if year == 2016
-replace elec_clean_sub = 1.9 if year == 2017
-replace elec_clean_sub = 2.8 if year == 2018
-replace elec_clean_sub = 3.5 if year == 2019
-replace elec_clean_sub = 6.8 if year == 2020
-replace elec_clean_sub = 7.6 if year == 2021
+
 replace elec_clean_sub = elec_clean_sub * 100 / CPI
-label variable elec_clean_sub "Energy investment tax credit expenditures in billions of 2012 dollars"
 
 gen elec_clean_relsub = elec_clean_sub / Y_elec
 label variable elec_clean_relsub "Proportion of US electricity revenue funded by energy investment tax credit"

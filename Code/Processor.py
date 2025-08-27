@@ -34,6 +34,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
 import os
+import io
+import zipfile
 from datetime import datetime
 import requests as api
 import Production_Functions as pf
@@ -71,7 +73,9 @@ class Processor:
         """""
         Clean Data
         
-        Output: Clean Data/RICE.pkl
+        Output: Raw Data/Patent_CPC.pkl
+                Raw Data/Patent_Citations.pkl
+                Clean Data/RICE.pkl
                 Clean Data/clim_cal_panel.pkl
         """""
    
@@ -93,9 +97,7 @@ class Processor:
         FRED_CPI_df['year'] = pd.to_datetime(FRED_CPI_df['year']).dt.year
         FRED_CPI_df['CPI'] = pd.to_numeric(FRED_CPI_df['CPI'], errors='coerce')
         FRED_CPI_df['CPI'] = FRED_CPI_df['CPI'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
-        
-        FRED_CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
-        
+                
         
         # ------------------------- #
         # FRED Motor Vehicle Output #
@@ -106,10 +108,8 @@ class Processor:
         FRED_VR_df = pd.DataFrame(filtered_data)
         
         FRED_VR_df['year'] = pd.to_datetime(FRED_VR_df['year']).dt.year
-        FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce')
-        
-        FRED_VR_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Vehicle_Revenue.pkl') #Nominal US vehicle revenue in billions of dollars
-        
+        FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce') #Nominal US vehicle revenue in billions of dollars
+                
         
         # -------- #
         # FRED GDP #
@@ -120,10 +120,8 @@ class Processor:
         FRED_Y_df = pd.DataFrame(filtered_data)
         
         FRED_Y_df['year'] = pd.to_datetime(FRED_Y_df['year']).dt.year
-        FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce')
-        
-        FRED_Y_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Total_GDP.pkl') #Nominal US GDP in billions of dollars
-        
+        FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce') #Nominal US GDP in billions of dollars
+                
         
         # ----------------------- #
         # FRED Total R&D Spending #
@@ -134,10 +132,8 @@ class Processor:
         FRED_RD_df = pd.DataFrame(filtered_data)
         
         FRED_RD_df['year'] = pd.to_datetime(FRED_RD_df['year']).dt.year
-        FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce')
-        
-        FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl') #Nominal US R&D in billions of dollars
-        
+        FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce') #Nominal US R&D in billions of dollars
+                
         
         # ----------------------- #
         # EIA Electricity Revenue #
@@ -150,7 +146,7 @@ class Processor:
         EIA_Rev_df['year'] = pd.to_datetime(EIA_Rev_df['year']).dt.year
         EIA_Rev_df['elec_revenue'] = pd.to_numeric(EIA_Rev_df['elec_revenue'], errors='coerce')
         
-        EIA_Rev_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Electricity_Revenue.pkl') #Nominal US electricity revenue in millions of dollars
+        EIA_Rev_df['elec_revenue'] = EIA_Rev_df['elec_revenue'] / 1000 #Nominal US electricity revenue in billions of dollars
         
         
         # -------------------------- #
@@ -165,10 +161,34 @@ class Processor:
         EIA_Q_df['MWh'] = pd.to_numeric(EIA_Q_df['MWh'], errors='coerce')
         
         EIA_Q_df = EIA_Q_df.pivot(index="year", columns="type", values="MWh").reset_index()
-        EIA_Q_df['q_elec_clean'] = 1 - EIA_Q_df['FOS'] / EIA_Q_df['ALL']
+        EIA_Q_df['q_elec_clean'] = 1 - EIA_Q_df['FOS'] / EIA_Q_df['ALL'] #US clean electricity quantity share
         EIA_Q_df = EIA_Q_df[['year', 'q_elec_clean']]
+                
         
-        EIA_Q_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Electricity_Share.pkl') #US clean electricity quantity share
+        # ---------------------------- #
+        # EPA Greenhouse Gas Inventory #
+        # ---------------------------- #
+        r = api.get("https://www.epa.gov/system/files/other-files/2024-04/executive-summary.zip", headers={"User-Agent": "Mozilla/5.0"})
+        
+        with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+            target = next(p for p in z.namelist() if p.lower().endswith("table es-5.csv"))
+            with z.open(target) as f:
+                EPA_df = pd.read_csv(f, skiprows=1, nrows=8)  
+       
+        EPA_df = EPA_df.set_index(EPA_df.columns[0]).T.reset_index(drop=False)
+        EPA_df = EPA_df.rename(columns={"index": "year",
+                                        "Transportation": "car_C_em",
+                                        "Electric Power Industry": "elec_C_em",
+                                        "Total Gross Emissions (Sources)": "total_C_em"})
+        
+        EPA_df['year'] = pd.to_numeric(EPA_df['year'], errors='coerce')
+        
+        EPA_df['car_C_em'] = EPA_df['car_C_em'] * self.CO2_C / 1000
+        EPA_df['elec_C_em'] = EPA_df['elec_C_em'] * self.CO2_C / 1000
+        EPA_df['total_C_em'] = EPA_df['total_C_em'] * self.CO2_C / 1000
+        #Carbon emissions equivalent in gigatons
+        
+        EPA_df = EPA_df[["year", "car_C_em", "elec_C_em", "total_C_em"]]
         
         
         # -------------------------------- #
@@ -212,7 +232,18 @@ class Processor:
               .sort_values('year')
               .reset_index(drop=True)
         )
-                
+           
+        
+        # -------------------------------------- #
+        # NOAA Atmospheric Carbon Concentrations #
+        # -------------------------------------- #
+        NOAA_df = pd.read_csv("https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.csv",
+                              skiprows=43,
+                              usecols=[0, 1])
+        
+        NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
+        NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
+        
         
         # --------------------- #
         # PatentsView CPC Codes #
@@ -239,49 +270,52 @@ class Processor:
         
         PV_citations_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         
+        del PV_citations_df
+        
         
         # ------------------------------------------- #
         # Transportation Energy Data Book: Table 6.02 #
         # ------------------------------------------- #
-        TEDB_df = pd.read_excel(
-                    f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.xlsx',
-                    sheet_name="TEDB Edition 40",
-                    header=0,        
-                    usecols="B:I",   
-                    skiprows=7,      
-                    nrows=24         
-                )
+        url = "https://tedb.ornl.gov/wp-content/uploads/2022/06/Table6_02_06012022.xlsx"
+
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = api.get(url, headers=headers)
+        
+        TEDB_df = pd.read_excel(io.BytesIO(r.content),
+                                sheet_name="TEDB Edition 40",
+                                header=0,        
+                                usecols="B:I",   
+                                skiprows=7,      
+                                nrows=24         
+                            )
+        
         TEDB_df = TEDB_df.rename(columns={
-                    "Calendaryear": "year",
-                    "Alllightvehiclesalesthousan": "Q_car" #Light vehicle quantity in thousands
+                    "Calendar year": "year",
+                    "All light vehicle sales (thousands)": "Q_car" #Light vehicle quantity in thousands
                 })
         
+        TEDB_df['Hybrid vehicle sales (thousands)'] = pd.to_numeric(TEDB_df['Hybrid vehicle sales (thousands)'], errors='coerce')
+        TEDB_df = TEDB_df.dropna(subset=["year"])
+        
         TEDB_df["Q_car_clean"] = (
-                        TEDB_df["Hybridvehiclesalesthousands"].fillna(0)
-                      + TEDB_df["Pluginhybridvehiclesalesth"].fillna(0)
-                      + TEDB_df["Allelectricvehiclesalesthou"].fillna(0)
+                        TEDB_df["Hybrid vehicle sales (thousands)"].fillna(0)
+                      + TEDB_df["Plug-in hybrid vehicle sales (thousands)"].fillna(0)
+                      + TEDB_df["All-electric vehicle sales (thousands)"].fillna(0)
                     ) #US clean vehicle quantity in thousands
         
         TEDB_df["q_car_clean"] = (
-                        TEDB_df["Hybridshareofalllightvehicl"].fillna(0)
-                      + TEDB_df["Pluginhybridshareofalllig"].fillna(0)
-                      + TEDB_df["Allelectricshareofalllight"].fillna(0)
+                        TEDB_df["Hybrid share of all light vehicles"].fillna(0)
+                      + TEDB_df["Plug-in hybrid share of \nall light vehicles"].fillna(0)
+                      + TEDB_df["All-electric share of all light vehicles"].fillna(0)
                     ) #US clean vehicle quantity share
         
         TEDB_df = TEDB_df[["year", "Q_car", "Q_car_clean", "q_car_clean"]]
-        
-        for c in ["year", "Q_car", "Q_car_clean", "q_car_clean"]:
-            TEDB_df[c] = TEDB_df.to_numeric(TEDB_df[c], errors="coerce")
-        
-        TEDB_df.to_pickle(f'{self.Directory}/Raw Data/TEDB_Car_Clean_qShare.pkl')
         
         
         # --------- #
         # 2010 RICE #
         # --------- #
-        in_path   = Path(f'{self.Directory}/Raw Data/RICE.xlsx')
-        sheet     = "Results"
-        RICE_df = pd.read_excel(in_path, sheet_name=sheet, header=0)
+        RICE_df = pd.read_excel(f'{self.Directory}/Raw Data/RICE.xlsx', sheet_name="Results", header=0)
         
         RICE_df["year"] = pd.to_numeric(RICE_df["year"], errors="coerce").astype("Int64")
         
@@ -316,35 +350,7 @@ class Processor:
         )
         
         RICE_df.to_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
-        
-        
-        # -------------------------------------- #
-        # NOAA Atmospheric Carbon Concentrations #
-        # -------------------------------------- #
-        NOAA_df = pd.read_csv(f'{self.Directory}/Raw Data/NOAA_CO2_PPM.csv')
-        
-        NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
-        NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
-        
-        
-        # ----------------------- #
-        # EPA Emissions Inventory #
-        # ----------------------- #
-        EPA_df = pd.read_csv(f'{self.Directory}/Raw Data/EPA_CO2e.csv')
-        
-        EPA_df = EPA_df.rename(columns={"transportation": "car_C_em",
-                                "electricpowerindustry": "elec_C_em",
-                                "grosstotal": "total_C_em"})
-        
-        EPA_df['car_C_em'] = EPA_df['car_C_em'] * self.CO2_C / 1000
-        EPA_df['elec_C_em'] = EPA_df['elec_C_em'] * self.CO2_C / 1000
-        EPA_df['total_C_em'] = EPA_df['total_C_em'] * self.CO2_C / 1000
-        #Carbon emissions in gigatons
-        
-        EPA_df = EPA_df[["year", "car_C_em", "elec_C_em", "total_C_em"]]
-        
-        EPA_df.to_pickle(f'{self.Directory}/Raw Data/EPA_C_Em.pkl')
-        
+                
         
         # ----------------------- #
         # IEA Public R&D Spending #
@@ -372,14 +378,23 @@ class Processor:
                 spend_col = f"{c}_{t}_class_spend"
                 out_col = f"{c}_{t}_RD_sub"
                 IEA_df[spend_col] = IEA_df["value"] * IEA_df[flag_col]
-                IEA_df[out_col] = IEA_df.groupby("year")[spend_col].transform("sum")
+                IEA_df[out_col] = IEA_df.groupby("year")[spend_col].transform("sum") / 1000 #Nominal public R&D expenditures in billions of dollars
         
         rd_cols = [f"{c}_{t}_RD_sub" for c in self.classes for t in self.types]
         IEA_df = IEA_df[["year"] + rd_cols].drop_duplicates().sort_values("year").reset_index(drop=True)
         
-        IEA_df.to_pickle(f'{self.Directory}/Raw Data/IED_RD_Sub.pkl')
         
+        # -------------------------------------- #
+        # Congressional Research Service Reports #
+        # -------------------------------------- #
+        CRS_data = {"year": [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021],
+                    "car_clean_sub": [0.1, 0.2, 0.4, 0.2, 0.2, 0.3, 0.8, 1.2, 1.5, 1.7, 1.7],
+                    "elec_clean_sub": [0.5, 0.5, 0.5, 0.6, 1.2, 2.5, 1.9, 2.8, 3.5, 6.8, 7.6]
+                    } #Manually enter
         
+        CRS_df = pd.DataFrame(CRS_data) #Nominal tax credit expenditures in billions of dollars
+
+
         # ----------------------------------------------------------------
 
         # Label patent technology classes.

@@ -38,11 +38,6 @@ global car_dirty_classes F02B F02D F02F F02M F02N F02P Y02T10/12 Y02T10/40
 
 cd "${project}"
 
-*************
-***Cleaner***
-*************
-run "Empirical/Code/Cleaner.do"
-
 
 **********************
 ***Relevant Patents***

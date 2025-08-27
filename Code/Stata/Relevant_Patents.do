@@ -59,8 +59,7 @@ duplicates drop patent_id, force
 merge 1:1 patent_id using "Empirical/Raw Data/application.dta", keep(match) nogenerate
 rename app_year year
 
-*Drop inappropriate years
-drop if year < 1900 | year > 2025
+
 
 *Only keep relevant variables
 keep patent_id gen_patent car_clean_patent car_dirty_patent elec_clean_patent elec_dirty_patent year
