@@ -404,9 +404,98 @@ class Processor:
         
         # ----------------------------------------------------------------
 
-        # Create revenue and quantity share series.
+        # Create panel of calibration moments.
 
         # ----------------------------------------------------------------
+        
+        clim_cal_panel_df = FRED_CPI_df.copy()
+        ##Sort out dates!!!
+        
+        # ----------- #
+        # Electricity #
+        # ----------- #
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     EIA_Rev_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        clim_cal_panel_df['Y_elec'] = clim_cal_panel_df['elec_revenue'] / clim_cal_panel_df['CPI']
+        
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     EIA_Q_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        
+        # --------- #
+        # Transport #
+        # --------- #
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     FRED_VR_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        clim_cal_panel_df['Y_car'] = clim_cal_panel_df['car_revenue'] / clim_cal_panel_df['CPI']
+        
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     TEDB_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        
+        # ------------ #
+        # Final Output #
+        # ------------ #
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     FRED_Y_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        clim_cal_panel_df['GDP'] = clim_cal_panel_df['GDP'] / clim_cal_panel_df['CPI']
+        clim_cal_panel_df['S_elec'] = clim_cal_panel_df['Y_elec'] / clim_cal_panel_df['GDP']
+        clim_cal_panel_df['S_car'] = clim_cal_panel_df['Y_car'] / clim_cal_panel_df['GDP']
+        
+        
+        # ------------------ #
+        # Sectoral Emissions #
+        # ------------------ #
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     EPA_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        clim_cal_panel_df['elec_C_relem'] = clim_cal_panel_df['elec_C_em'] / clim_cal_panel_df['total_C_em']
+        clim_cal_panel_df['car_C_relem'] = clim_cal_panel_df['car_C_em'] / clim_cal_panel_df['total_C_em']
+        
+        
+        # -------------------- #
+        # Status Quo Subsidies #
+        # -------------------- #
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     CRS_df,
+                                     on='year',
+                                     how='outer'
+                                     )
+        
+        clim_cal_panel_df['elec_clean_sub'] = clim_cal_panel_df['elec_clean_sub'] / clim_cal_panel_df['CPI']
+        clim_cal_panel_df['elec_clean_relsub'] = clim_cal_panel_df['elec_clean_sub'] / clim_cal_panel_df['Y_elec']
+        
+        clim_cal_panel_df['car_clean_sub'] = clim_cal_panel_df['car_clean_sub'] / clim_cal_panel_df['CPI']
+        clim_cal_panel_df['car_clean_relsub'] = clim_cal_panel_df['car_clean_sub'] / clim_cal_panel_df['Y_car']
+        
+        
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     IEA_df,
+                                     on='year',
+                                     how='outer'
+                                     )
+        
         
         # ----------------------------------------------------------------
 
