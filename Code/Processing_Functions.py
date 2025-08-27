@@ -6,6 +6,9 @@ Notes: Functions that accomplish basic processing for the project.
 """""""""""
 
 import numpy as np
+import requests
+import zipfile
+import io
 import pandas as pd
 
 
@@ -46,7 +49,20 @@ def clean_round(number, decimals):
     
 
 
+def Extract_PatentsView(Table):
+    "Download and Extract a PatentsView Bulk Table"
+    
+    url = f"https://s3.amazonaws.com/data.patentsview.org/download/{Table}.tsv.zip"
 
+    r = requests.get(url, stream=True)
+    r.raise_for_status()
+
+    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+        tsv_name = f"{Table}.tsv"
+        with z.open(tsv_name) as f:
+            df = pd.read_csv(f, sep="\t", low_memory=False)
+    
+    return df
 
 
 

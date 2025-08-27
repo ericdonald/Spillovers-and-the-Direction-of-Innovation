@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
 import os
+from datetime import datetime
 import requests as api
 import Production_Functions as pf
 import SteadyState_Functions as ssf
@@ -216,12 +217,29 @@ class Processor:
         # --------------------- #
         # PatentsView CPC Codes #
         # --------------------- #
+        PV_CPC_df = gpf.Extract_PatentsView('g_cpc_current')
+        
+        PV_CPC_df.to_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        
+        
         # ------------------------ #
         # PatentsView Applications #
         # ------------------------ #
+        PV_applications_df = gpf.Extract_PatentsView('g_application')
+        
+        PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], errors="coerce").dt.year
+        PV_applications_df = PV_applications_df.dropna(subset=["year"])
+        PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
+        
+        
         # --------------------- #
         # PatentsView Citations #
         # --------------------- #
+        PV_citations_df = gpf.Extract_PatentsView('g_us_patent_citation')
+        
+        PV_citations_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        
+        
         # ------------------------------------------- #
         # Transportation Energy Data Book: Table 6.02 #
         # ------------------------------------------- #
