@@ -1,6 +1,6 @@
 # Replication Package for "[Spillovers and the Direction of Innovation](https://www.ericdonald.com/research/spillovers-and-the-direction-of-innovation)"
 
-## Dataset List:
+## Data Sources:
 
 Below is the list of all data sets required for replication. The first set lists those downloaded inside of the code using APIs, and the second set lists those contained within the Raw Data folder. Therefore, the links below are for reference only; a user does not need to visit these sites to extract the data.
 To make use of the API commands, the user will need to make a '.env' file with the following lines:
@@ -38,3 +38,9 @@ where XX is the user's API key for the relevant data source. All data sources ha
 - [IEA Public R&D Spending](https://www.iea.org/data-and-statistics/data-product/energy-technology-rd-and-d-budget-database-2)
 - [Congressional Research Service Report IF11017](https://www.congress.gov/crs-product/IF11017)
 - [Congressional Research Service Report IF10479](https://www.congress.gov/crs-product/IF10479)
+
+## Software Requirements
+
+## Description of Code
+
+## List of Tables and Figures
