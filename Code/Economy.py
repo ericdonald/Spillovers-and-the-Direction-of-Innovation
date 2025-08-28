@@ -24,7 +24,7 @@ class Economy:
     def __init__(self):
         "Initialize Economy Object"
         
-        self.Directory = Path(__file__).resolve().parent.parent.parent
+        self.Directory = Path(__file__).resolve().parent.parent
         
         # --------------------------------------- #
         # Define Externally Calibrated Parameters #

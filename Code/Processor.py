@@ -53,7 +53,7 @@ class Processor:
         "Initialize Processor Object"
         
         self.E = E
-        self.Directory = Path(__file__).resolve().parent.parent.parent
+        self.Directory = Path(__file__).resolve().parent.parent
         self.FRED_API = os.getenv("FRED_API")
         self.EIA_API = os.getenv("EIA_API")
         self.PPM_C = 2.13 #Atmospheric PPM of CO2 to GtC
