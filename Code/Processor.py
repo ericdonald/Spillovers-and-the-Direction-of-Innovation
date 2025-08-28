@@ -33,7 +33,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
-import os
 import io
 import zipfile
 from datetime import datetime
@@ -54,8 +53,6 @@ class Processor:
         
         self.E = E
         self.Directory = Path(__file__).resolve().parent.parent
-        self.FRED_API = os.getenv("FRED_API")
-        self.EIA_API = os.getenv("EIA_API")
         self.PPM_C = 2.13 #Atmospheric PPM of CO2 to GtC
         self.CO2_C = 12/44 #CO2 to Carbon Conversion
         
@@ -66,6 +63,17 @@ class Processor:
                             ("elec", "dirty"): ["21OILGAS", "22COAL"],
                             ("car",  "clean"): ["1311VBAT", "1312ADVA", "1314INFR"],
                             ("car",  "dirty"): ["1313ENGI", "21OILGAS"]}
+        
+        keys_path = self.Directory / ".keys"
+        keys = {}
+        with open(keys_path) as f:
+            for line in f:
+                if "=" in line:
+                    k, v = line.strip().split("=", 1)
+                    keys[k.strip()] = v.strip()
+        
+        self.FRED_API = keys.get("FRED_API")
+        self.EIA_API = keys.get("EIA_API")
 
         
         
