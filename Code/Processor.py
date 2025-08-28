@@ -76,6 +76,7 @@ class Processor:
         Output: Raw Data/Patent_CPC.pkl
                 Raw Data/Patent_Citations.pkl
                 Clean Data/RICE.pkl
+                Clean Data/cal_panel.pkl
                 Clean Data/clim_cal_panel.pkl
         """""
    
@@ -188,6 +189,7 @@ class Processor:
         EPA_df['total_C_em'] = EPA_df['total_C_em'] * self.CO2_C / 1000
         #Carbon emissions equivalent in gigatons
         
+        EPA_df = EPA_df.dropna(subset=["year"])
         EPA_df = EPA_df[["year", "car_C_em", "elec_C_em", "total_C_em"]]
         
         
@@ -408,21 +410,21 @@ class Processor:
 
         # ----------------------------------------------------------------
         
-        clim_cal_panel_df = FRED_CPI_df.copy()
+        cal_panel_df = FRED_CPI_df.copy()
         ##Sort out dates!!!
         
         # ----------- #
         # Electricity #
         # ----------- #
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      EIA_Rev_df,
                                      on='year',
                                      how='inner'
                                      )
         
-        clim_cal_panel_df['Y_elec'] = clim_cal_panel_df['elec_revenue'] / clim_cal_panel_df['CPI']
+        cal_panel_df['Y_elec'] = cal_panel_df['elec_revenue'] / cal_panel_df['CPI']
         
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      EIA_Q_df,
                                      on='year',
                                      how='inner'
@@ -432,15 +434,15 @@ class Processor:
         # --------- #
         # Transport #
         # --------- #
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      FRED_VR_df,
                                      on='year',
                                      how='inner'
                                      )
         
-        clim_cal_panel_df['Y_car'] = clim_cal_panel_df['car_revenue'] / clim_cal_panel_df['CPI']
+        cal_panel_df['Y_car'] = cal_panel_df['car_revenue'] / cal_panel_df['CPI']
         
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      TEDB_df,
                                      on='year',
                                      how='inner'
@@ -450,51 +452,53 @@ class Processor:
         # ------------ #
         # Final Output #
         # ------------ #
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      FRED_Y_df,
                                      on='year',
                                      how='inner'
                                      )
         
-        clim_cal_panel_df['GDP'] = clim_cal_panel_df['GDP'] / clim_cal_panel_df['CPI']
-        clim_cal_panel_df['S_elec'] = clim_cal_panel_df['Y_elec'] / clim_cal_panel_df['GDP']
-        clim_cal_panel_df['S_car'] = clim_cal_panel_df['Y_car'] / clim_cal_panel_df['GDP']
+        cal_panel_df['GDP'] = cal_panel_df['GDP'] / cal_panel_df['CPI']
+        cal_panel_df['S_elec'] = cal_panel_df['Y_elec'] / cal_panel_df['GDP']
+        cal_panel_df['S_car'] = cal_panel_df['Y_car'] / cal_panel_df['GDP']
         
         
         # ------------------ #
         # Sectoral Emissions #
         # ------------------ #
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      EPA_df,
                                      on='year',
                                      how='inner'
                                      )
         
-        clim_cal_panel_df['elec_C_relem'] = clim_cal_panel_df['elec_C_em'] / clim_cal_panel_df['total_C_em']
-        clim_cal_panel_df['car_C_relem'] = clim_cal_panel_df['car_C_em'] / clim_cal_panel_df['total_C_em']
+        cal_panel_df['elec_C_relem'] = cal_panel_df['elec_C_em'] / cal_panel_df['total_C_em']
+        cal_panel_df['car_C_relem'] = cal_panel_df['car_C_em'] / cal_panel_df['total_C_em']
         
         
         # -------------------- #
         # Status Quo Subsidies #
         # -------------------- #
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      CRS_df,
                                      on='year',
                                      how='outer'
                                      )
         
-        clim_cal_panel_df['elec_clean_sub'] = clim_cal_panel_df['elec_clean_sub'] / clim_cal_panel_df['CPI']
-        clim_cal_panel_df['elec_clean_relsub'] = clim_cal_panel_df['elec_clean_sub'] / clim_cal_panel_df['Y_elec']
+        cal_panel_df['elec_clean_sub'] = cal_panel_df['elec_clean_sub'] / cal_panel_df['CPI']
+        cal_panel_df['elec_clean_relsub'] = cal_panel_df['elec_clean_sub'] / cal_panel_df['Y_elec']
         
-        clim_cal_panel_df['car_clean_sub'] = clim_cal_panel_df['car_clean_sub'] / clim_cal_panel_df['CPI']
-        clim_cal_panel_df['car_clean_relsub'] = clim_cal_panel_df['car_clean_sub'] / clim_cal_panel_df['Y_car']
+        cal_panel_df['car_clean_sub'] = cal_panel_df['car_clean_sub'] / cal_panel_df['CPI']
+        cal_panel_df['car_clean_relsub'] = cal_panel_df['car_clean_sub'] / cal_panel_df['Y_car']
         
         
-        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+        cal_panel_df = pd.merge(cal_panel_df,
                                      IEA_df,
                                      on='year',
                                      how='outer'
                                      )
+        
+        cal_panel_df.to_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         
         
         # ----------------------------------------------------------------
