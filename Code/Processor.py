@@ -368,19 +368,19 @@ class Processor:
         IEA_df = pd.read_csv(f'{self.Directory}/Raw Data/IED_RD_Sub.csv')
                               
         IEA_df = IEA_df[IEA_df["Flag Codes"] != "L"]
-        IEA_df = IEA_df.rename(columns={"time": "year"})
+        IEA_df = IEA_df.rename(columns={"Time": "year"})
         
-        IEA_df = IEA_df[["flow", "v6", "year", "value"]]
+        IEA_df = IEA_df[["FLOW", "year", "Value"]]
         
         for c in self.classes:
             for t in self.types:
                 col = f"{c}_{t}"
                 codes = self.IED_classes[(c, t)]
-                IEA_df[col] = IEA_df["flow"].isin(codes).astype(float)
+                IEA_df[col] = IEA_df["Value"].isin(codes).astype(float)
         
-        IEA_df.loc[IEA_df["flow"] == "34BIOFUE", "elec_clean"] = -1.0
-        IEA_df.loc[IEA_df["flow"] == "21OILGAS", "elec_dirty"] = 0.5
-        IEA_df.loc[IEA_df["flow"] == "21OILGAS", "car_dirty"] = 0.5
+        IEA_df.loc[IEA_df["FLOW"] == "34BIOFUE", "elec_clean"] = -1.0
+        IEA_df.loc[IEA_df["FLOW"] == "21OILGAS", "elec_dirty"] = 0.5
+        IEA_df.loc[IEA_df["FLOW"] == "21OILGAS", "car_dirty"] = 0.5
         
         for c in self.classes:
             for t in self.types:
