@@ -111,7 +111,7 @@ class Processor:
         # ------------------------- #
         # FRED Motor Vehicle Output #
         # ------------------------- #
-        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA#0&frequency=a&api_key={self.FRED_API}&file_type=json')
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
         filtered_data = [{'year': entry['date'], 'car_revenue': entry['value']} for entry in data]
         FRED_VR_df = pd.DataFrame(filtered_data)
@@ -376,7 +376,7 @@ class Processor:
             for t in self.types:
                 col = f"{c}_{t}"
                 codes = self.IED_classes[(c, t)]
-                IEA_df[col] = IEA_df["Value"].isin(codes).astype(float)
+                IEA_df[col] = IEA_df["FLOW"].isin(codes).astype(float)
         
         IEA_df.loc[IEA_df["FLOW"] == "34BIOFUE", "elec_clean"] = -1.0
         IEA_df.loc[IEA_df["FLOW"] == "21OILGAS", "elec_dirty"] = 0.5
@@ -387,7 +387,7 @@ class Processor:
                 flag_col = f"{c}_{t}"
                 spend_col = f"{c}_{t}_class_spend"
                 out_col = f"{c}_{t}_RD_sub"
-                IEA_df[spend_col] = IEA_df["value"] * IEA_df[flag_col]
+                IEA_df[spend_col] = IEA_df["Value"] * IEA_df[flag_col]
                 IEA_df[out_col] = IEA_df.groupby("year")[spend_col].transform("sum") / 1000 #Nominal public R&D expenditures in billions of dollars
         
         rd_cols = [f"{c}_{t}_RD_sub" for c in self.classes for t in self.types]
@@ -419,7 +419,7 @@ class Processor:
         # ----------------------------------------------------------------
         
         cal_panel_df = FRED_CPI_df.copy()
-        ##Sort out dates!!!
+
         
         # ----------- #
         # Electricity #
