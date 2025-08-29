@@ -471,6 +471,18 @@ class Processor:
         cal_panel_df['S_car'] = cal_panel_df['Y_car'] / cal_panel_df['GDP']
         
         
+        # --------- #
+        # Total R&D #
+        # --------- #
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     FRED_RD_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        cal_panel_df['RD'] = cal_panel_df['RD'] / cal_panel_df['CPI']
+        
+        
         # ------------------ #
         # Sectoral Emissions #
         # ------------------ #
@@ -505,6 +517,12 @@ class Processor:
                                      on='year',
                                      how='outer'
                                      )
+        
+        for c in self.classes:
+            for t in self.types:
+                cal_panel_df[f"{c}_{t}_RD_sub"] = cal_panel_df[f"{c}_{t}_RD_sub"] / cal_panel_df['CPI']
+                cal_panel_df[f"{c}_{t}_RD_relsub"] = cal_panel_df[f"{c}_{t}_RD_sub"] / cal_panel_df["RD"] 
+                
         
         cal_panel_df.to_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         
