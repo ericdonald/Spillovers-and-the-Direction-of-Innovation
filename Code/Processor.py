@@ -273,6 +273,8 @@ class Processor:
         # --------------------- #
         PV_CPC_df = gpf.Extract_PatentsView('g_cpc_current')
         
+        PV_CPC_df['patent_id'] = PV_CPC_df['patent_id'].astype(str)
+        
         PV_CPC_df.to_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
         
         
@@ -284,12 +286,15 @@ class Processor:
         PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], format="%Y-%m-%d", errors="coerce").dt.year
         PV_applications_df = PV_applications_df.dropna(subset=["year"])
         PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
-        
+        PV_applications_df['patent_id'] = PV_applications_df['patent_id'].astype(str)
         
         # --------------------- #
         # PatentsView Citations #
         # --------------------- #
         PV_citations_df = gpf.Extract_PatentsView('g_us_patent_citation')
+        
+        PV_citations_df['patent_id'] = PV_citations_df['patent_id'].astype(str)
+        PV_citations_df['citation_patent_id'] = PV_citations_df['citation_patent_id'].astype(str)
         
         PV_citations_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         
@@ -452,7 +457,7 @@ class Processor:
                              how='inner'
                              )
         
-        Rel_Pats_df = Rel_Pats_df[['patent_id' 'gen_patent' 'car_clean_patent' 'car_dirty_patent' 'elec_clean_patent' 'elec_dirty_patent' 'year']]
+        Rel_Pats_df = Rel_Pats_df[['patent_id', 'gen_patent', 'car_clean_patent', 'car_dirty_patent', 'elec_clean_patent', 'elec_dirty_patent', 'year']]
         
         Rel_Pats_df.to_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
