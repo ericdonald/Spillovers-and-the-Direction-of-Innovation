@@ -67,7 +67,9 @@ P.IAM(500, 200)
 P.CES_Spill(500,200,1.25)
 
 
-
+### Record Package Versions
+packages = ["numpy", "pandas", "scipy", "matplotlib", "numba", "quantecon"]
+P.write_package_versions(packages)
 
 
 

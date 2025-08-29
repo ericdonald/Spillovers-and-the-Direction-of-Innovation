@@ -37,6 +37,7 @@ import io
 import zipfile
 from datetime import datetime
 import requests as api
+import importlib.metadata as md
 import Production_Functions as pf
 import SteadyState_Functions as ssf
 import Objective_Functions as of
@@ -460,6 +461,7 @@ class Processor:
         Rel_Pats_df = Rel_Pats_df[['patent_id', 'gen_patent', 'car_clean_patent', 'car_dirty_patent', 'elec_clean_patent', 'elec_dirty_patent', 'year']]
         
         Rel_Pats_df.to_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        
         
         # ----------------------------------------------------------------
 
@@ -1857,3 +1859,28 @@ class Processor:
         DF_policy_CES = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), ξ_hat_CES)), 
                              columns=['Year', 'ξ_hat_CES_Transport', 'ξ_hat_CES_Electricity'])
         DF_policy_CES.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy_CES.csv', index=False)
+        
+        
+        
+    def write_package_versions(self, packages):
+        """""
+        Table of Package Versions
+    
+        Output: Results/core_versions.txt
+        """""
+        
+        filename=f'{self.Directory}/Results/core_versions.txt'
+        
+        rows = []
+        for pkg in packages:
+            ver = md.version(pkg)
+            rows.append((pkg, ver))
+    
+        with open(filename, "w") as f:
+            f.write("| Package | Version |\n")
+            f.write("|---------|---------|\n")
+            for pkg, ver in rows:
+                f.write(f"| {pkg} | {ver} |\n")
+
+
+
