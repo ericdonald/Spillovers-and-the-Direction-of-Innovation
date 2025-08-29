@@ -59,6 +59,18 @@ class Processor:
         self.classes = ["car", "elec"]
         self.types = ["clean", "dirty"]
         
+        self.CPC_classes = {("elec", "clean"): ["Y02E10", "Y02E30", "Y02E60/10", "Y02E60/13", "Y02E60/14", "Y02E60/16", "Y02B10/10"],
+                            ("elec", "dirty"): ["F22", "F23", "F27", "C10J", "F01K", "F02C", "F02G",
+                                                "F02B7", "F02B11", "F02B49", "F25B27/02", "F02B1/12", "F02B1/14",
+                                                "F02B3/06", "F02B3/08", "F02B3/10", "F02B3/12", "F02B13/02", "F02B13/04",
+                                                "B01J8/20", "B01J8/22", "B01J8/24", "B01J8/26", "B01J8/28", "B01J8/30"],
+                            ("car",  "clean"): [ "B60L", "B60K1", "B60K6", "H01M8", "B60W20", "B60W10/08", "B60W10/24",
+                                                "B60W10/26", "B60W10/28", "Y02T10/64", "Y02T10/70", "Y02T10/7072", "Y02T10/72",
+                                                "Y02T10/92", "Y02T90/10", "Y02T90/12", "Y02T90/14", "Y02T90/16", "Y02T90/167",
+                                                "Y02T90/40", "Y02T10/62"],
+                            ("car",  "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P", "Y02T10/12", "Y02T10/40"]}
+        #Classes follow both CPC and IPC classification, but there is no discordance between CPC and IPC for these classes.
+        
         self.IED_classes = {("elec", "clean"): ["RENEWABLE", "NUCLEAR", "34BIOFUE"],
                             ("elec", "dirty"): ["21OILGAS", "22COAL"],
                             ("car",  "clean"): ["1311VBAT", "1312ADVA", "1314INFR"],
@@ -84,6 +96,7 @@ class Processor:
         Output: Raw Data/Patent_CPC.pkl
                 Raw Data/Patent_Citations.pkl
                 Clean Data/RICE.pkl
+                Clean Data/relevant_patents.pkl
                 Clean Data/cal_panel.pkl
                 Clean Data/clim_cal_panel.pkl
         """""
@@ -268,7 +281,7 @@ class Processor:
         # ------------------------ #
         PV_applications_df = gpf.Extract_PatentsView('g_application')
         
-        PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], errors="coerce").dt.year
+        PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], format="%Y-%m-%d", errors="coerce").dt.year
         PV_applications_df = PV_applications_df.dropna(subset=["year"])
         PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
         
@@ -411,6 +424,37 @@ class Processor:
 
         # ----------------------------------------------------------------
         
+        Rel_Pats_df = PV_CPC_df.copy()
+        
+        Rel_Pats_df["cpc_group5"] = Rel_Pats_df["cpc_group"].str[:5]
+        Rel_Pats_df["cpc_group6"] = Rel_Pats_df["cpc_group"].str[:6]
+        Rel_Pats_df["gen_patent"] = 1
+        
+        for c in self.classes:
+            for t in self.types:
+                col = f"{c}_{t}"
+                codes = set(self.CPC_classes[(c, t)])
+                Rel_Pats_df[col] = (Rel_Pats_df["cpc_class"].isin(codes)
+                                | Rel_Pats_df["cpc_subclass"].isin(codes)
+                                | Rel_Pats_df["cpc_group"].isin(codes)
+                                | Rel_Pats_df["cpc_group5"].isin(codes)
+                                | Rel_Pats_df["cpc_group6"].isin(codes)).astype(np.int8)
+                
+                col_pat = f"{c}_{t}_patent"
+                Rel_Pats_df[col_pat] = Rel_Pats_df.groupby("patent_id")[col].transform("max")
+                Rel_Pats_df.loc[Rel_Pats_df[col_pat] == 1, "gen_patent"] = 0
+                
+        Rel_Pats_df = Rel_Pats_df.drop_duplicates(subset='patent_id', keep='first')
+        
+        Rel_Pats_df = pd.merge(Rel_Pats_df,
+                             PV_applications_df,
+                             on='patent_id',
+                             how='inner'
+                             )
+        
+        Rel_Pats_df = Rel_Pats_df[['patent_id' 'gen_patent' 'car_clean_patent' 'car_dirty_patent' 'elec_clean_patent' 'elec_dirty_patent' 'year']]
+        
+        Rel_Pats_df.to_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
         # ----------------------------------------------------------------
 
