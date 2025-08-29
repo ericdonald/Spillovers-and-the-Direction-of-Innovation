@@ -367,7 +367,7 @@ class Processor:
         # ----------------------- #
         IEA_df = pd.read_csv(f'{self.Directory}/Raw Data/IED_RD_Sub.csv')
                               
-        IEA_df = IEA_df[IEA_df["flagcodes"] != "L"]
+        IEA_df = IEA_df[IEA_df["Flag Codes"] != "L"]
         IEA_df = IEA_df.rename(columns={"time": "year"})
         
         IEA_df = IEA_df[["flow", "v6", "year", "value"]]
@@ -427,7 +427,7 @@ class Processor:
         cal_panel_df = pd.merge(cal_panel_df,
                                      EIA_Rev_df,
                                      on='year',
-                                     how='inner'
+                                     how='outer'
                                      )
         
         cal_panel_df['Y_elec'] = cal_panel_df['elec_revenue'] / cal_panel_df['CPI']
@@ -435,7 +435,7 @@ class Processor:
         cal_panel_df = pd.merge(cal_panel_df,
                                      EIA_Q_df,
                                      on='year',
-                                     how='inner'
+                                     how='outer'
                                      )
         
         
@@ -526,7 +526,7 @@ class Processor:
         clim_cal_panel_df = pd.merge(clim_cal_panel_df,
                                      NOAA_df,
                                      on='year',
-                                     how='outer'
+                                     how='left'
                                      )
         
         clim_cal_panel_df.to_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
@@ -581,7 +581,7 @@ class Processor:
         
         cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
         cal_panel['year'] = cal_panel['year'].dt.year
-        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
+        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
         Mom_nu = np.mean(S_θ_nu, 0)
         
         Calibrate_Results.add('Average Income Share for Transport', gpf.clean_round(Mom_nu[0]*100, 1))

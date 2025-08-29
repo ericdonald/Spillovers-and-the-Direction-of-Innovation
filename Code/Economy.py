@@ -94,7 +94,7 @@ class Economy:
         # ---------------- #
         # CES Sector Share #
         # ----------------- #
-        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
+        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
         nu = np.mean(S_θ_nu, 0)
         nu = np.append(nu, 1-np.sum(nu))
         
