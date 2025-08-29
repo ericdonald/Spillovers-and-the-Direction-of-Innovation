@@ -80,9 +80,9 @@ class Economy:
         
         J = 2*self.Θ + 1
         ξ_lf = np.ones(J)
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
-        clim_cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
+        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
         
         # ------------ #
         # Input Prices #
@@ -214,9 +214,9 @@ class Economy:
         "Output Match of 2010s Experience"    
         
         J = 2*self.Θ + 1
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
-        clim_cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
+        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
     
         # ------------------ #
         # Initial Technology #
@@ -319,12 +319,12 @@ class Economy:
         # ----------------- #
         # Outside Emissions #
         # ----------------- #
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
         relEm = np.sum(np.mean(C_ω, 0))
         
-        RICE = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/RICE.dta')
+        RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
         RICE_optEm = RICE.loc[(RICE.year >= self.Year_0 + self.T) & (RICE.year <= self.Year_0 + Periods*self.T), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
         Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
         
@@ -496,12 +496,12 @@ class Economy:
         # ----------------- #
         # Outside Emissions #
         # ----------------- #
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
         relEm = np.sum(np.mean(C_ω, 0))
         
-        RICE = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/RICE.dta')
+        RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
         RICE_optEm = RICE.loc[(RICE.year >= self.Year_0 + self.T) & (RICE.year <= self.Year_0 + Periods*self.T), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
         Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
         

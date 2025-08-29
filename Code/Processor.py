@@ -612,7 +612,7 @@ class Processor:
         # -------------------------------- #
         # Plot Match of Climate Parameters #
         # -------------------------------- #
-        clim_cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
+        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
         
         Em = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
         C_data = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_stock']].to_numpy().reshape(61)
@@ -641,7 +641,7 @@ class Processor:
         
         Calibrate_Results.add('General to General Citation Share', gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
         
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
         S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
         Mom_nu = np.mean(S_θ_nu, 0)
@@ -727,10 +727,10 @@ class Processor:
         # ----------------------- #
         # Compute Citation Shares #
         # ----------------------- #
-        df_cpc = pd.read_stata(f'{self.Directory}/Empirical/Raw Data/cpc_current.dta')
+        df_cpc = pd.read_pickle(f'{self.Directory}/Raw Data/cpc_current.pkl')
         df_cpc = df_cpc[['patent_id', 'subsection_id']]
         
-        df_relevant = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/relevant_patents.dta')
+        df_relevant = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         df_relevant = df_relevant[
             [
                 'patent_id',
@@ -784,7 +784,7 @@ class Processor:
         del df_merged, long_data
         
         
-        df_citations  = pd.read_stata(f'{self.Directory}/Empirical/Raw Data/uspatentcitation.dta')
+        df_citations  = pd.read_pickle(f'{self.Directory}/Raw Data/uspatentcitation.pkl')
         df_citations = df_citations[['patent_id', 'citation_id']]
         
         df_cite_matrix = pd.merge(
@@ -881,7 +881,7 @@ class Processor:
         # -------------- #
         # Empirical Path #
         # -------------- #
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
         
         q_car_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_car_clean']].to_numpy()
@@ -962,7 +962,7 @@ class Processor:
         # ---------------------------- #
         # Derive Hypothetical Policies #
         # ---------------------------- #
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
         
         Y_start = cal_panel.loc[cal_panel.year == self.E.Year_0, ['GDP']].to_numpy()[0,0]
@@ -1468,7 +1468,7 @@ class Processor:
         ρ_h = (1+self.E.ρ_h)**self.E.T - 1
         ρ_l = (1+self.E.ρ_l)**self.E.T - 1
         
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
         
         Y_start = cal_panel.loc[cal_panel.year == self.E.Year_0, ['GDP']].to_numpy()[0,0]
@@ -1792,7 +1792,7 @@ class Processor:
         
         ρ = (1+self.E.ρ_l)**self.E.T - 1
         
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         cal_panel['year'] = cal_panel['year'].dt.year
         
         r_adjust = np.tile(self.E.r.reshape((1,J)), (T_time, 1))
