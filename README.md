@@ -3,12 +3,12 @@
 ## Data Sources:
 
 Below is the list of all data sources required for replication. The first group are those programmatically retrieved via APIs or direct download, and the second group are those contained in the Raw Data folder. The links below are for reference only; a user does not need to visit these sites to extract the data.
-To make use of the API commands, the user will need to make a '.env' file with the following lines:
+To make use of the API commands, the user will need to make a '.keys' file with the following lines:
 
 ```
 #API Keys
-FRED_API = 'XX'
-EIA_API = 'XX'
+FRED_API = XX
+EIA_API = XX
 ```
 
 where XX is the user's API key for the relevant data source.
