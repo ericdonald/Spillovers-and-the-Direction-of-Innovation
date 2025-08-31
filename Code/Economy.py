@@ -184,7 +184,7 @@ class Economy:
         # ----------------- #
         # Spillover Network #
         # ----------------- #
-        self.φ_tilde_0 = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
+        self.φ_tilde_0 = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         
         φ_hatg = self.φ_tilde_0.ravel()
     

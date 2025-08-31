@@ -66,7 +66,7 @@ class Processor:
                                                 "Y02T10/92", "Y02T90/10", "Y02T90/12", "Y02T90/14", "Y02T90/16", "Y02T90/167",
                                                 "Y02T90/40", "Y02T10/62"],
                             ("car",  "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P", "Y02T10/12", "Y02T10/40"]}
-        #Classes follow both CPC and IPC classification, but there is no discordance between CPC and IPC for these classes.
+        #Classes follow both CPC and IPC classifications, but there is no discordance between CPC and IPC for these classes.
         
         self.IED_classes = {("elec", "clean"): ["RENEWABLE", "NUCLEAR", "34BIOFUE"],
                             ("elec", "dirty"): ["21OILGAS", "22COAL"],
@@ -602,8 +602,8 @@ class Processor:
         """""
         Spillover Network Analysis
         
-        Output: Clean Data/citation_shares.pkl
-                Clean Data/citation_shares_applicant.pkl
+        Output: Clean Data/citation_shares.npy
+                Clean Data/citation_shares_applicant.npy
                 Results/Figures/Spillover_Network.png
                 Results/Figures/Clean_Centrality.csv
                 Results/Tables/Disagg_Results.csv
@@ -620,7 +620,7 @@ class Processor:
         
         φ_tilde_0 = gpf.citation_shares(citations_df, relevant_df, self.classes, self.types)
         
-        φ_tilde_0.to_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
+        np.save(f'{self.Directory}/Clean Data/citation_shares.npy', φ_tilde_0)
         
         
         # ----------------------------------------------------------------
@@ -633,7 +633,7 @@ class Processor:
         
         φ_tilde_app = gpf.citation_shares(citations_applicant_df, relevant_df, self.classes, self.types)
         
-        φ_tilde_app.to_pickle(f'{self.Directory}/Clean Data/citation_shares_applicant.pkl')
+        np.save(f'{self.Directory}/Clean Data/citation_shares_applicant.npy', φ_tilde_app)
         
         
         # ----------------------------------------------------------------
@@ -1023,7 +1023,7 @@ class Processor:
         # ------------------------------ #
         φ_hat_low = np.eye(J)
         
-        φtilde_noθ = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
+        φtilde_noθ = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         for θ in range(self.E.Θ):
             φtilde_noθ[2*θ,2*θ] = self.E.φ_tilde_0[2*θ,2*θ] + self.E.φ_tilde_0[2*θ,2*θ+1]
             φtilde_noθ[2*θ,2*θ+1] = 0
@@ -1032,7 +1032,7 @@ class Processor:
             φtilde_noθ[2*θ+1,2*θ+1] = self.E.φ_tilde_0[2*θ+1,2*θ+1] + self.E.φ_tilde_0[2*θ+1,2*θ]
             φtilde_noθ[2*θ+1,2*θ] = 0
                     
-        φtilde_nogen = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
+        φtilde_nogen = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         φtilde_nogen = φtilde_nogen + np.diag(np.append(φtilde_nogen[:-1,-1],0))
         φtilde_nogen[:-1,-1] = np.zeros(J-1)
         
@@ -1225,7 +1225,7 @@ class Processor:
         # --------------------------------------------------- #
         # Spectral Radius for Applicant Only Citation Network #
         # --------------------------------------------------- #
-        φ_tilde_ao = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares_applicant.pkl')
+        φ_tilde_ao = np.load(f'{self.Directory}/Clean Data/citation_shares_applicant.npy')
         
         Abar_ss_ao = ssf.Abar_SS(self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
         Jake_ao = ssf.Jacob(Abar_ss_ao, self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
