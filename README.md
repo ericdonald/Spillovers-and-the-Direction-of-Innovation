@@ -6,7 +6,6 @@ Below is the list of all data sources required for replication. The first group 
 To make use of the API commands, the user will need to make a '.keys' file with the following lines:
 
 ```
-#API Keys
 FRED_API = XX
 EIA_API = XX
 ```
@@ -42,10 +41,16 @@ where XX is the user's API key for the relevant data source.
 - [Congressional Research Service Report IF10479](https://www.congress.gov/crs-product/IF10479)
 
 ## Software Requirements:
-
 ### Python
-
-
+All of the replication codes run on Python `3.11.13`. Prior to running the codes, install the following packages:
+| Package | Version |
+|---------|---------|
+| numpy | 2.2.6 |
+| pandas | 2.3.2 |
+| scipy | 1.16.1 |
+| matplotlib | 3.10.5 |
+| numba | 0.61.2 |
+| quantecon | 0.10.1 |
 
 ## Description of Code:
 
