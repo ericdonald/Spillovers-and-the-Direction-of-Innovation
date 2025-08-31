@@ -33,8 +33,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
-import io
-import zipfile
+import io, sys, zipfile
 from datetime import datetime
 import requests as api
 import importlib.metadata as md
@@ -1880,6 +1879,8 @@ class Processor:
     
     
         ### Write Table
+        print(sys.version)
+        
         with open(filename, "w") as f:
             f.write("| Package | Version |\n")
             f.write("|---------|---------|\n")
