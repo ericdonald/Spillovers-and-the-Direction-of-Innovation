@@ -1,4 +1,4 @@
-# Replication Package for "[Spillovers and the Direction of Innovation](https://www.ericdonald.com/research/spillovers-and-the-direction-of-innovation)"
+# Replication Package <br> [Spillovers and the Direction of Innovation](https://www.ericdonald.com/research/spillovers-and-the-direction-of-innovation)
 
 ## Data Sources:
 
