@@ -3,10 +3,7 @@ Processor Module
 
 Notes: This file defines a class for processing the economy of "Spillovers and the Direction of Innovation".
     
-Output: Results/Figures/Spillover_Network.png
-        Results/Figures/Clean_Centrality.csv
-        Results/Tables/Disagg_Results.csv
-        Results/Figures/2010s_Transition.csv
+Output: Results/Figures/2010s_Transition.csv
         Results/Tables/Tens_Results.csv
         Results/Figures/LinearCompare.csv
         Results/Figures/TechPathBidenlow.csv
@@ -601,68 +598,43 @@ class Processor:
          
         
          
-    def Calibrate(self):
-        """""
-        Calibrate Parameters and Initial Conditions
-        
-        Output: Results/Figures/Carbon_Match.csv
-                Results/Tables/Calibrate_Results.csv
-        """""
-        
-        self.E.Calibrate()
-        Calibrate_Results = gpf.ResultsTable()
-        
-        ω_prop = ((self.E.ω[3]-self.E.ω[1])/self.E.ω[1])*100
-        Calibrate_Results.add('Relative Increase in Elec Carbon Intensity', gpf.clean_round(ω_prop, 1))
-        
-        # -------------------------------- #
-        # Plot Match of Climate Parameters #
-        # -------------------------------- #
-        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
-        
-        Em = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
-        C_data = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_stock']].to_numpy().reshape(61)
-        
-        C1_Start = self.E.C_bar + self.E.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year <= 1960, ['C_em']].to_numpy())
-        C2_start = C_data[0] - C1_Start
-        
-        C1 = np.ones(Em.size)*C1_Start
-        C2 = np.ones(Em.size)*C2_start
-        
-        for t in range(1, Em.size):
-            C1[t] = pf.Perm_Carb(C1[t-1], Em[t], self.E.ψ_p)
-            C2[t] = pf.Tran_Carb(C2[t-1], Em[t], self.E.ψ_p, self.E.ψ_0, self.E.ψ)
-        
-        C = C1 + C2
-            
-        DF_CM = pd.DataFrame(np.hstack((np.arange(1960, 2020+1).reshape((-1,1)), C_data.reshape((-1,1)), C.reshape((-1,1)))), 
-                             columns=['Year', 'Data', 'Model'])
-        DF_CM.to_csv(f'{self.Directory}/Results/Figures/Carbon_Match.csv', index=False)
-        
-        # -------------- #
-        # Record Results #
-        # -------------- #
-        Calibrate_Results.add('Climate Persistence Parameter', gpf.clean_round(self.E.ψ, 3))
-        Calibrate_Results.add('Climate Absorption Parameter', gpf.clean_round(self.E.ψ_0, 3))
-        
-        Calibrate_Results.add('General to General Citation Share', gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
-        
-        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
-        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
-        Mom_nu = np.mean(S_θ_nu, 0)
-        
-        Calibrate_Results.add('Average Income Share for Transport', gpf.clean_round(Mom_nu[0]*100, 1))
-        Calibrate_Results.add('Average Income Share for Electricity', gpf.clean_round(Mom_nu[1]*100, 1))
-        Calibrate_Results.add('CES Share for Transport', gpf.clean_round(self.E.ν[0], 3))
-        Calibrate_Results.add('CES Share for Electricity', gpf.clean_round(self.E.ν[1], 3))
-        
-        Calibrate_Results.to_csv(f'{self.Directory}/Results/Tables/Calibrate_Results.csv')
-        
-    
-    
     def SpillAnalysis(self):
-        "Spillover Network Analysis"
+        """""
+        Spillover Network Analysis
+        
+        Output: Clean Data/citation_shares.pkl
+                Clean Data/citation_shares_applicant.pkl
+                Results/Figures/Spillover_Network.png
+                Results/Figures/Clean_Centrality.csv
+                Results/Tables/Disagg_Results.csv
+        """""
+        
+        # ----------------------------------------------------------------
+
+        # Estimate baseline spillover network.
+
+        # ----------------------------------------------------------------
+        
+        citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        
+        φ_tilde_0 = gpf.citation_shares(citations_df, relevant_df, self.classes, self.types)
+        
+        φ_tilde_0.to_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
+        
+        
+        # ----------------------------------------------------------------
+
+        # Estimate applicant only spillover network.
+
+        # ----------------------------------------------------------------
+        
+        citations_applicant_df = citations_df[citations_df["citation_category"] != "cited by applicant"]
+        
+        φ_tilde_app = gpf.citation_shares(citations_applicant_df, relevant_df, self.classes, self.types)
+        
+        φ_tilde_app.to_pickle(f'{self.Directory}/Clean Data/citation_shares_applicant.pkl')
+        
         
         # ----------------------------------------------------------------
 
@@ -672,7 +644,7 @@ class Processor:
 
         tech_label_list = ['Clean Car', 'Dirty Car', 'Clean Elec', 'Dirty Elec', 'Gen']
         fig, ax = plt.subplots(1,1)
-        img = ax.matshow(self.E.φ_tilde_0[:-1,:])
+        img = ax.matshow(φ_tilde_0[:-1,:])
         ax.set_xticks([0,1,2,3,4])
         ax.set_xticklabels(tech_label_list)
         ax.set_yticks([0,1,2,3])
@@ -733,11 +705,9 @@ class Processor:
         # ----------------------- #
         # Compute Citation Shares #
         # ----------------------- #
-        df_cpc = pd.read_pickle(f'{self.Directory}/Raw Data/cpc_current.pkl')
-        df_cpc = df_cpc[['patent_id', 'subsection_id']]
+        citations_df = citations_df[['patent_id', 'cpc_class']]
         
-        df_relevant = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
-        df_relevant = df_relevant[
+        relevant_df = relevant_df[
             [
                 'patent_id',
                 'gen_patent',
@@ -748,15 +718,14 @@ class Processor:
             ]
         ]
         
-       
         df_tech = pd.merge(
-            df_relevant,
-            df_cpc,
+            relevant_df,
+            citations_df,
             on='patent_id',
             how='inner'
         )
         
-        del df_cpc, df_relevant
+        del citations_df, relevant_df
                 
         # Keep only one observation for each climate patent
         df_clim = df_tech[df_tech['gen_patent'] == 0].drop_duplicates(subset='patent_id', keep='first')
@@ -772,8 +741,8 @@ class Processor:
         long_data = []
         for _, row in df_merged.iterrows():
             if row['gen_patent'] == 1:
-                # Only subsection_id as tech_class
-                long_data.append((row['patent_id'], row['subsection_id'], row['citee_weight']))
+                # Only cpc_class as tech_class
+                long_data.append((row['patent_id'], row['cpc_class'], row['citee_weight']))
             else:
                 # For each of these four flags, add a row if flag == 1
                 if row['car_clean_patent'] == 1:
@@ -791,7 +760,7 @@ class Processor:
         
         
         df_citations  = pd.read_pickle(f'{self.Directory}/Raw Data/uspatentcitation.pkl')
-        df_citations = df_citations[['patent_id', 'citation_id']]
+        df_citations = df_citations[['patent_id', 'citation_patent_id']]
         
         df_cite_matrix = pd.merge(
             df_long,
@@ -802,8 +771,8 @@ class Processor:
             
         del df_citations
         
-        df_cite_matrix = df_cite_matrix[['tech_class', 'citation_id']]
-        df_cite_matrix.rename(columns={'tech_class': 'citer_tech_class', 'citation_id': 'patent_id'}, inplace=True)
+        df_cite_matrix = df_cite_matrix[['tech_class', 'citation_patent_id']]
+        df_cite_matrix.rename(columns={'tech_class': 'citer_tech_class', 'citation_patent_id': 'patent_id'}, inplace=True)
         
         df_cite_matrix = df_cite_matrix.groupby(['citer_tech_class', 'patent_id']).size().reset_index(name='citer_weight')
         
@@ -871,6 +840,66 @@ class Processor:
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Electricity', Cent[3])
         
         Disagg_Results.to_csv(f'{self.Directory}/Results/Tables/Disagg_Results.csv')
+        
+        
+        
+    def Calibrate(self):
+        """""
+        Calibrate Parameters and Initial Conditions
+        
+        Output: Results/Figures/Carbon_Match.csv
+                Results/Tables/Calibrate_Results.csv
+        """""
+        
+        self.E.Calibrate()
+        Calibrate_Results = gpf.ResultsTable()
+        
+        ω_prop = ((self.E.ω[3]-self.E.ω[1])/self.E.ω[1])*100
+        Calibrate_Results.add('Relative Increase in Elec Carbon Intensity', gpf.clean_round(ω_prop, 1))
+        
+        # -------------------------------- #
+        # Plot Match of Climate Parameters #
+        # -------------------------------- #
+        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
+        
+        Em = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
+        C_data = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_stock']].to_numpy().reshape(61)
+        
+        C1_Start = self.E.C_bar + self.E.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year <= 1960, ['C_em']].to_numpy())
+        C2_start = C_data[0] - C1_Start
+        
+        C1 = np.ones(Em.size)*C1_Start
+        C2 = np.ones(Em.size)*C2_start
+        
+        for t in range(1, Em.size):
+            C1[t] = pf.Perm_Carb(C1[t-1], Em[t], self.E.ψ_p)
+            C2[t] = pf.Tran_Carb(C2[t-1], Em[t], self.E.ψ_p, self.E.ψ_0, self.E.ψ)
+        
+        C = C1 + C2
+            
+        DF_CM = pd.DataFrame(np.hstack((np.arange(1960, 2020+1).reshape((-1,1)), C_data.reshape((-1,1)), C.reshape((-1,1)))), 
+                             columns=['Year', 'Data', 'Model'])
+        DF_CM.to_csv(f'{self.Directory}/Results/Figures/Carbon_Match.csv', index=False)
+        
+        # -------------- #
+        # Record Results #
+        # -------------- #
+        Calibrate_Results.add('Climate Persistence Parameter', gpf.clean_round(self.E.ψ, 3))
+        Calibrate_Results.add('Climate Absorption Parameter', gpf.clean_round(self.E.ψ_0, 3))
+        
+        Calibrate_Results.add('General to General Citation Share', gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
+        
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
+        cal_panel['year'] = cal_panel['year'].dt.year
+        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
+        Mom_nu = np.mean(S_θ_nu, 0)
+        
+        Calibrate_Results.add('Average Income Share for Transport', gpf.clean_round(Mom_nu[0]*100, 1))
+        Calibrate_Results.add('Average Income Share for Electricity', gpf.clean_round(Mom_nu[1]*100, 1))
+        Calibrate_Results.add('CES Share for Transport', gpf.clean_round(self.E.ν[0], 3))
+        Calibrate_Results.add('CES Share for Electricity', gpf.clean_round(self.E.ν[1], 3))
+        
+        Calibrate_Results.to_csv(f'{self.Directory}/Results/Tables/Calibrate_Results.csv')
         
         
         
@@ -994,7 +1023,7 @@ class Processor:
         # ------------------------------ #
         φ_hat_low = np.eye(J)
         
-        φtilde_noθ = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
+        φtilde_noθ = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
         for θ in range(self.E.Θ):
             φtilde_noθ[2*θ,2*θ] = self.E.φ_tilde_0[2*θ,2*θ] + self.E.φ_tilde_0[2*θ,2*θ+1]
             φtilde_noθ[2*θ,2*θ+1] = 0
@@ -1003,7 +1032,7 @@ class Processor:
             φtilde_noθ[2*θ+1,2*θ+1] = self.E.φ_tilde_0[2*θ+1,2*θ+1] + self.E.φ_tilde_0[2*θ+1,2*θ]
             φtilde_noθ[2*θ+1,2*θ] = 0
                     
-        φtilde_nogen = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
+        φtilde_nogen = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
         φtilde_nogen = φtilde_nogen + np.diag(np.append(φtilde_nogen[:-1,-1],0))
         φtilde_nogen[:-1,-1] = np.zeros(J-1)
         
@@ -1196,7 +1225,7 @@ class Processor:
         # --------------------------------------------------- #
         # Spectral Radius for Applicant Only Citation Network #
         # --------------------------------------------------- #
-        φ_tilde_ao = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares_applicant.dta').to_numpy()
+        φ_tilde_ao = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares_applicant.pkl')
         
         Abar_ss_ao = ssf.Abar_SS(self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
         Jake_ao = ssf.Jacob(Abar_ss_ao, self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
@@ -1871,14 +1900,18 @@ class Processor:
         filename=f'{self.Directory}/Results/core_versions.txt'
         
         
-        ### Collect Packages
+        # ---------------- #
+        # Collect Packages #
+        # ---------------- #
         rows = []
         for pkg in packages:
             ver = md.version(pkg)
             rows.append((pkg, ver))
     
     
-        ### Write Table
+        # ----------- #
+        # Write Table #
+        # ----------- #
         print(sys.version)
         
         with open(filename, "w") as f:

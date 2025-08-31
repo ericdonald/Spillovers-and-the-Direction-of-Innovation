@@ -81,7 +81,6 @@ class Economy:
         J = 2*self.Θ + 1
         ξ_lf = np.ones(J)
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
         
         # ------------ #
@@ -185,7 +184,7 @@ class Economy:
         # ----------------- #
         # Spillover Network #
         # ----------------- #
-        self.φ_tilde_0 = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
+        self.φ_tilde_0 = pd.read_pickle(f'{self.Directory}/Clean Data/citation_shares.pkl')
         
         φ_hatg = self.φ_tilde_0.ravel()
     

@@ -66,3 +66,47 @@ def Extract_PatentsView(Table):
 
 
 
+def citation_shares(citations_df, relevant_df, classes, types):
+    "Compute Citation Network"
+    
+    # ----------------------- #
+    # Technology Class Labels #
+    # ----------------------- #
+    tech_pairs = [(c, t) for c in classes for t in types]
+    col_labels = [f"{c}_{t}" for (c, t) in tech_pairs] + ["gen"]
+    tech_cols  = [f"{lab}_patent" for lab in col_labels]
+
+
+    # --------------------- #
+    # Process into Matrices #
+    # --------------------- #
+    pid_to_idx = pd.Series(relevant_df.index.values, index=relevant_df['patent_id']).to_dict()
+
+    ci = citations_df['patent_id'].map(pid_to_idx)
+    cj = citations_df['citation_patent_id'].map(pid_to_idx)
+    mask = ci.notna() & cj.notna()
+    if not mask.any():
+        K = len(tech_cols)
+        return np.zeros((K, K), float), col_labels, col_labels
+
+    ci = ci[mask].astype(int).to_numpy()
+    cj = cj[mask].astype(int).to_numpy()
+
+    F = relevant_df[tech_cols].to_numpy(dtype=float, copy=False)
+
+    Fciting = F[ci, :]
+    Fcited  = F[cj, :]
+
+
+    # -------------- #
+    # Compute Shares #
+    # -------------- #
+    counts = Fciting.T @ Fcited  # (K x K)
+
+    row_sums = counts.sum(axis=1, keepdims=True)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        shares = np.divide(counts, row_sums, out=np.zeros_like(counts), where=row_sums > 0)
+
+    return shares, col_labels, col_labels
+
+

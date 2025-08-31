@@ -31,16 +31,16 @@ P = p.Processor(E)
 P.Cleaner()
 
 
-# --------- #
-# Calibrate #
-# --------- #
-P.Calibrate()
-
-
 # -------------------------- #
 # Spillover Network Analysis #
 # -------------------------- #
 P.SpillAnalysis()
+
+
+# --------- #
+# Calibrate #
+# --------- #
+P.Calibrate()
 
 
 # -------------- #
@@ -67,7 +67,9 @@ P.IAM(500, 200)
 P.CES_Spill(500,200,1.25)
 
 
-### Record Package Versions
+# ----------------------- #
+# Record Package Versions #
+# ----------------------- #
 packages = ["numpy", "pandas", "scipy", "matplotlib", "numba", "quantecon"]
 P.write_package_versions(packages)
 
