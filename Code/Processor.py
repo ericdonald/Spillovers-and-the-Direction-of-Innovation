@@ -1871,11 +1871,15 @@ class Processor:
         
         filename=f'{self.Directory}/Results/core_versions.txt'
         
+        
+        ### Collect Packages
         rows = []
         for pkg in packages:
             ver = md.version(pkg)
             rows.append((pkg, ver))
     
+    
+        ### Write Table
         with open(filename, "w") as f:
             f.write("| Package | Version |\n")
             f.write("|---------|---------|\n")

@@ -6,10 +6,10 @@ Notes: Functions that accomplish basic processing for the project.
 """""""""""
 
 import numpy as np
+import pandas as pd
 import requests
 import zipfile
 import io
-import pandas as pd
 
 
 
