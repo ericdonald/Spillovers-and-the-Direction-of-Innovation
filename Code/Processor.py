@@ -1646,7 +1646,7 @@ class Processor:
                 Results/Figures/IAMPolicy_damhigh.csv
                 Results/Figures/TempPathIAM.csv
                 Results/Tables/IAM_Results.csv
-                Results/Tables/Clean_Growth.pkl
+                Results/Clean_Growth.pkl
         """""
         
         J = 2*self.E.Θ + 1
@@ -1984,7 +1984,7 @@ class Processor:
         gc = np.log(A_dischigh_FB_long) - np.log(A_lag)
         df_gc = pd.DataFrame(gc[:,[0,2]])
         df_gc.columns = ['Clean Car Growth', 'Clean Electricity Growth']
-        df_gc.to_pickle(f'{self.Directory}/Results/Tables/Clean_Growth.pkl')
+        df_gc.to_pickle(f'{self.Directory}/Results/Clean_Growth.pkl')
         
         
 
