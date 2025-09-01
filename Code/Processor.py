@@ -14,6 +14,7 @@ import io, sys, zipfile
 from datetime import datetime
 import requests as api
 import importlib.metadata as md
+from itertools import product
 import Production_Functions as pf
 import SteadyState_Functions as ssf
 import Objective_Functions as of
@@ -578,13 +579,14 @@ class Processor:
          
         
          
-    def SpillAnalysis(self):
+    def SpillAnalysis(self, year_start=1970, year_end=2015, tbin=5):
         """""
         Spillover Network Analysis
         
         Output: Clean Data/citation_shares.npy
                 Clean Data/citation_shares_applicant.npy
                 Results/Figures/Spillover_Network.png
+                Results/Tables/Stability_Regressions.txt
                 Results/Figures/Clean_Centrality.csv
                 Results/Tables/Disagg_Results.csv
         """""
@@ -615,6 +617,8 @@ class Processor:
         
         np.save(f'{self.Directory}/Clean Data/citation_shares_applicant.npy', φ_tilde_app)
         
+        del citations_df, citations_applicant_df, relevant_df
+        
         
         # ----------------------------------------------------------------
 
@@ -641,9 +645,160 @@ class Processor:
         # Stability of clean centrality.
 
         # ----------------------------------------------------------------
-
-        spill_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/spillover_stability.dta')
         
+        # ---------------------------------- #
+        # Build Spillover Panel by Time Bins #
+        # ---------------------------------- #
+        tech_labels = [f"{c}_{t}" for c, t in product(self.classes, self.types)] + ["gen"]
+
+        tbins = list(range(year_start, year_end, tbin))
+        def five_year_bin(y):
+            for right in tbins:
+                if (y > right - tbin) and (y <= right):
+                    return right
+            return 0
+       
+        
+        citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        
+        citations_df["t_int"] = citations_df["year"].apply(five_year_bin)
+        citations_df = citations_df[citations_df["t_int"] != 0]
+        
+        citer = citations_df.merge(
+                        relevant_df[
+                            ["patent_id", "gen_patent"]
+                            + [f"{c}_{t}_patent" for c, t in product(self.classes, self.types)]
+                        ]
+                        .rename(columns={"patent_id": "id_citer_patent"})
+                        .rename(
+                            columns={
+                                "gen_patent": "citer_gen_patent",
+                                **{
+                                    f"{c}_{t}_patent": f"citer_{c}_{t}_patent"
+                                    for c, t in product(self.classes, self.types)
+                                },
+                            }
+                        ),
+                        how="inner",
+                        left_on="patent_id",
+                        right_on="id_citer_patent",
+                    )
+        
+        citee = citer.merge(
+                        relevant_df[
+                            ["patent_id", "gen_patent"]
+                            + [f"{c}_{t}_patent" for c, t in product(self.classes, self.types)]
+                        ]
+                        .rename(columns={"patent_id": "id_citee_patent"})
+                        .rename(
+                            columns={
+                                "gen_patent": "citee_gen_patent",
+                                **{
+                                    f"{c}_{t}_patent": f"citee_{c}_{t}_patent"
+                                    for c, t in product(self.classes, self.types)
+                                },
+                            }
+                        ),
+                        how="inner",
+                        left_on="citation_patent_id",
+                        right_on="id_citee_patent",
+                    )
+        
+        def active_labels(row, prefix):
+            labs = []
+            for c, t in product(self.classes, self.types):
+                if row[f"{prefix}_{c}_{t}_patent"] == 1:
+                    labs.append(f"{c}_{t}")
+            if row[f"{prefix}_gen_patent"] == 1:
+                labs.append("gen")
+            return labs
+
+        df = citee.copy()
+        df["citer_list"] = df.apply(lambda r: active_labels(r, "citer"), axis=1)
+        df["citee_list"] = df.apply(lambda r: active_labels(r, "citee"), axis=1)
+    
+        df = df.explode("citer_list").rename(columns={"citer_list": "tech_citer"})
+        df = df.explode("citee_list").rename(columns={"citee_list": "tech_citee"})
+    
+        df = df[["t_int", "tech_citer", "tech_citee"]].copy()
+        
+        tot = df.groupby(["t_int", "tech_citer"], as_index=False).size().rename(columns={"size": "tot_cites"})
+        cites = df.groupby(["t_int", "tech_citer", "tech_citee"], as_index=False).size().rename(columns={"size": "cites"})
+        phi = cites.merge(tot, on=["t_int", "tech_citer"], how="left")
+        phi["phi_tilde"] = phi["cites"] / phi["tot_cites"]
+    
+        all_pairs = pd.MultiIndex.from_product([tbins, tech_labels, tech_labels], names=["t_int", "tech_citer", "tech_citee"])
+        phi = phi.set_index(["t_int", "tech_citer", "tech_citee"]).reindex(all_pairs).reset_index()
+        phi["phi_tilde"] = phi["phi_tilde"].fillna(0.0)
+    
+        phi = phi.sort_values(["tech_citer", "tech_citee", "t_int"]).reset_index(drop=True)
+        phi["phi_lag"] = phi.groupby(["tech_citer", "tech_citee"])["phi_tilde"].shift(1)
+    
+        phi["t_trend"] = phi["t_int"] - 1975
+        phi["clean_sender"] = ((phi["tech_citee"] == "car_clean") | (phi["tech_citee"] == "elec_clean")).astype(int)
+        phi["car_clean_sender"] = (phi["tech_citee"] == "car_clean").astype(int)
+        phi["elec_clean_sender"] = (phi["tech_citee"] == "elec_clean").astype(int)
+        phi["car_clean_trend"] = phi["car_clean_sender"] * phi["t_trend"]
+    
+        spill_panel = phi.dropna(subset=["phi_lag"]).copy()
+        
+        
+        # --------------------- #
+        # Stability Regressions #
+        # --------------------- #
+        cluster_groups = spill_panel["tech_citer"]
+        
+        def run_ols(y, X, cluster):
+            model = sm.OLS(y, X)
+            res = model.fit(cov_type="cluster", cov_kwds={"groups": cluster})
+            return res
+    
+        m1 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag"]], cluster_groups)
+    
+        spill_panel["clean_trend"] = spill_panel["clean_sender"] * spill_panel["t_trend"]
+        m2 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "clean_trend"]], cluster_groups)
+    
+        m3 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_sender"]], cluster_groups)
+    
+        def coef_se(res, name, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
+            b = res.params.get(name, np.nan)
+            se = res.bse.get(name, np.nan)
+            return fmt(b), sefmt(se)
+        
+        b11, se11 = coef_se(m1, "phi_lag")
+        
+        b21, se21 = coef_se(m2, "phi_lag")
+        b22, se22 = coef_se(m2, "clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+
+        b31, se31 = coef_se(m3, "phi_lag")
+        b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.5f}", sefmt=lambda x: f"({x:.4f})")
+        b33, se33 = coef_se(m3, "elec_clean_sender", fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.3f})")
+    
+        r1, r2, r3 = f"{m1.rsquared:.3f}", f"{m2.rsquared:.3f}", f"{m3.rsquared:.3f}"
+        n1, n2, n3 = f"{int(m1.nobs)}", f"{int(m2.nobs)}", f"{int(m3.nobs)}"
+    
+        lines = []
+        lines.append(f"Lagged Spillover Elasticity & {b11} & {b21} & {b31} \\\\")
+        lines.append(f"& {se11} & {se21} & {se31} \\\\[3pt]")
+        lines.append(f"Clean Technology Trend &  & {b22} &  \\\\")
+        lines.append(f"&  & {se22} &  \\\\[3pt]")
+        lines.append(f"Clean Transport Trend &  &  & {b32} \\\\")
+        lines.append(f"&  &  & {se32} \\\\[3pt]")
+        lines.append(f"Clean Electricity Trend &  &  & {b33} \\\\")
+        lines.append(f"&  &  & {se33} \\\\[3pt]")
+        lines.append(f"$R^2$ & {r1} & {r2} & {r3} \\\\")
+        lines.append(f"Obs & {n1} & {n2} & {n3} \\\\")
+    
+        tex_body = "\n".join(lines)
+    
+        with open(f'{self.Directory}/Results/Tables/Stability_Regressions.txt', "w") as f:
+            f.write(tex_body)
+        
+        
+        # --------------------- #
+        # Plot Clean Centrality #
+        # --------------------- #
         citer = spill_panel['tech_citer'].unique()
         citee = spill_panel['tech_citee'].unique()
         years = spill_panel['t_int'].unique()
@@ -685,8 +840,10 @@ class Processor:
         # ----------------------- #
         # Compute Citation Shares #
         # ----------------------- #
-        citations_df = citations_df[['patent_id', 'cpc_class']]
+        cpc_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        cpc_df = cpc_df[['patent_id', 'cpc_class']]
         
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         relevant_df = relevant_df[
             [
                 'patent_id',
@@ -700,12 +857,12 @@ class Processor:
         
         df_tech = pd.merge(
             relevant_df,
-            citations_df,
+            cpc_df,
             on='patent_id',
             how='inner'
         )
         
-        del citations_df, relevant_df
+        del cpc_df, relevant_df
                 
         # Keep only one observation for each climate patent
         df_clim = df_tech[df_tech['gen_patent'] == 0].drop_duplicates(subset='patent_id', keep='first')
