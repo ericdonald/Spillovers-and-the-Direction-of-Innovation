@@ -3,7 +3,6 @@ Production Functions
 
 Notes: Functions that describe the production block of the economy.
     
-Output:
 """""""""""
 
 import numpy as np

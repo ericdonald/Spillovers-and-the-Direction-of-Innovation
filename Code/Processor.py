@@ -2,39 +2,19 @@
 Processor Module
 
 Notes: This file defines a class for processing the economy of "Spillovers and the Direction of Innovation".
-    
-Output: Results/Figures/Spillover_Network.png
-        Results/Figures/Clean_Centrality.csv
-        Results/Tables/Disagg_Results.csv
-        Results/Figures/2010s_Transition.csv
-        Results/Tables/Tens_Results.csv
-        Results/Figures/LinearCompare.csv
-        Results/Figures/TechPathBidenlow.csv
-        Results/Figures/TechPathBidenhigh.csv
-        Results/Figures/BasinsTax.csv
-        Results/Figures/BasinsSub.csv
-        Results/Figures/AmpDeterms.csv
-        Results/Figures/TranDeterms.csv
-        Results/Figures/TranPolicy.csv
-        Results/Tables/PolicyX_Results.csv
-        Results/Figures/IAMPolicy.csv
-        Results/Figures/IAMPolicy_spilllow.csv
-        Results/Figures/IAMPolicy_dischigh.csv
-        Results/Figures/IAMPolicy_damhigh.csv
-        Results/Figures/TempPathIAM.csv
-        Results/Tables/IAM_Results.csv
-        Results/Tables/Clean_Growth.pkl
-        Results/Tables/CES_Results.csv
-        Results/Figures/IAMPolicy_CES.csv
 
 """""""""""
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import statsmodels.api as sm
 from pathlib import Path
-import os
+import io, sys, zipfile
+from datetime import datetime
 import requests as api
+import importlib.metadata as md
+from itertools import product
 import Production_Functions as pf
 import SteadyState_Functions as ssf
 import Objective_Functions as of
@@ -50,98 +30,595 @@ class Processor:
         "Initialize Processor Object"
         
         self.E = E
-        self.Directory = Path(__file__).resolve().parent.parent.parent
-        self.FRED_API = os.getenv("FRED_API")
+        self.Directory = Path(__file__).resolve().parent.parent
+        self.PPM_C = 2.13 #Atmospheric PPM of CO2 to GtC
+        self.CO2_C = 12/44 #CO2 to Carbon Conversion
+        
+        self.classes = ["car", "elec"]
+        self.types = ["clean", "dirty"]
+        
+        self.CPC_classes = {("elec", "clean"): ["Y02E10", "Y02E30", "Y02E60/10", "Y02E60/13", "Y02E60/14", "Y02E60/16", "Y02B10/10"],
+                            ("elec", "dirty"): ["F22", "F23", "F27", "C10J", "F01K", "F02C", "F02G",
+                                                "F02B7", "F02B11", "F02B49", "F25B27/02", "F02B1/12", "F02B1/14",
+                                                "F02B3/06", "F02B3/08", "F02B3/10", "F02B3/12", "F02B13/02", "F02B13/04",
+                                                "B01J8/20", "B01J8/22", "B01J8/24", "B01J8/26", "B01J8/28", "B01J8/30"],
+                            ("car",  "clean"): [ "B60L", "B60K1", "B60K6", "H01M8", "B60W20", "B60W10/08", "B60W10/24",
+                                                "B60W10/26", "B60W10/28", "Y02T10/64", "Y02T10/70", "Y02T10/7072", "Y02T10/72",
+                                                "Y02T10/92", "Y02T90/10", "Y02T90/12", "Y02T90/14", "Y02T90/16", "Y02T90/167",
+                                                "Y02T90/40", "Y02T10/62"],
+                            ("car",  "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P", "Y02T10/12", "Y02T10/40"]}
+        #Classes follow both CPC and IPC classifications, but there is no discordance between CPC and IPC for these classes.
+        
+        self.IED_classes = {("elec", "clean"): ["RENEWABLE", "NUCLEAR", "34BIOFUE"],
+                            ("elec", "dirty"): ["21OILGAS", "22COAL"],
+                            ("car",  "clean"): ["1311VBAT", "1312ADVA", "1314INFR"],
+                            ("car",  "dirty"): ["1313ENGI", "21OILGAS"]}
+        
+        keys_path = self.Directory / ".keys"
+        keys = {}
+        with open(keys_path) as f:
+            for line in f:
+                if "=" in line:
+                    k, v = line.strip().split("=", 1)
+                    keys[k.strip()] = v.strip()
+        
+        self.FRED_API = keys.get("FRED_API")
+        self.EIA_API = keys.get("EIA_API")
+
         
         
-        
-    def Cleaner(self, CPI_year=2012):
+    def Cleaner(self, ind_year=1800, CPI_year=2021):
         """""
         Clean Data
         
-        Output: Raw Data/FRED_CPI.pkl
+        Output: Raw Data/Patent_CPC.pkl
+                Raw Data/Patent_Citations.pkl
+                Clean Data/RICE.pkl
+                Clean Data/relevant_patents.pkl
+                Clean Data/cal_panel.pkl
+                Clean Data/clim_cal_panel.pkl
         """""
    
+    
+        # ----------------------------------------------------------------
+
+        # Unpack data sets.
+
+        # ----------------------------------------------------------------
         
         # -------- #
         # FRED CPI #
         # -------- #
-        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&observation_start=1980-01-01&observation_end=2016-01-01&api_key={self.FRED_API}&file_type=json')
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&api_key={self.FRED_API}&file_type=json')
         data = FRED.json()['observations']
-        filtered_data = [{'date': entry['date'], 'value': entry['value']} for entry in data]
-        CPI_df = pd.DataFrame(filtered_data)
+        filtered_data = [{'year': entry['date'], 'CPI': entry['value']} for entry in data]
+        FRED_CPI_df = pd.DataFrame(filtered_data)
         
-        CPI_df['date'] = pd.to_datetime(CPI_df['date']).dt.year
-        CPI_df.rename(columns={'date': 'year', 'value': 'CPI'}, inplace=True)
-        CPI_df['CPI'] = pd.to_numeric(CPI_df['CPI'], errors='coerce')
-        CPI_df['CPI'] = CPI_df['CPI'] / CPI_df.loc[CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
+        FRED_CPI_df['year'] = pd.to_datetime(FRED_CPI_df['year']).dt.year
+        FRED_CPI_df['CPI'] = pd.to_numeric(FRED_CPI_df['CPI'], errors='coerce')
+        FRED_CPI_df['CPI'] = FRED_CPI_df['CPI'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
+                
         
-        CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
-         
-         
-         
-    def Calibrate(self):
-        """""
-        Calibrate Parameters and Initial Conditions
+        # ------------------------- #
+        # FRED Motor Vehicle Output #
+        # ------------------------- #
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
+        data = FRED.json()['observations']
+        filtered_data = [{'year': entry['date'], 'car_revenue': entry['value']} for entry in data]
+        FRED_VR_df = pd.DataFrame(filtered_data)
         
-        Output: Results/Figures/Carbon_Match.csv
-                Results/Tables/Calibrate_Results.csv
-        """""
+        FRED_VR_df['year'] = pd.to_datetime(FRED_VR_df['year']).dt.year
+        FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce') #Nominal US vehicle revenue in billions of dollars
+                
         
-        self.E.Calibrate()
-        Calibrate_Results = gpf.ResultsTable()
+        # -------- #
+        # FRED GDP #
+        # -------- #
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=GDP&frequency=a&api_key={self.FRED_API}&file_type=json')
+        data = FRED.json()['observations']
+        filtered_data = [{'year': entry['date'], 'GDP': entry['value']} for entry in data]
+        FRED_Y_df = pd.DataFrame(filtered_data)
         
-        ω_prop = ((self.E.ω[3]-self.E.ω[1])/self.E.ω[1])*100
-        Calibrate_Results.add('Relative Increase in Elec Carbon Intensity', gpf.clean_round(ω_prop, 1))
+        FRED_Y_df['year'] = pd.to_datetime(FRED_Y_df['year']).dt.year
+        FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce') #Nominal US GDP in billions of dollars
+                
+        
+        # ----------------------- #
+        # FRED Total R&D Spending #
+        # ----------------------- #
+        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=Y694RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
+        data = FRED.json()['observations']
+        filtered_data = [{'year': entry['date'], 'RD': entry['value']} for entry in data]
+        FRED_RD_df = pd.DataFrame(filtered_data)
+        
+        FRED_RD_df['year'] = pd.to_datetime(FRED_RD_df['year']).dt.year
+        FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce') #Nominal US R&D in billions of dollars
+                
+        
+        # ----------------------- #
+        # EIA Electricity Revenue #
+        # ----------------------- #
+        EIA = api.get(f'https://api.eia.gov/v2/electricity/retail-sales/data/?api_key={self.EIA_API}&frequency=annual&data[0]=revenue&facets[stateid][]=US&facets[sectorid][]=ALL&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
+        data = EIA.json()["response"]["data"]
+        filtered_data = [{'year': entry['period'], 'elec_revenue': entry['revenue']} for entry in data]
+        EIA_Rev_df = pd.DataFrame(filtered_data)
+        
+        EIA_Rev_df['year'] = pd.to_datetime(EIA_Rev_df['year']).dt.year
+        EIA_Rev_df['elec_revenue'] = pd.to_numeric(EIA_Rev_df['elec_revenue'], errors='coerce')
+        
+        EIA_Rev_df['elec_revenue'] = EIA_Rev_df['elec_revenue'] / 1000 #Nominal US electricity revenue in billions of dollars
+        
+        
+        # -------------------------- #
+        # EIA Electricity Quantities #
+        # -------------------------- #
+        EIA = api.get(f'https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?api_key={self.EIA_API}&frequency=annual&data[0]=generation&facets[fueltypeid][]=ALL&facets[fueltypeid][]=FOS&facets[location][]=US&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
+        data = EIA.json()["response"]["data"]
+        filtered_data = [{'year': entry['period'], 'type':entry['fueltypeid'], 'MWh': entry['generation']} for entry in data]
+        EIA_Q_df = pd.DataFrame(filtered_data)
+        
+        EIA_Q_df['year'] = pd.to_datetime(EIA_Q_df['year']).dt.year
+        EIA_Q_df['MWh'] = pd.to_numeric(EIA_Q_df['MWh'], errors='coerce')
+        
+        EIA_Q_df = EIA_Q_df.pivot(index="year", columns="type", values="MWh").reset_index()
+        EIA_Q_df['q_elec_clean'] = 1 - EIA_Q_df['FOS'] / EIA_Q_df['ALL'] #US clean electricity quantity share
+        EIA_Q_df = EIA_Q_df[['year', 'q_elec_clean']]
+                
+        
+        # ---------------------------- #
+        # EPA Greenhouse Gas Inventory #
+        # ---------------------------- #
+        r = api.get("https://www.epa.gov/system/files/other-files/2024-04/executive-summary.zip", headers={"User-Agent": "Mozilla/5.0"})
+        
+        with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+            target = next(p for p in z.namelist() if p.lower().endswith("table es-5.csv"))
+            with z.open(target) as f:
+                EPA_df = pd.read_csv(f, skiprows=1, nrows=8)  
+       
+        EPA_df = EPA_df.set_index(EPA_df.columns[0]).T.reset_index(drop=False)
+        EPA_df = EPA_df.rename(columns={"index": "year",
+                                        "Transportation": "car_C_em",
+                                        "Electric Power Industry": "elec_C_em",
+                                        "Total Gross Emissions (Sources)": "total_C_em"})
+        
+        EPA_df['year'] = pd.to_numeric(EPA_df['year'], errors='coerce')
+        
+        EPA_df['car_C_em'] = EPA_df['car_C_em'] * self.CO2_C / 1000
+        EPA_df['elec_C_em'] = EPA_df['elec_C_em'] * self.CO2_C / 1000
+        EPA_df['total_C_em'] = EPA_df['total_C_em'] * self.CO2_C / 1000
+        #Carbon emissions equivalent in gigatons
+        
+        EPA_df = EPA_df.dropna(subset=["year"])
+        EPA_df = EPA_df[["year", "car_C_em", "elec_C_em", "total_C_em"]]
+        
         
         # -------------------------------- #
-        # Plot Match of Climate Parameters #
+        # OWID Global Industrial Emissions #
         # -------------------------------- #
-        clim_cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
+        OWID_CO2_Ind_df = pd.read_csv("https://ourworldindata.org/grapher/annual-co2-emissions-per-country.csv?v=1&csvType=filtered&useColumnShortNames=true&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
         
-        Em = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
-        C_data = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_stock']].to_numpy().reshape(61)
+        OWID_CO2_Ind_df = OWID_CO2_Ind_df[['Year', 'emissions_total']]
+        OWID_CO2_Ind_df = OWID_CO2_Ind_df.rename(columns={"Year": "year", "emissions_total": "C_em_fossil"})
         
-        C1_Start = self.E.C_bar + self.E.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year <= 1960, ['C_em']].to_numpy())
-        C2_start = C_data[0] - C1_Start
+        OWID_CO2_Ind_df['C_em_fossil'] = OWID_CO2_Ind_df['C_em_fossil'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
+                
         
-        C1 = np.ones(Em.size)*C1_Start
-        C2 = np.ones(Em.size)*C2_start
+        # ------------------------------ #
+        # OWID Global Land-Use Emissions #
+        # ------------------------------ #
+        OWID_CO2_LU_df = pd.read_csv("https://ourworldindata.org/grapher/co2-land-use.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
         
-        for t in range(1, Em.size):
-            C1[t] = pf.Perm_Carb(C1[t-1], Em[t], self.E.ψ_p)
-            C2[t] = pf.Tran_Carb(C2[t-1], Em[t], self.E.ψ_p, self.E.ψ_0, self.E.ψ)
+        OWID_CO2_LU_df = OWID_CO2_LU_df[['Year', 'emissions_from_land_use_change']]
+        OWID_CO2_LU_df = OWID_CO2_LU_df.rename(columns={"Year": "year", "emissions_from_land_use_change": "C_em_LU"})
         
-        C = C1 + C2
-            
-        DF_CM = pd.DataFrame(np.hstack((np.arange(1960, 2020+1).reshape((-1,1)), C_data.reshape((-1,1)), C.reshape((-1,1)))), 
-                             columns=['Year', 'Data', 'Model'])
-        DF_CM.to_csv(f'{self.Directory}/Results/Figures/Carbon_Match.csv', index=False)
+        OWID_CO2_LU_df['C_em_LU'] = OWID_CO2_LU_df['C_em_LU'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
         
-        # -------------- #
-        # Record Results #
-        # -------------- #
-        Calibrate_Results.add('Climate Persistence Parameter', gpf.clean_round(self.E.ψ, 3))
-        Calibrate_Results.add('Climate Absorption Parameter', gpf.clean_round(self.E.ψ_0, 3))
+        #Extrapolate linear trend from 1850–1950 back to 1800
+        fit_slice = OWID_CO2_LU_df[(OWID_CO2_LU_df['year'] >= 1850) & (OWID_CO2_LU_df['year'] <= 1950)].dropna(subset=['C_em_LU'])
+        x = fit_slice['year'].values.astype(float)
+        y = fit_slice['C_em_LU'].values.astype(float)
         
-        Calibrate_Results.add('General to General Citation Share', gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
+        a, b = np.polyfit(x, y, deg=1)
         
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
-        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
-        Mom_nu = np.mean(S_θ_nu, 0)
+        years_back = np.arange(ind_year, 1850)
+        y_hat_back = a * years_back + b
         
-        Calibrate_Results.add('Average Income Share for Transport', gpf.clean_round(Mom_nu[0]*100, 1))
-        Calibrate_Results.add('Average Income Share for Electricity', gpf.clean_round(Mom_nu[1]*100, 1))
-        Calibrate_Results.add('CES Share for Transport', gpf.clean_round(self.E.ν[0], 3))
-        Calibrate_Results.add('CES Share for Electricity', gpf.clean_round(self.E.ν[1], 3))
+        extrap_df = pd.DataFrame({'year': years_back, 'C_em_LU': y_hat_back})
         
-        Calibrate_Results.to_csv(f'{self.Directory}/Results/Tables/Calibrate_Results.csv')
+        have_years = set(OWID_CO2_LU_df['year'])
+        extrap_df = extrap_df[~extrap_df['year'].isin(have_years)]
         
-    
-    
-    def SpillAnalysis(self):
-        "Spillover Network Analysis"
+        OWID_CO2_LU_df = (
+            pd.concat([OWID_CO2_LU_df, extrap_df], ignore_index=True)
+              .sort_values('year')
+              .reset_index(drop=True)
+        )
+           
+        
+        # -------------------------------------- #
+        # NOAA Atmospheric Carbon Concentrations #
+        # -------------------------------------- #
+        NOAA_df = pd.read_csv("https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.csv",
+                              skiprows=43,
+                              usecols=[0, 1])
+        
+        NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
+        NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
+        
+        
+        # --------------------- #
+        # PatentsView CPC Codes #
+        # --------------------- #
+        PV_CPC_df = gpf.Extract_PatentsView('g_cpc_current')
+        
+        PV_CPC_df['patent_id'] = PV_CPC_df['patent_id'].astype(str)
+        
+        PV_CPC_df.to_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        
+        
+        # ------------------------ #
+        # PatentsView Applications #
+        # ------------------------ #
+        PV_applications_df = gpf.Extract_PatentsView('g_application')
+        
+        PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], format="%Y-%m-%d", errors="coerce").dt.year
+        PV_applications_df = PV_applications_df.dropna(subset=["year"])
+        PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
+        PV_applications_df['patent_id'] = PV_applications_df['patent_id'].astype(str)
+        
+        # --------------------- #
+        # PatentsView Citations #
+        # --------------------- #
+        PV_citations_df = gpf.Extract_PatentsView('g_us_patent_citation')
+        
+        PV_citations_df['patent_id'] = PV_citations_df['patent_id'].astype(str)
+        PV_citations_df['citation_patent_id'] = PV_citations_df['citation_patent_id'].astype(str)
+        
+        PV_citations_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        
+        del PV_citations_df
+        
+        
+        # ------------------------------------------- #
+        # Transportation Energy Data Book: Table 6.02 #
+        # ------------------------------------------- #
+        url = "https://tedb.ornl.gov/wp-content/uploads/2022/06/Table6_02_06012022.xlsx"
+
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = api.get(url, headers=headers)
+        
+        TEDB_df = pd.read_excel(io.BytesIO(r.content),
+                                sheet_name="TEDB Edition 40",
+                                header=0,        
+                                usecols="B:I",   
+                                skiprows=7,      
+                                nrows=24         
+                            )
+        
+        TEDB_df = TEDB_df.rename(columns={
+                    "Calendar year": "year",
+                    "All light vehicle sales (thousands)": "Q_car" #Light vehicle quantity in thousands
+                })
+        
+        TEDB_df['Hybrid vehicle sales (thousands)'] = pd.to_numeric(TEDB_df['Hybrid vehicle sales (thousands)'], errors='coerce')
+        TEDB_df = TEDB_df.dropna(subset=["year"])
+        
+        TEDB_df["Q_car_clean"] = (
+                        TEDB_df["Hybrid vehicle sales (thousands)"].fillna(0)
+                      + TEDB_df["Plug-in hybrid vehicle sales (thousands)"].fillna(0)
+                      + TEDB_df["All-electric vehicle sales (thousands)"].fillna(0)
+                    ) #US clean vehicle quantity in thousands
+        
+        TEDB_df["q_car_clean"] = (
+                        TEDB_df["Hybrid share of all light vehicles"].fillna(0)
+                      + TEDB_df["Plug-in hybrid share of \nall light vehicles"].fillna(0)
+                      + TEDB_df["All-electric share of all light vehicles"].fillna(0)
+                    ) #US clean vehicle quantity share
+        
+        TEDB_df = TEDB_df[["year", "Q_car", "Q_car_clean", "q_car_clean"]]
+        
+        
+        # --------- #
+        # 2010 RICE #
+        # --------- #
+        RICE_df = pd.read_excel(f'{self.Directory}/Raw Data/RICE.xlsx', sheet_name="Results", header=0)
+        
+        RICE_df["year"] = pd.to_numeric(RICE_df["year"], errors="coerce").astype("Int64")
+        
+        needed_years = [2010, 3000]
+        have = set(RICE_df["year"].dropna().tolist())
+        to_add = [y for y in needed_years if y not in have]
+        
+        if to_add:
+            add_df = pd.DataFrame({"year": to_add})
+            RICE_df = pd.concat([RICE_df, add_df], ignore_index=True)
+                
+        RICE_df = RICE_df.sort_values("year")
+        
+        yr_min, yr_max = int(RICE_df["year"].min()), int(RICE_df["year"].max())
+        full_years = pd.Index(range(yr_min, yr_max + 1), name="year")
+        RICE_df = RICE_df.set_index("year").reindex(full_years).reset_index()
+        
+        em_cols = [
+            "Optimal_Global_Em",
+            "Optimal_US_Em",
+            "Baseline_Global_Em",
+            "Baseline_US_Em",
+        ] #Carbon emissions in gigatons
+        
+        for c in em_cols:
+            if c in RICE_df.columns:
+                RICE_df[c] = pd.to_numeric(RICE_df[c], errors="coerce")
+                RICE_df.loc[RICE_df["year"] > 2595, c] = 0.0
+        
+        RICE_df[em_cols] = RICE_df[em_cols].interpolate(
+            method="linear", limit_direction="both", axis=0
+        )
+        
+        RICE_df.to_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
+                
+        
+        # ----------------------- #
+        # IEA Public R&D Spending #
+        # ----------------------- #
+        IEA_df = pd.read_csv(f'{self.Directory}/Raw Data/IED_RD_Sub.csv')
+                              
+        IEA_df = IEA_df[IEA_df["Flag Codes"] != "L"]
+        IEA_df = IEA_df.rename(columns={"Time": "year"})
+        
+        IEA_df = IEA_df[["FLOW", "year", "Value"]]
+        
+        for c in self.classes:
+            for t in self.types:
+                col = f"{c}_{t}"
+                codes = self.IED_classes[(c, t)]
+                IEA_df[col] = IEA_df["FLOW"].isin(codes).astype(float)
+        
+        IEA_df.loc[IEA_df["FLOW"] == "34BIOFUE", "elec_clean"] = -1.0
+        IEA_df.loc[IEA_df["FLOW"] == "21OILGAS", "elec_dirty"] = 0.5
+        IEA_df.loc[IEA_df["FLOW"] == "21OILGAS", "car_dirty"] = 0.5
+        
+        for c in self.classes:
+            for t in self.types:
+                flag_col = f"{c}_{t}"
+                spend_col = f"{c}_{t}_class_spend"
+                out_col = f"{c}_{t}_RD_sub"
+                IEA_df[spend_col] = IEA_df["Value"] * IEA_df[flag_col]
+                IEA_df[out_col] = IEA_df.groupby("year")[spend_col].transform("sum") / 1000 #Nominal public R&D expenditures in billions of dollars
+        
+        rd_cols = [f"{c}_{t}_RD_sub" for c in self.classes for t in self.types]
+        IEA_df = IEA_df[["year"] + rd_cols].drop_duplicates().sort_values("year").reset_index(drop=True)
+        
+        
+        # -------------------------------------- #
+        # Congressional Research Service Reports #
+        # -------------------------------------- #
+        CRS_data = {"year": [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021],
+                    "car_clean_sub": [0.1, 0.2, 0.4, 0.2, 0.2, 0.3, 0.8, 1.2, 1.5, 1.7, 1.7],
+                    "elec_clean_sub": [0.5, 0.5, 0.5, 0.6, 1.2, 2.5, 1.9, 2.8, 3.5, 6.8, 7.6]
+                    } #Manually enter
+        
+        CRS_df = pd.DataFrame(CRS_data) #Nominal tax credit expenditures in billions of dollars
+
+
+        # ----------------------------------------------------------------
+
+        # Label patent technology classes.
+
+        # ----------------------------------------------------------------
+        
+        Rel_Pats_df = PV_CPC_df.copy()
+        
+        Rel_Pats_df["cpc_group5"] = Rel_Pats_df["cpc_group"].str[:5]
+        Rel_Pats_df["cpc_group6"] = Rel_Pats_df["cpc_group"].str[:6]
+        Rel_Pats_df["gen_patent"] = 1
+        
+        for c in self.classes:
+            for t in self.types:
+                col = f"{c}_{t}"
+                codes = set(self.CPC_classes[(c, t)])
+                Rel_Pats_df[col] = (Rel_Pats_df["cpc_class"].isin(codes)
+                                | Rel_Pats_df["cpc_subclass"].isin(codes)
+                                | Rel_Pats_df["cpc_group"].isin(codes)
+                                | Rel_Pats_df["cpc_group5"].isin(codes)
+                                | Rel_Pats_df["cpc_group6"].isin(codes)).astype(np.int8)
+                
+                col_pat = f"{c}_{t}_patent"
+                Rel_Pats_df[col_pat] = Rel_Pats_df.groupby("patent_id")[col].transform("max")
+                Rel_Pats_df.loc[Rel_Pats_df[col_pat] == 1, "gen_patent"] = 0
+                
+        Rel_Pats_df = Rel_Pats_df.drop_duplicates(subset='patent_id', keep='first')
+        
+        Rel_Pats_df = pd.merge(Rel_Pats_df,
+                             PV_applications_df,
+                             on='patent_id',
+                             how='inner'
+                             )
+        
+        Rel_Pats_df = Rel_Pats_df[['patent_id', 'gen_patent', 'car_clean_patent', 'car_dirty_patent', 'elec_clean_patent', 'elec_dirty_patent', 'year']]
+        
+        Rel_Pats_df.to_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        
+        
+        # ----------------------------------------------------------------
+
+        # Create panel of calibration moments.
+
+        # ----------------------------------------------------------------
+        
+        cal_panel_df = FRED_CPI_df.copy()
+
+        
+        # ----------- #
+        # Electricity #
+        # ----------- #
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     EIA_Rev_df,
+                                     on='year',
+                                     how='outer'
+                                     )
+        
+        cal_panel_df['Y_elec'] = cal_panel_df['elec_revenue'] / cal_panel_df['CPI']
+        
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     EIA_Q_df,
+                                     on='year',
+                                     how='outer'
+                                     )
+        
+        
+        # --------- #
+        # Transport #
+        # --------- #
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     FRED_VR_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        cal_panel_df['Y_car'] = cal_panel_df['car_revenue'] / cal_panel_df['CPI']
+        
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     TEDB_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        
+        # ------------ #
+        # Final Output #
+        # ------------ #
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     FRED_Y_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        cal_panel_df['GDP'] = cal_panel_df['GDP'] / cal_panel_df['CPI']
+        cal_panel_df['S_elec'] = cal_panel_df['Y_elec'] / cal_panel_df['GDP']
+        cal_panel_df['S_car'] = cal_panel_df['Y_car'] / cal_panel_df['GDP']
+        
+        
+        # --------- #
+        # Total R&D #
+        # --------- #
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     FRED_RD_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        cal_panel_df['RD'] = cal_panel_df['RD'] / cal_panel_df['CPI']
+        
+        
+        # ------------------ #
+        # Sectoral Emissions #
+        # ------------------ #
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     EPA_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        cal_panel_df['elec_C_relem'] = cal_panel_df['elec_C_em'] / cal_panel_df['total_C_em']
+        cal_panel_df['car_C_relem'] = cal_panel_df['car_C_em'] / cal_panel_df['total_C_em']
+        
+        
+        # -------------------- #
+        # Status Quo Subsidies #
+        # -------------------- #
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     CRS_df,
+                                     on='year',
+                                     how='outer'
+                                     )
+        
+        cal_panel_df['elec_clean_sub'] = cal_panel_df['elec_clean_sub'] / cal_panel_df['CPI']
+        cal_panel_df['elec_clean_relsub'] = cal_panel_df['elec_clean_sub'] / cal_panel_df['Y_elec']
+        
+        cal_panel_df['car_clean_sub'] = cal_panel_df['car_clean_sub'] / cal_panel_df['CPI']
+        cal_panel_df['car_clean_relsub'] = cal_panel_df['car_clean_sub'] / cal_panel_df['Y_car']
+        
+        
+        cal_panel_df = pd.merge(cal_panel_df,
+                                     IEA_df,
+                                     on='year',
+                                     how='outer'
+                                     )
+        
+        for c in self.classes:
+            for t in self.types:
+                cal_panel_df[f"{c}_{t}_RD_sub"] = cal_panel_df[f"{c}_{t}_RD_sub"] / cal_panel_df['CPI']
+                cal_panel_df[f"{c}_{t}_RD_relsub"] = cal_panel_df[f"{c}_{t}_RD_sub"] / cal_panel_df["RD"] 
+                
+        
+        cal_panel_df.to_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
+        
+        
+        # ----------------------------------------------------------------
+
+        # Create carbon emissions and atmospheric concentrations series.
+
+        # ----------------------------------------------------------------
+        
+        clim_cal_panel_df = pd.merge(OWID_CO2_Ind_df,
+                                     OWID_CO2_LU_df,
+                                     on='year',
+                                     how='inner'
+                                     )
+        
+        clim_cal_panel_df['C_em'] = clim_cal_panel_df['C_em_fossil'] + clim_cal_panel_df['C_em_LU']
+        
+        clim_cal_panel_df = pd.merge(clim_cal_panel_df,
+                                     NOAA_df,
+                                     on='year',
+                                     how='left'
+                                     )
+        
+        clim_cal_panel_df.to_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
+         
+        
+         
+    def SpillAnalysis(self, year_start=1970, year_end=2015, tbin=5):
+        """""
+        Spillover Network Analysis
+        
+        Output: Clean Data/citation_shares.npy
+                Clean Data/citation_shares_applicant.npy
+                Results/Figures/Spillover_Network.png
+                Results/Tables/Stability_Regressions.txt
+                Results/Figures/Clean_Centrality.csv
+                Results/Tables/Disagg_Results.csv
+        """""
+        
+        # ----------------------------------------------------------------
+
+        # Estimate baseline spillover network.
+
+        # ----------------------------------------------------------------
+        
+        citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        
+        φ_tilde_0 = gpf.citation_shares(citations_df, relevant_df, self.classes, self.types)
+        
+        np.save(f'{self.Directory}/Clean Data/citation_shares.npy', φ_tilde_0)
+        
+        
+        # ----------------------------------------------------------------
+
+        # Estimate applicant only spillover network.
+
+        # ----------------------------------------------------------------
+        
+        citations_applicant_df = citations_df[citations_df["citation_category"] != "cited by applicant"]
+        
+        φ_tilde_app = gpf.citation_shares(citations_applicant_df, relevant_df, self.classes, self.types)
+        
+        np.save(f'{self.Directory}/Clean Data/citation_shares_applicant.npy', φ_tilde_app)
+        
+        del citations_df, citations_applicant_df, relevant_df
+        
         
         # ----------------------------------------------------------------
 
@@ -151,7 +628,7 @@ class Processor:
 
         tech_label_list = ['Clean Car', 'Dirty Car', 'Clean Elec', 'Dirty Elec', 'Gen']
         fig, ax = plt.subplots(1,1)
-        img = ax.matshow(self.E.φ_tilde_0[:-1,:])
+        img = ax.matshow(φ_tilde_0[:-1,:])
         ax.set_xticks([0,1,2,3,4])
         ax.set_xticklabels(tech_label_list)
         ax.set_yticks([0,1,2,3])
@@ -168,9 +645,165 @@ class Processor:
         # Stability of clean centrality.
 
         # ----------------------------------------------------------------
-
-        spill_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/spillover_stability.dta')
         
+        # ---------------------------------- #
+        # Build Spillover Panel by Time Bins #
+        # ---------------------------------- #
+        tech_labels = [f"{c}_{t}" for c, t in product(self.classes, self.types)] + ["gen"]
+
+        tbins = list(range(year_start, year_end, tbin))
+        def five_year_bin(y):
+            for right in tbins:
+                if (y > right - tbin) and (y <= right):
+                    return right
+            return 0
+       
+        
+        citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        
+        citer_df = citations_df.merge(
+                        relevant_df[
+                            ["patent_id", "year", "gen_patent"]
+                            + [f"{c}_{t}_patent" for c, t in product(self.classes, self.types)]
+                        ]
+                        .rename(columns={"patent_id": "id_citer_patent"})
+                        .rename(
+                            columns={
+                                "gen_patent": "citer_gen_patent",
+                                **{
+                                    f"{c}_{t}_patent": f"citer_{c}_{t}_patent"
+                                    for c, t in product(self.classes, self.types)
+                                },
+                            }
+                        ),
+                        how="inner",
+                        left_on="patent_id",
+                        right_on="id_citer_patent",
+                    )
+        
+        citer_df["t_int"] = citer_df["year"].apply(five_year_bin)
+        citer_df = citer_df[citer_df["t_int"] != 0]
+        
+        citee_df = citer_df.merge(
+                        relevant_df[
+                            ["patent_id", "gen_patent"]
+                            + [f"{c}_{t}_patent" for c, t in product(self.classes, self.types)]
+                        ]
+                        .rename(columns={"patent_id": "id_citee_patent"})
+                        .rename(
+                            columns={
+                                "gen_patent": "citee_gen_patent",
+                                **{
+                                    f"{c}_{t}_patent": f"citee_{c}_{t}_patent"
+                                    for c, t in product(self.classes, self.types)
+                                },
+                            }
+                        ),
+                        how="inner",
+                        left_on="citation_patent_id",
+                        right_on="id_citee_patent",
+                    )
+        del citations_df, relevant_df, citer_df
+        
+        def active_labels(row, prefix):
+            labs = []
+            for c, t in product(self.classes, self.types):
+                if row[f"{prefix}_{c}_{t}_patent"] == 1:
+                    labs.append(f"{c}_{t}")
+            if row[f"{prefix}_gen_patent"] == 1:
+                labs.append("gen")
+            return labs
+
+        citee_df["citer_list"] = citee_df.apply(lambda r: active_labels(r, "citer"), axis=1)
+        citee_df["citee_list"] = citee_df.apply(lambda r: active_labels(r, "citee"), axis=1)
+    
+        citee_df = citee_df.explode("citer_list").rename(columns={"citer_list": "tech_citer"})
+        citee_df = citee_df.explode("citee_list").rename(columns={"citee_list": "tech_citee"})
+    
+        citee_df = citee_df[["t_int", "tech_citer", "tech_citee"]]
+        
+        tot = citee_df.groupby(["t_int", "tech_citer"], as_index=False).size().rename(columns={"size": "tot_cites"})
+        cites = citee_df.groupby(["t_int", "tech_citer", "tech_citee"], as_index=False).size().rename(columns={"size": "cites"})
+        phi = cites.merge(tot, on=["t_int", "tech_citer"], how="left")
+        
+        del citee_df, tot, cites
+        
+        phi["phi_tilde"] = phi["cites"] / phi["tot_cites"]
+    
+        all_pairs = pd.MultiIndex.from_product([tbins, tech_labels, tech_labels], names=["t_int", "tech_citer", "tech_citee"])
+        phi = phi.set_index(["t_int", "tech_citer", "tech_citee"]).reindex(all_pairs).reset_index()
+        phi["phi_tilde"] = phi["phi_tilde"].fillna(0.0)
+    
+        phi = phi.sort_values(["tech_citer", "tech_citee", "t_int"]).reset_index(drop=True)
+        phi["phi_lag"] = phi.groupby(["tech_citer", "tech_citee"])["phi_tilde"].shift(1)
+    
+        phi["t_trend"] = phi["t_int"] - (year_start + tbin)
+        phi["clean_sender"] = ((phi["tech_citee"] == "car_clean") | (phi["tech_citee"] == "elec_clean")).astype(int)
+        phi["car_clean_sender"] = (phi["tech_citee"] == "car_clean").astype(int)
+        phi["elec_clean_sender"] = (phi["tech_citee"] == "elec_clean").astype(int)
+        
+        phi["clean_trend"] = phi["clean_sender"] * phi["t_trend"]
+        phi["car_clean_trend"] = phi["car_clean_sender"] * phi["t_trend"]
+        phi["elec_clean_trend"] = phi["elec_clean_sender"] * phi["t_trend"]
+    
+        spill_panel = phi.dropna(subset=["phi_lag"]).copy()
+        
+        
+        # --------------------- #
+        # Stability Regressions #
+        # --------------------- #
+        cluster_groups = spill_panel["tech_citer"]
+        
+        def run_ols(y, X, cluster):
+            model = sm.OLS(y, X)
+            res = model.fit(cov_type="cluster", cov_kwds={"groups": cluster})
+            return res
+    
+        m1 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag"]], cluster_groups)
+    
+        m2 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "clean_trend"]], cluster_groups)
+    
+        m3 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_trend"]], cluster_groups)
+    
+        def coef_se(res, name, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
+            b = res.params.get(name, np.nan)
+            se = res.bse.get(name, np.nan)
+            return fmt(b), sefmt(se)
+        
+        b11, se11 = coef_se(m1, "phi_lag")
+        
+        b21, se21 = coef_se(m2, "phi_lag")
+        b22, se22 = coef_se(m2, "clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+
+        b31, se31 = coef_se(m3, "phi_lag")
+        b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+        b33, se33 = coef_se(m3, "elec_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+    
+        r1, r2, r3 = f"{m1.rsquared:.3f}", f"{m2.rsquared:.3f}", f"{m3.rsquared:.3f}"
+        n1, n2, n3 = f"{int(m1.nobs)}", f"{int(m2.nobs)}", f"{int(m3.nobs)}"
+    
+        lines = []
+        lines.append(f"Lagged Spillover Elasticity & {b11} & {b21} & {b31} \\\\")
+        lines.append(f"& {se11} & {se21} & {se31} \\\\[3pt]")
+        lines.append(f"Clean Technology Trend &  & {b22} &  \\\\")
+        lines.append(f"&  & {se22} &  \\\\[3pt]")
+        lines.append(f"Clean Transport Trend &  &  & {b32} \\\\")
+        lines.append(f"&  &  & {se32} \\\\[3pt]")
+        lines.append(f"Clean Electricity Trend &  &  & {b33} \\\\")
+        lines.append(f"&  &  & {se33} \\\\[3pt]")
+        lines.append(f"$R^2$ & {r1} & {r2} & {r3} \\\\")
+        lines.append(f"Obs & {n1} & {n2} & {n3}")
+    
+        tex_body = "\n".join(lines)
+    
+        with open(f'{self.Directory}/Results/Tables/Stability_Regressions.tex', "w") as f:
+            f.write(tex_body)
+        
+        
+        # --------------------- #
+        # Plot Clean Centrality #
+        # --------------------- #
         citer = spill_panel['tech_citer'].unique()
         citee = spill_panel['tech_citee'].unique()
         years = spill_panel['t_int'].unique()
@@ -185,7 +818,7 @@ class Processor:
             r_idx = citer_index[row['tech_citer']]
             s_idx = citee_index[row['tech_citee']]
             y_idx = year_index[row['t_int']]
-            φ_tilde_t[r_idx, s_idx, y_idx] = row['φ_tilde']
+            φ_tilde_t[r_idx, s_idx, y_idx] = row['phi_tilde']
             
         clean_centrality = np.zeros((φ_tilde_t.shape[2], 2))
         for t in range(φ_tilde_t.shape[2]):
@@ -209,14 +842,15 @@ class Processor:
         
         Disagg_Results = gpf.ResultsTable()
         
+        
         # ----------------------- #
         # Compute Citation Shares #
         # ----------------------- #
-        df_cpc = pd.read_stata(f'{self.Directory}/Empirical/Raw Data/cpc_current.dta')
-        df_cpc = df_cpc[['patent_id', 'subsection_id']]
+        cpc_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        cpc_df = cpc_df[['patent_id', 'cpc_class']]
         
-        df_relevant = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/relevant_patents.dta')
-        df_relevant = df_relevant[
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        relevant_df = relevant_df[
             [
                 'patent_id',
                 'gen_patent',
@@ -227,34 +861,29 @@ class Processor:
             ]
         ]
         
-       
         df_tech = pd.merge(
-            df_relevant,
-            df_cpc,
+            relevant_df,
+            cpc_df,
             on='patent_id',
             how='inner'
         )
         
-        del df_cpc, df_relevant
+        del cpc_df, relevant_df
                 
-        # Keep only one observation for each climate patent
         df_clim = df_tech[df_tech['gen_patent'] == 0].drop_duplicates(subset='patent_id', keep='first')
         df_gen = df_tech[df_tech['gen_patent'] == 1]
         df_merged = pd.concat([df_clim, df_gen], ignore_index=True)
         
         del df_tech, df_clim, df_gen
         
-        # Weight general patents for consistency with base case
         df_merged['citee_weight'] = 1 / df_merged.groupby('patent_id')['patent_id'].transform('count')
         
      
         long_data = []
         for _, row in df_merged.iterrows():
             if row['gen_patent'] == 1:
-                # Only subsection_id as tech_class
-                long_data.append((row['patent_id'], row['subsection_id'], row['citee_weight']))
+                long_data.append((row['patent_id'], row['cpc_class'], row['citee_weight']))
             else:
-                # For each of these four flags, add a row if flag == 1
                 if row['car_clean_patent'] == 1:
                     long_data.append((row['patent_id'], 'car_clean_patent', row['citee_weight']))
                 if row['car_dirty_patent'] == 1:
@@ -269,8 +898,8 @@ class Processor:
         del df_merged, long_data
         
         
-        df_citations  = pd.read_stata(f'{self.Directory}/Empirical/Raw Data/uspatentcitation.dta')
-        df_citations = df_citations[['patent_id', 'citation_id']]
+        df_citations  = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        df_citations = df_citations[['patent_id', 'citation_patent_id']]
         
         df_cite_matrix = pd.merge(
             df_long,
@@ -281,8 +910,8 @@ class Processor:
             
         del df_citations
         
-        df_cite_matrix = df_cite_matrix[['tech_class', 'citation_id']]
-        df_cite_matrix.rename(columns={'tech_class': 'citer_tech_class', 'citation_id': 'patent_id'}, inplace=True)
+        df_cite_matrix = df_cite_matrix[['tech_class', 'citation_patent_id']]
+        df_cite_matrix.rename(columns={'tech_class': 'citer_tech_class', 'citation_patent_id': 'patent_id'}, inplace=True)
         
         df_cite_matrix = df_cite_matrix.groupby(['citer_tech_class', 'patent_id']).size().reset_index(name='citer_weight')
         
@@ -353,24 +982,92 @@ class Processor:
         
         
         
+    def Calibrate(self):
+        """""
+        Calibrate Parameters and Initial Conditions
+        
+        Output: Results/Figures/Carbon_Match.csv
+                Results/Tables/Calibrate_Results.csv
+        """""
+        
+        self.E.Calibrate()
+        Calibrate_Results = gpf.ResultsTable()
+        
+        ω_prop = ((self.E.ω[3]-self.E.ω[1])/self.E.ω[1])*100
+        Calibrate_Results.add('Relative Increase in Elec Carbon Intensity', gpf.clean_round(ω_prop, 1))
+        
+        
+        # -------------------------------- #
+        # Plot Match of Climate Parameters #
+        # -------------------------------- #
+        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
+        
+        Em = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_em']].to_numpy().reshape(61)
+        C_data = clim_cal_panel.loc[(clim_cal_panel.year >= 1960) & (clim_cal_panel.year <= 2020), ['C_stock']].to_numpy().reshape(61)
+        
+        C1_Start = self.E.C_bar + self.E.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year <= 1960, ['C_em']].to_numpy())
+        C2_start = C_data[0] - C1_Start
+        
+        C1 = np.ones(Em.size)*C1_Start
+        C2 = np.ones(Em.size)*C2_start
+        
+        for t in range(1, Em.size):
+            C1[t] = pf.Perm_Carb(C1[t-1], Em[t], self.E.ψ_p)
+            C2[t] = pf.Tran_Carb(C2[t-1], Em[t], self.E.ψ_p, self.E.ψ_0, self.E.ψ)
+        
+        C = C1 + C2
+            
+        DF_CM = pd.DataFrame(np.hstack((np.arange(1960, 2020+1).reshape((-1,1)), C_data.reshape((-1,1)), C.reshape((-1,1)))), 
+                             columns=['Year', 'Data', 'Model'])
+        DF_CM.to_csv(f'{self.Directory}/Results/Figures/Carbon_Match.csv', index=False)
+        
+        
+        # -------------- #
+        # Record Results #
+        # -------------- #
+        Calibrate_Results.add('Climate Persistence Parameter', gpf.clean_round(self.E.ψ, 3))
+        Calibrate_Results.add('Climate Absorption Parameter', gpf.clean_round(self.E.ψ_0, 3))
+        
+        Calibrate_Results.add('General to General Citation Share', gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
+        
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
+        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
+        Mom_nu = np.mean(S_θ_nu, 0)
+        
+        Calibrate_Results.add('Average Income Share for Transport', gpf.clean_round(Mom_nu[0]*100, 1))
+        Calibrate_Results.add('Average Income Share for Electricity', gpf.clean_round(Mom_nu[1]*100, 1))
+        Calibrate_Results.add('CES Share for Transport', gpf.clean_round(self.E.ν[0], 3))
+        Calibrate_Results.add('CES Share for Electricity', gpf.clean_round(self.E.ν[1], 3))
+        
+        Calibrate_Results.to_csv(f'{self.Directory}/Results/Tables/Calibrate_Results.csv')
+        
+        
+        
     def TensGraph(self, Year_start, Year_end):
-        "Graph Match of 2010s Experience"
+        """""
+        Graph Match of 2010s Experience
+        
+        Output: Results/Figures/2010s_Transition.csv
+                Results/Tables/Tens_Results.csv
+        """""
         
         Tens_Results = gpf.ResultsTable()
+        
         
         # ---------------------- #
         # Derive Simulated Paths #
         # ---------------------- #
         (q_θc, q_θc_low, A_start, ξ_0, ξ_0low) = self.E.TensMatch(Year_start, Year_end)
         
+        
         # -------------- #
         # Empirical Path #
         # -------------- #
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         
         q_car_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_car_clean']].to_numpy()
         q_elec_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_elec_clean']].to_numpy()
+        
         
         # ------------------------------- #
         # Plot Quantity Share Predictions #
@@ -400,6 +1097,7 @@ class Processor:
         Abar_ss_low = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_0low, self.E.Θ, self.E.o)
         Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
         κ_low = np.linalg.eig(Jake_low)[0]
+        
         
         # -------------- #
         # Record Results #
@@ -434,7 +1132,19 @@ class Processor:
         
         
     def PolicyExperiments(self, T_time):
-        "Processing of Policy Experiments"
+        """""
+        Processing of Policy Experiments
+    
+        Output: Results/Figures/LinearCompare.csv
+                Results/Figures/TechPathBidenlow.csv
+                Results/Figures/TechPathBidenhigh.csv
+                Results/Figures/BasinsTax.csv
+                Results/Figures/BasinsSub.csv
+                Results/Figures/AmpDeterms.csv
+                Results/Figures/TranDeterms.csv
+                Results/Figures/TranPolicy.csv
+                Results/Tables/PolicyX_Results.csv
+        """""
         
         J = 2*self.E.Θ + 1
         X = ssf.X_mat(self.E.Θ)
@@ -447,16 +1157,15 @@ class Processor:
         # ---------------------------- #
         # Derive Hypothetical Policies #
         # ---------------------------- #
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         
         Y_start = cal_panel.loc[cal_panel.year == self.E.Year_0, ['GDP']].to_numpy()[0,0]
         
         τ_biden_dollar_low = 51
         τ_biden_dollar_high = 190
         
-        τ_biden_low = (self.E.Y0 / Y_start) * τ_biden_dollar_low * (44/12)
-        τ_biden_high = (self.E.Y0 / Y_start) * τ_biden_dollar_high * (44/12)
+        τ_biden_low = (self.E.Y0 / Y_start) * τ_biden_dollar_low * (self.CO2_C**(-1))
+        τ_biden_high = (self.E.Y0 / Y_start) * τ_biden_dollar_high * (self.CO2_C**(-1))
         
         r_tilde_low = self.E.r + self.E.ω * τ_biden_low
         r_tilde_high = self.E.r + self.E.ω * τ_biden_high
@@ -473,7 +1182,7 @@ class Processor:
         # ------------------------------ #
         φ_hat_low = np.eye(J)
         
-        φtilde_noθ = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
+        φtilde_noθ = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         for θ in range(self.E.Θ):
             φtilde_noθ[2*θ,2*θ] = self.E.φ_tilde_0[2*θ,2*θ] + self.E.φ_tilde_0[2*θ,2*θ+1]
             φtilde_noθ[2*θ,2*θ+1] = 0
@@ -482,7 +1191,7 @@ class Processor:
             φtilde_noθ[2*θ+1,2*θ+1] = self.E.φ_tilde_0[2*θ+1,2*θ+1] + self.E.φ_tilde_0[2*θ+1,2*θ]
             φtilde_noθ[2*θ+1,2*θ] = 0
                     
-        φtilde_nogen = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
+        φtilde_nogen = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         φtilde_nogen = φtilde_nogen + np.diag(np.append(φtilde_nogen[:-1,-1],0))
         φtilde_nogen[:-1,-1] = np.zeros(J-1)
         
@@ -675,7 +1384,7 @@ class Processor:
         # --------------------------------------------------- #
         # Spectral Radius for Applicant Only Citation Network #
         # --------------------------------------------------- #
-        φ_tilde_ao = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares_applicant.dta').to_numpy()
+        φ_tilde_ao = np.load(f'{self.Directory}/Clean Data/citation_shares_applicant.npy')
         
         Abar_ss_ao = ssf.Abar_SS(self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
         Jake_ao = ssf.Jacob(Abar_ss_ao, self.E.η, φ_tilde_ao, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
@@ -691,7 +1400,7 @@ class Processor:
         #Carbon Price
         P = 2000
         τ_dollar_pd = np.linspace(0, P, P)
-        τ_pd = (self.E.Y0 / Y_start) * τ_dollar_pd * (44/12)
+        τ_pd = (self.E.Y0 / Y_start) * τ_dollar_pd * (self.CO2_C**(-1))
         
         r_tilde_pd = np.zeros((P, J))
         Abar_ss_low_pd = np.zeros((P, J-1))
@@ -928,7 +1637,17 @@ class Processor:
             
             
     def IAM(self, Periods, T_time):
-        "Processing of IAM"
+        """""
+        Processing of IAM
+    
+        Output: Results/Figures/IAMPolicy.csv
+                Results/Figures/IAMPolicy_spilllow.csv
+                Results/Figures/IAMPolicy_dischigh.csv
+                Results/Figures/IAMPolicy_damhigh.csv
+                Results/Figures/TempPathIAM.csv
+                Results/Tables/IAM_Results.csv
+                Results/Tables/Clean_Growth.pkl
+        """""
         
         J = 2*self.E.Θ + 1
         IAM_Results = gpf.ResultsTable()
@@ -953,8 +1672,7 @@ class Processor:
         ρ_h = (1+self.E.ρ_h)**self.E.T - 1
         ρ_l = (1+self.E.ρ_l)**self.E.T - 1
         
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         
         Y_start = cal_panel.loc[cal_panel.year == self.E.Year_0, ['GDP']].to_numpy()[0,0]
         
@@ -970,7 +1688,7 @@ class Processor:
         # -------------------------- #
         # Make Policy Comprehensible #
         # -------------------------- #
-        τ_FB_dollar = τ_FB * (Y_start / self.E.Y0) * (12/44)
+        τ_FB_dollar = τ_FB * (Y_start / self.E.Y0) * (self.CO2_C)
         
         X_τ = np.ones((1,J))
         τ_adjust_FB = τ_FB @ X_τ
@@ -1089,13 +1807,13 @@ class Processor:
         
         (τ_damhigh, C_damhigh, ξtilde_damhigh, A_damhigh) = self.E.IAM(Periods, T_time, 1, 0, 0, 1)
         
-        τ_spilllow_dollar = τ_spilllow * (Y_start / self.E.Y0) * (12/44)
+        τ_spilllow_dollar = τ_spilllow * (Y_start / self.E.Y0) * (self.CO2_C)
         
         τ_adjust_spilllow = τ_spilllow @ X_τ
         r_tilde_spilllow = r_adjust + ω_adjust*τ_adjust_spilllow
         
         
-        τ_dischigh_FB_dollar = τ_dischigh_FB * (Y_start / self.E.Y0) * (12/44)
+        τ_dischigh_FB_dollar = τ_dischigh_FB * (Y_start / self.E.Y0) * (self.CO2_C)
         
         τ_adjust_dischigh_FB = τ_dischigh_FB @ X_τ
         r_tilde_dischigh_FB = r_adjust + ω_adjust*τ_adjust_dischigh_FB
@@ -1104,7 +1822,7 @@ class Processor:
         r_tilde_dischigh_ten = r_adjust + ω_adjust*0.1*τ_adjust_dischigh_ten
         
         
-        τ_damhigh_dollar = τ_damhigh * (Y_start / self.E.Y0) * (12/44)
+        τ_damhigh_dollar = τ_damhigh * (Y_start / self.E.Y0) * (self.CO2_C)
         
         τ_adjust_damhigh = τ_damhigh @ X_τ
         r_tilde_damhigh = r_adjust + ω_adjust*τ_adjust_damhigh
@@ -1170,6 +1888,7 @@ class Processor:
         (τ_FB_long, C_FB_long, ξtilde_FB_long, A_FB_long) = self.E.IAM(Periods, Periods, 1, 0, 0, 0)
         (τ_ten_long, C_ten_long, ξtilde_ten_long, A_ten_long) = self.E.IAM(Periods, Periods, 0.1, 0, 0, 0)
         (τ_zero_long, C_zero_long, ξtilde_zero_long, A_zero_long) = self.E.IAM(Periods, Periods, 0, 0, 0, 0)
+        
         
         # ----------------- #
         # Temperature Paths #
@@ -1270,16 +1989,18 @@ class Processor:
         
 
     def CES_Spill(self, Periods, T_time, o):
-        "Processing of CES Spillover Robustness"
+        """""
+        Processing of CES Spillover Robustness
+    
+        Output: Results/Tables/CES_Results.csv
+                Results/Figures/IAMPolicy_CES.csv
+        """""
         
         J = 2*self.E.Θ + 1
         CES_Results = gpf.ResultsTable()       
         
         ρ = (1+self.E.ρ_l)**self.E.T - 1
-        
-        cal_panel = pd.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
-        
+                
         r_adjust = np.tile(self.E.r.reshape((1,J)), (T_time, 1))
         ν_adjust = np.tile(self.E.ν.reshape((1,self.E.Θ+1)), (T_time, 1))
         ω_adjust = np.tile(self.E.ω.reshape((1,J)), (T_time, 1))
@@ -1337,3 +2058,38 @@ class Processor:
         DF_policy_CES = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), ξ_hat_CES)), 
                              columns=['Year', 'ξ_hat_CES_Transport', 'ξ_hat_CES_Electricity'])
         DF_policy_CES.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy_CES.csv', index=False)
+        
+        
+        
+    def write_package_versions(self, packages):
+        """""
+        Table of Package Versions
+    
+        Output: Results/core_versions.txt
+        """""
+        
+        filename=f'{self.Directory}/Results/core_versions.txt'
+        
+        
+        # ---------------- #
+        # Collect Packages #
+        # ---------------- #
+        rows = []
+        for pkg in packages:
+            ver = md.version(pkg)
+            rows.append((pkg, ver))
+    
+    
+        # ----------- #
+        # Write Table #
+        # ----------- #
+        print(sys.version)
+        
+        with open(filename, "w") as f:
+            f.write("| Package | Version |\n")
+            f.write("|---------|---------|\n")
+            for pkg, ver in rows:
+                f.write(f"| {pkg} | {ver} |\n")
+
+
+

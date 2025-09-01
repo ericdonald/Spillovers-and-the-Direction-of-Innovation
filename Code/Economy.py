@@ -3,7 +3,6 @@ Economy Module
 
 Notes: This file defines a class for the economy of "Spillovers and the Direction of Innovation".
     
-Output:
 """""""""""
 
 import numpy as np
@@ -25,7 +24,7 @@ class Economy:
     def __init__(self):
         "Initialize Economy Object"
         
-        self.Directory = Path(__file__).resolve().parent.parent.parent
+        self.Directory = Path(__file__).resolve().parent.parent
         
         # --------------------------------------- #
         # Define Externally Calibrated Parameters #
@@ -57,7 +56,7 @@ class Economy:
         self.Year_0 = 2021 #Initial Calibration Year
         self.φ_tilde_0 = np.zeros((J,J)) #Empirical Gross Spillover Network
         self.C_frac_100 = 0.41 #Fraction of Carbon in Atmosphere after 100 Years
-        self.C_frac_100 = 0.25 #Fraction of Carbon in Atmosphere after 100 Years
+        self.C_frac_1000 = 0.25 #Fraction of Carbon in Atmosphere after 1000 Years
         
         # --------------------------------------- #
         # Define Internally Calibrated Parameters #
@@ -81,9 +80,8 @@ class Economy:
         
         J = 2*self.Θ + 1
         ξ_lf = np.ones(J)
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
-        clim_cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
+        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
         
         # ------------ #
         # Input Prices #
@@ -95,7 +93,7 @@ class Economy:
         # ---------------- #
         # CES Sector Share #
         # ----------------- #
-        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
+        S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
         nu = np.mean(S_θ_nu, 0)
         nu = np.append(nu, 1-np.sum(nu))
         
@@ -133,8 +131,8 @@ class Economy:
         t_2 = 1000
         dt = t_2 - t_1
         
-        frac_1 = self.C_frac_20 - self.ψ_p
-        frac_2 = self.C_frac_100 - self.ψ_p
+        frac_1 = self.C_frac_100 - self.ψ_p
+        frac_2 = self.C_frac_1000 - self.ψ_p
         
         self.ψ_0 = frac_1**(t_2/dt) / frac_2**(t_1/dt) / (1 - self.ψ_p)
         self.ψ = (frac_1 / self.ψ_0 / (1 - self.ψ_p))**(1/t_1)
@@ -186,7 +184,7 @@ class Economy:
         # ----------------- #
         # Spillover Network #
         # ----------------- #
-        self.φ_tilde_0 = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/citation_shares.dta').to_numpy()
+        self.φ_tilde_0 = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         
         φ_hatg = self.φ_tilde_0.ravel()
     
@@ -215,9 +213,8 @@ class Economy:
         "Output Match of 2010s Experience"    
         
         J = 2*self.Θ + 1
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
-        clim_cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/clim_cal_panel.dta')
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
+        clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
     
         # ------------------ #
         # Initial Technology #
@@ -320,12 +317,11 @@ class Economy:
         # ----------------- #
         # Outside Emissions #
         # ----------------- #
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
         relEm = np.sum(np.mean(C_ω, 0))
         
-        RICE = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/RICE.dta')
+        RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
         RICE_optEm = RICE.loc[(RICE.year >= self.Year_0 + self.T) & (RICE.year <= self.Year_0 + Periods*self.T), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
         Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
         
@@ -497,12 +493,11 @@ class Economy:
         # ----------------- #
         # Outside Emissions #
         # ----------------- #
-        cal_panel = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/cal_panel.dta')
-        cal_panel['year'] = cal_panel['year'].dt.year
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
         relEm = np.sum(np.mean(C_ω, 0))
         
-        RICE = pd.io.stata.read_stata(f'{self.Directory}/Empirical/Clean Data/RICE.dta')
+        RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
         RICE_optEm = RICE.loc[(RICE.year >= self.Year_0 + self.T) & (RICE.year <= self.Year_0 + Periods*self.T), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
         Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
         

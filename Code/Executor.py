@@ -3,7 +3,6 @@ Executor
 
 Notes: This file executes the code for "Spillovers and the Direction of Innovation".
     
-Output:
 """""""""""
 
 import Economy as e
@@ -26,16 +25,22 @@ P = p.Processor(E)
 
 # ----------------------------------------------------------------
 
-# --------- #
-# Calibrate #
-# --------- #
-P.Calibrate()
+# ---------- #
+# Clean Data #
+# ---------- #
+P.Cleaner()
 
 
 # -------------------------- #
 # Spillover Network Analysis #
 # -------------------------- #
 P.SpillAnalysis()
+
+
+# --------- #
+# Calibrate #
+# --------- #
+P.Calibrate()
 
 
 # -------------- #
@@ -62,7 +67,11 @@ P.IAM(500, 200)
 P.CES_Spill(500,200,1.25)
 
 
-
+# ----------------------- #
+# Record Package Versions #
+# ----------------------- #
+packages = ["numpy", "pandas", "scipy", "matplotlib", "numba", "quantecon", "statsmodels", "openpyxl"]
+P.write_package_versions(packages)
 
 
 

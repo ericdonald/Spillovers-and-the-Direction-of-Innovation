@@ -3,7 +3,6 @@ Objective Functions
 
 Notes: Functions that describe the objectives and optimality conditions of the economy.
     
-Output:
 """""""""""
 
 import numpy as np

@@ -3,7 +3,6 @@ Steady-State Functions
 
 Notes: Functions that describe the steady-state of the economy.
     
-Output:
 """""""""""
 
 import numpy as np

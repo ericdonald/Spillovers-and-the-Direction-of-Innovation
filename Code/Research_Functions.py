@@ -3,7 +3,6 @@ Research Functions
 
 Notes: Functions that describe the research block of the economy.
     
-Output:
 """""""""""
 
 import numpy as np
