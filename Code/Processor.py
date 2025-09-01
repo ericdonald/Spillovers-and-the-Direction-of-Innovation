@@ -793,7 +793,7 @@ class Processor:
         lines.append(f"Clean Electricity Trend &  &  & {b33} \\\\")
         lines.append(f"&  &  & {se33} \\\\[3pt]")
         lines.append(f"$R^2$ & {r1} & {r2} & {r3} \\\\")
-        lines.append(f"Obs & {n1} & {n2} & {n3} \\\\")
+        lines.append(f"Obs & {n1} & {n2} & {n3}")
     
         tex_body = "\n".join(lines)
     
