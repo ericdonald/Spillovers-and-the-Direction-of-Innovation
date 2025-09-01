@@ -1031,7 +1031,6 @@ class Processor:
         Calibrate_Results.add('General to General Citation Share', gpf.clean_round(self.E.φ_tilde_0[-1,-1]*100, 1))
         
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         S_θ_nu = cal_panel.loc[(cal_panel.year >= 2001) & (cal_panel.year <= 2020), ['S_car','S_elec']].to_numpy()
         Mom_nu = np.mean(S_θ_nu, 0)
         
@@ -1065,7 +1064,6 @@ class Processor:
         # Empirical Path #
         # -------------- #
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         
         q_car_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_car_clean']].to_numpy()
         q_elec_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_elec_clean']].to_numpy()
@@ -1160,7 +1158,6 @@ class Processor:
         # Derive Hypothetical Policies #
         # ---------------------------- #
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         
         Y_start = cal_panel.loc[cal_panel.year == self.E.Year_0, ['GDP']].to_numpy()[0,0]
         
@@ -1676,7 +1673,6 @@ class Processor:
         ρ_l = (1+self.E.ρ_l)**self.E.T - 1
         
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         
         Y_start = cal_panel.loc[cal_panel.year == self.E.Year_0, ['GDP']].to_numpy()[0,0]
         
@@ -2006,7 +2002,6 @@ class Processor:
         ρ = (1+self.E.ρ_l)**self.E.T - 1
         
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         
         r_adjust = np.tile(self.E.r.reshape((1,J)), (T_time, 1))
         ν_adjust = np.tile(self.E.ν.reshape((1,self.E.Θ+1)), (T_time, 1))

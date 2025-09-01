@@ -214,7 +214,6 @@ class Economy:
         
         J = 2*self.Θ + 1
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
     
         # ------------------ #
@@ -319,7 +318,6 @@ class Economy:
         # Outside Emissions #
         # ----------------- #
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
         relEm = np.sum(np.mean(C_ω, 0))
         
@@ -536,7 +534,6 @@ class Economy:
         # Outside Emissions #
         # ----------------- #
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        cal_panel['year'] = cal_panel['year'].dt.year
         C_ω = cal_panel.loc[(cal_panel.year >= 2000) & (cal_panel.year <= 2020), ['car_C_relem','elec_C_relem']].to_numpy()
         relEm = np.sum(np.mean(C_ω, 0))
         
