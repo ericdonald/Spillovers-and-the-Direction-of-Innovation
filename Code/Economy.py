@@ -400,10 +400,50 @@ class Economy:
         # Functions #
         # --------- #
         Funcs = (of.τ_root, of.C_root, of.ξtilde_root, of.A_root, of.ς_root)
+        F = len(Funcs)
         
-        N_lag = tuple([2,3]) + tuple(range(J + 4, J*2 + 4))
-        N_t = tuple(range(N))
-        N_lead = tuple(range(N))
+        func_widths = [2, 2, J, J, 2]
+        
+        #N_τ = tuple(range(2))
+        N_C = tuple(range(2, 4))
+        N_ξtilde = tuple(range(4, 4 + J))
+        N_A = tuple(range(4 + J, 4 + J*2))
+        N_ς = tuple(range(4 + J*2, 6 + J*2))
+            
+        dep_lag = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==1 and n in N_C: #Carbon condition on lagged carbon
+                    dep_lag[f,n] = 1
+                if f==3 and n in N_A: #Technology condition on lagged technology
+                    dep_lag[f,n] = 1
+        
+        dep_t = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+                if f==1 and not (n in N_ξtilde or n in N_ς): #Carbon condition on all but innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+                if f==2: #Innovation subsidy condition on everything
+                    dep_t[f,n] = 1
+                if f==3 and (n in N_ξtilde or n in N_A): #Technology condition on innovation subsidy or technology
+                    dep_t[f,n] = 1
+                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but innovation subsidy
+                    dep_t[f,n] = 1
+        
+        dep_lead = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but lead innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+                if f==2 and not n in N_ς: #Innovation subsidy condition on all but lead crazy recursion
+                    dep_t[f,n] = 1
+                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but lead innovation subsidy
+                    dep_t[f,n] = 1
         
         r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
         ν_adjust = np.tile(self.ν.reshape((1,self.Θ+1)), (Periods, 1))
@@ -429,7 +469,7 @@ class Economy:
         # ----- #
         # Solve #
         # ----- #
-        X = srs.SRS(X_g, Funcs, Init, Term, args, N_lag, N_t, N_lead)
+        X = srs.SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead)
     
         # -------------------------------------------------------------------- #
         # Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology #
@@ -564,10 +604,50 @@ class Economy:
         # Functions #
         # --------- #
         Funcs = (of.τ_root, of.C_root, of.ξtilde_root, of.A_root, of.ς_root)
+        F = len(Funcs)
         
-        N_lag = tuple([2,3]) + tuple(range(J + 4, J*2 + 4))
-        N_t = tuple(range(N))
-        N_lead = tuple(range(N))
+        func_widths = [2, 2, J, J, 2]
+        
+        #N_τ = tuple(range(2))
+        N_C = tuple(range(2, 4))
+        N_ξtilde = tuple(range(4, 4 + J))
+        N_A = tuple(range(4 + J, 4 + J*2))
+        N_ς = tuple(range(4 + J*2, 6 + J*2))
+            
+        dep_lag = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==1 and n in N_C: #Carbon condition on lagged carbon
+                    dep_lag[f,n] = 1
+                if f==3 and n in N_A: #Technology condition on lagged technology
+                    dep_lag[f,n] = 1
+        
+        dep_t = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+                if f==1 and not (n in N_ξtilde or n in N_ς): #Carbon condition on all but innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+                if f==2: #Innovation subsidy condition on everything
+                    dep_t[f,n] = 1
+                if f==3 and (n in N_ξtilde or n in N_A): #Technology condition on innovation subsidy or technology
+                    dep_t[f,n] = 1
+                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but innovation subsidy
+                    dep_t[f,n] = 1
+        
+        dep_lead = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but lead innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+                if f==2 and not n in N_ς: #Innovation subsidy condition on all but lead crazy recursion
+                    dep_t[f,n] = 1
+                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but lead innovation subsidy
+                    dep_t[f,n] = 1
         
         r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
         ν_adjust = np.tile(self.ν.reshape((1,self.Θ+1)), (Periods, 1))
@@ -593,7 +673,7 @@ class Economy:
         # ----- #
         # Solve #
         # ----- #
-        X = srs.SRS(X_g, Funcs, Init, Term, args, N_lag, N_t, N_lead)
+        X = srs.SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead)
     
         # -------------------------------------------------------------------- #
         # Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology #
