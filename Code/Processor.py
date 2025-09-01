@@ -996,6 +996,7 @@ class Processor:
         ω_prop = ((self.E.ω[3]-self.E.ω[1])/self.E.ω[1])*100
         Calibrate_Results.add('Relative Increase in Elec Carbon Intensity', gpf.clean_round(ω_prop, 1))
         
+        
         # -------------------------------- #
         # Plot Match of Climate Parameters #
         # -------------------------------- #
@@ -1019,6 +1020,7 @@ class Processor:
         DF_CM = pd.DataFrame(np.hstack((np.arange(1960, 2020+1).reshape((-1,1)), C_data.reshape((-1,1)), C.reshape((-1,1)))), 
                              columns=['Year', 'Data', 'Model'])
         DF_CM.to_csv(f'{self.Directory}/Results/Figures/Carbon_Match.csv', index=False)
+        
         
         # -------------- #
         # Record Results #
@@ -1052,10 +1054,12 @@ class Processor:
         
         Tens_Results = gpf.ResultsTable()
         
+        
         # ---------------------- #
         # Derive Simulated Paths #
         # ---------------------- #
         (q_θc, q_θc_low, A_start, ξ_0, ξ_0low) = self.E.TensMatch(Year_start, Year_end)
+        
         
         # -------------- #
         # Empirical Path #
@@ -1065,6 +1069,7 @@ class Processor:
         
         q_car_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_car_clean']].to_numpy()
         q_elec_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_elec_clean']].to_numpy()
+        
         
         # ------------------------------- #
         # Plot Quantity Share Predictions #
@@ -1094,6 +1099,7 @@ class Processor:
         Abar_ss_low = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_0low, self.E.Θ, self.E.o)
         Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
         κ_low = np.linalg.eig(Jake_low)[0]
+        
         
         # -------------- #
         # Record Results #
@@ -1886,6 +1892,7 @@ class Processor:
         (τ_FB_long, C_FB_long, ξtilde_FB_long, A_FB_long) = self.E.IAM(Periods, Periods, 1, 0, 0, 0)
         (τ_ten_long, C_ten_long, ξtilde_ten_long, A_ten_long) = self.E.IAM(Periods, Periods, 0.1, 0, 0, 0)
         (τ_zero_long, C_zero_long, ξtilde_zero_long, A_zero_long) = self.E.IAM(Periods, Periods, 0, 0, 0, 0)
+        
         
         # ----------------- #
         # Temperature Paths #
