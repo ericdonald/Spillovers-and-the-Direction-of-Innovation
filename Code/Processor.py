@@ -738,7 +738,7 @@ class Processor:
         phi = phi.sort_values(["tech_citer", "tech_citee", "t_int"]).reset_index(drop=True)
         phi["phi_lag"] = phi.groupby(["tech_citer", "tech_citee"])["phi_tilde"].shift(1)
     
-        phi["t_trend"] = phi["t_int"] - 1975
+        phi["t_trend"] = phi["t_int"] - (year_start + tbin)
         phi["clean_sender"] = ((phi["tech_citee"] == "car_clean") | (phi["tech_citee"] == "elec_clean")).astype(int)
         phi["car_clean_sender"] = (phi["tech_citee"] == "car_clean").astype(int)
         phi["elec_clean_sender"] = (phi["tech_citee"] == "elec_clean").astype(int)
@@ -777,8 +777,8 @@ class Processor:
         b22, se22 = coef_se(m2, "clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
 
         b31, se31 = coef_se(m3, "phi_lag")
-        b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.5f}", sefmt=lambda x: f"({x:.4f})")
-        b33, se33 = coef_se(m3, "elec_clean_trend", fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.3f})")
+        b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+        b33, se33 = coef_se(m3, "elec_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
     
         r1, r2, r3 = f"{m1.rsquared:.3f}", f"{m2.rsquared:.3f}", f"{m3.rsquared:.3f}"
         n1, n2, n3 = f"{int(m1.nobs)}", f"{int(m2.nobs)}", f"{int(m3.nobs)}"
