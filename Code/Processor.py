@@ -818,7 +818,7 @@ class Processor:
             r_idx = citer_index[row['tech_citer']]
             s_idx = citee_index[row['tech_citee']]
             y_idx = year_index[row['t_int']]
-            φ_tilde_t[r_idx, s_idx, y_idx] = row['φ_tilde']
+            φ_tilde_t[r_idx, s_idx, y_idx] = row['phi_tilde']
             
         clean_centrality = np.zeros((φ_tilde_t.shape[2], 2))
         for t in range(φ_tilde_t.shape[2]):
@@ -841,6 +841,7 @@ class Processor:
         # ----------------------------------------------------------------
         
         Disagg_Results = gpf.ResultsTable()
+        
         
         # ----------------------- #
         # Compute Citation Shares #
@@ -869,24 +870,20 @@ class Processor:
         
         del cpc_df, relevant_df
                 
-        # Keep only one observation for each climate patent
         df_clim = df_tech[df_tech['gen_patent'] == 0].drop_duplicates(subset='patent_id', keep='first')
         df_gen = df_tech[df_tech['gen_patent'] == 1]
         df_merged = pd.concat([df_clim, df_gen], ignore_index=True)
         
         del df_tech, df_clim, df_gen
         
-        # Weight general patents for consistency with base case
         df_merged['citee_weight'] = 1 / df_merged.groupby('patent_id')['patent_id'].transform('count')
         
      
         long_data = []
         for _, row in df_merged.iterrows():
             if row['gen_patent'] == 1:
-                # Only cpc_class as tech_class
                 long_data.append((row['patent_id'], row['cpc_class'], row['citee_weight']))
             else:
-                # For each of these four flags, add a row if flag == 1
                 if row['car_clean_patent'] == 1:
                     long_data.append((row['patent_id'], 'car_clean_patent', row['citee_weight']))
                 if row['car_dirty_patent'] == 1:
