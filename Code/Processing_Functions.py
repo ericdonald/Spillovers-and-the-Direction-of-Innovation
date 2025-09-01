@@ -107,6 +107,6 @@ def citation_shares(citations_df, relevant_df, classes, types):
     with np.errstate(invalid='ignore', divide='ignore'):
         shares = np.divide(counts, row_sums, out=np.zeros_like(counts), where=row_sums > 0)
 
-    return shares, col_labels, col_labels
+    return shares
 
 
