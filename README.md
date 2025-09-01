@@ -51,6 +51,8 @@ All of the replication codes run on Python `3.11.13`. Prior to running the codes
 | matplotlib | 3.10.5 |
 | numba | 0.61.2 |
 | quantecon | 0.10.1 |
+| statsmodels | 0.14.5 |
+| openpyxl | 3.1.5 |
 
 ## Description of Code:
 
