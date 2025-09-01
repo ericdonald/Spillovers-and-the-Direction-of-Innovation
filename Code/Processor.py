@@ -898,7 +898,7 @@ class Processor:
         del df_merged, long_data
         
         
-        df_citations  = pd.read_pickle(f'{self.Directory}/Raw Data/uspatentcitation.pkl')
+        df_citations  = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         df_citations = df_citations[['patent_id', 'citation_patent_id']]
         
         df_cite_matrix = pd.merge(
