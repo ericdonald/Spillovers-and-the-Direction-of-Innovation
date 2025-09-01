@@ -2,27 +2,6 @@
 Processor Module
 
 Notes: This file defines a class for processing the economy of "Spillovers and the Direction of Innovation".
-    
-Output: Results/Figures/2010s_Transition.csv
-        Results/Tables/Tens_Results.csv
-        Results/Figures/LinearCompare.csv
-        Results/Figures/TechPathBidenlow.csv
-        Results/Figures/TechPathBidenhigh.csv
-        Results/Figures/BasinsTax.csv
-        Results/Figures/BasinsSub.csv
-        Results/Figures/AmpDeterms.csv
-        Results/Figures/TranDeterms.csv
-        Results/Figures/TranPolicy.csv
-        Results/Tables/PolicyX_Results.csv
-        Results/Figures/IAMPolicy.csv
-        Results/Figures/IAMPolicy_spilllow.csv
-        Results/Figures/IAMPolicy_dischigh.csv
-        Results/Figures/IAMPolicy_damhigh.csv
-        Results/Figures/TempPathIAM.csv
-        Results/Tables/IAM_Results.csv
-        Results/Tables/Clean_Growth.pkl
-        Results/Tables/CES_Results.csv
-        Results/Figures/IAMPolicy_CES.csv
 
 """""""""""
 
@@ -904,7 +883,12 @@ class Processor:
         
         
     def TensGraph(self, Year_start, Year_end):
-        "Graph Match of 2010s Experience"
+        """""
+        Graph Match of 2010s Experience
+        
+        Output: Results/Figures/2010s_Transition.csv
+                Results/Tables/Tens_Results.csv
+        """""
         
         Tens_Results = gpf.ResultsTable()
         
@@ -984,7 +968,19 @@ class Processor:
         
         
     def PolicyExperiments(self, T_time):
-        "Processing of Policy Experiments"
+        """""
+        Processing of Policy Experiments
+    
+        Output: Results/Figures/LinearCompare.csv
+                Results/Figures/TechPathBidenlow.csv
+                Results/Figures/TechPathBidenhigh.csv
+                Results/Figures/BasinsTax.csv
+                Results/Figures/BasinsSub.csv
+                Results/Figures/AmpDeterms.csv
+                Results/Figures/TranDeterms.csv
+                Results/Figures/TranPolicy.csv
+                Results/Tables/PolicyX_Results.csv
+        """""
         
         J = 2*self.E.Θ + 1
         X = ssf.X_mat(self.E.Θ)
@@ -1478,7 +1474,17 @@ class Processor:
             
             
     def IAM(self, Periods, T_time):
-        "Processing of IAM"
+        """""
+        Processing of IAM
+    
+        Output: Results/Figures/IAMPolicy.csv
+                Results/Figures/IAMPolicy_spilllow.csv
+                Results/Figures/IAMPolicy_dischigh.csv
+                Results/Figures/IAMPolicy_damhigh.csv
+                Results/Figures/TempPathIAM.csv
+                Results/Tables/IAM_Results.csv
+                Results/Tables/Clean_Growth.pkl
+        """""
         
         J = 2*self.E.Θ + 1
         IAM_Results = gpf.ResultsTable()
@@ -1820,7 +1826,12 @@ class Processor:
         
 
     def CES_Spill(self, Periods, T_time, o):
-        "Processing of CES Spillover Robustness"
+        """""
+        Processing of CES Spillover Robustness
+    
+        Output: Results/Tables/CES_Results.csv
+                Results/Figures/IAMPolicy_CES.csv
+        """""
         
         J = 2*self.E.Θ + 1
         CES_Results = gpf.ResultsTable()       
