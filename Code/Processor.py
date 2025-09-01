@@ -797,7 +797,7 @@ class Processor:
     
         tex_body = "\n".join(lines)
     
-        with open(f'{self.Directory}/Results/Tables/Stability_Regressions.txt', "w") as f:
+        with open(f'{self.Directory}/Results/Tables/Stability_Regressions.tex', "w") as f:
             f.write(tex_body)
         
         
