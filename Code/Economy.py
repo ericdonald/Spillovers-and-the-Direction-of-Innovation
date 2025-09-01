@@ -402,13 +402,13 @@ class Economy:
         Funcs = (of.τ_root, of.C_root, of.ξtilde_root, of.A_root, of.ς_root)
         F = len(Funcs)
         
-        func_widths = [2, 2, self.J, self.J, 2]
+        func_widths = [2, 2, J, J, 2]
         
         #N_τ = tuple(range(2))
         N_C = tuple(range(2, 4))
-        N_ξtilde = tuple(range(4, 4 + self.J))
-        N_A = tuple(range(4 + self.J, 4 + self.J*2))
-        N_ς = tuple(range(4 + self.J*2, 6 + self.J*2))
+        N_ξtilde = tuple(range(4, 4 + J))
+        N_A = tuple(range(4 + J, 4 + J*2))
+        N_ς = tuple(range(4 + J*2, 6 + J*2))
             
         dep_lag = np.zeros((F, N))
         
@@ -606,13 +606,13 @@ class Economy:
         Funcs = (of.τ_root, of.C_root, of.ξtilde_root, of.A_root, of.ς_root)
         F = len(Funcs)
         
-        func_widths = [2, 2, self.J, self.J, 2]
+        func_widths = [2, 2, J, J, 2]
         
         #N_τ = tuple(range(2))
         N_C = tuple(range(2, 4))
-        N_ξtilde = tuple(range(4, 4 + self.J))
-        N_A = tuple(range(4 + self.J, 4 + self.J*2))
-        N_ς = tuple(range(4 + self.J*2, 6 + self.J*2))
+        N_ξtilde = tuple(range(4, 4 + J))
+        N_A = tuple(range(4 + J, 4 + J*2))
+        N_ς = tuple(range(4 + J*2, 6 + J*2))
             
         dep_lag = np.zeros((F, N))
         

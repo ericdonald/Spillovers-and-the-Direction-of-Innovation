@@ -2000,9 +2000,7 @@ class Processor:
         CES_Results = gpf.ResultsTable()       
         
         ρ = (1+self.E.ρ_l)**self.E.T - 1
-        
-        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
-        
+                
         r_adjust = np.tile(self.E.r.reshape((1,J)), (T_time, 1))
         ν_adjust = np.tile(self.E.ν.reshape((1,self.E.Θ+1)), (T_time, 1))
         ω_adjust = np.tile(self.E.ω.reshape((1,J)), (T_time, 1))
