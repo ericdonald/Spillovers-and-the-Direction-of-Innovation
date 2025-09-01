@@ -379,7 +379,7 @@ class Economy:
         else:
             ξtilde_g = np.tile(ξtilde_ss.reshape((1,J)), (Periods,1))
             if SCC_frac == 0:
-                ξtilde_g[:,:-1] = 1.25*ξtilde_g[:,:-1]
+                ξtilde_g[:,:-1] = 3*ξtilde_g[:,:-1]
         
         s_g = np.zeros((Periods,J))
         A_g = np.zeros((Periods,J))
