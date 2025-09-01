@@ -56,7 +56,7 @@ class Economy:
         self.Year_0 = 2021 #Initial Calibration Year
         self.φ_tilde_0 = np.zeros((J,J)) #Empirical Gross Spillover Network
         self.C_frac_100 = 0.41 #Fraction of Carbon in Atmosphere after 100 Years
-        self.C_frac_100 = 0.25 #Fraction of Carbon in Atmosphere after 100 Years
+        self.C_frac_1000 = 0.25 #Fraction of Carbon in Atmosphere after 1000 Years
         
         # --------------------------------------- #
         # Define Internally Calibrated Parameters #
@@ -131,8 +131,8 @@ class Economy:
         t_2 = 1000
         dt = t_2 - t_1
         
-        frac_1 = self.C_frac_20 - self.ψ_p
-        frac_2 = self.C_frac_100 - self.ψ_p
+        frac_1 = self.C_frac_100 - self.ψ_p
+        frac_2 = self.C_frac_1000 - self.ψ_p
         
         self.ψ_0 = frac_1**(t_2/dt) / frac_2**(t_1/dt) / (1 - self.ψ_p)
         self.ψ = (frac_1 / self.ψ_0 / (1 - self.ψ_p))**(1/t_1)
