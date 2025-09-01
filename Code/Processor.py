@@ -662,7 +662,7 @@ class Processor:
         citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
-        citer = citations_df.merge(
+        citer_df = citations_df.merge(
                         relevant_df[
                             ["patent_id", "year", "gen_patent"]
                             + [f"{c}_{t}_patent" for c, t in product(self.classes, self.types)]
@@ -682,10 +682,10 @@ class Processor:
                         right_on="id_citer_patent",
                     )
         
-        citer["t_int"] = citer["year"].apply(five_year_bin)
-        citer = citer[citer["t_int"] != 0]
+        citer_df["t_int"] = citer_df["year"].apply(five_year_bin)
+        citer_df = citer_df[citer_df["t_int"] != 0]
         
-        citee = citer.merge(
+        citee_df = citer_df.merge(
                         relevant_df[
                             ["patent_id", "gen_patent"]
                             + [f"{c}_{t}_patent" for c, t in product(self.classes, self.types)]
@@ -704,6 +704,7 @@ class Processor:
                         left_on="citation_patent_id",
                         right_on="id_citee_patent",
                     )
+        del citations_df, relevant_df, citer_df
         
         def active_labels(row, prefix):
             labs = []
@@ -714,18 +715,20 @@ class Processor:
                 labs.append("gen")
             return labs
 
-        df = citee.copy()
-        df["citer_list"] = df.apply(lambda r: active_labels(r, "citer"), axis=1)
-        df["citee_list"] = df.apply(lambda r: active_labels(r, "citee"), axis=1)
+        citee_df["citer_list"] = citee_df.apply(lambda r: active_labels(r, "citer"), axis=1)
+        citee_df["citee_list"] = citee_df.apply(lambda r: active_labels(r, "citee"), axis=1)
     
-        df = df.explode("citer_list").rename(columns={"citer_list": "tech_citer"})
-        df = df.explode("citee_list").rename(columns={"citee_list": "tech_citee"})
+        citee_df = citee_df.explode("citer_list").rename(columns={"citer_list": "tech_citer"})
+        citee_df = citee_df.explode("citee_list").rename(columns={"citee_list": "tech_citee"})
     
-        df = df[["t_int", "tech_citer", "tech_citee"]].copy()
+        citee_df = citee_df[["t_int", "tech_citer", "tech_citee"]]
         
-        tot = df.groupby(["t_int", "tech_citer"], as_index=False).size().rename(columns={"size": "tot_cites"})
-        cites = df.groupby(["t_int", "tech_citer", "tech_citee"], as_index=False).size().rename(columns={"size": "cites"})
+        tot = citee_df.groupby(["t_int", "tech_citer"], as_index=False).size().rename(columns={"size": "tot_cites"})
+        cites = citee_df.groupby(["t_int", "tech_citer", "tech_citee"], as_index=False).size().rename(columns={"size": "cites"})
         phi = cites.merge(tot, on=["t_int", "tech_citer"], how="left")
+        
+        del citee_df, tot, cites
+        
         phi["phi_tilde"] = phi["cites"] / phi["tot_cites"]
     
         all_pairs = pd.MultiIndex.from_product([tbins, tech_labels, tech_labels], names=["t_int", "tech_citer", "tech_citee"])
