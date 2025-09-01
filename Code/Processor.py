@@ -662,12 +662,9 @@ class Processor:
         citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
-        citations_df["t_int"] = citations_df["year"].apply(five_year_bin)
-        citations_df = citations_df[citations_df["t_int"] != 0]
-        
         citer = citations_df.merge(
                         relevant_df[
-                            ["patent_id", "gen_patent"]
+                            ["patent_id", "year", "gen_patent"]
                             + [f"{c}_{t}_patent" for c, t in product(self.classes, self.types)]
                         ]
                         .rename(columns={"patent_id": "id_citer_patent"})
@@ -684,6 +681,9 @@ class Processor:
                         left_on="patent_id",
                         right_on="id_citer_patent",
                     )
+        
+        citer["t_int"] = citer["year"].apply(five_year_bin)
+        citer = citer[citer["t_int"] != 0]
         
         citee = citer.merge(
                         relevant_df[
