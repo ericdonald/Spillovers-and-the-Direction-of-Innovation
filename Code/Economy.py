@@ -643,11 +643,11 @@ class Economy:
         for f in range(F):
             for n in range(N):
                 if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but lead innovation subsidy or crazy recursion
-                    dep_t[f,n] = 1
+                    dep_lead[f,n] = 1
                 if f==2 and not n in N_ς: #Innovation subsidy condition on all but lead crazy recursion
-                    dep_t[f,n] = 1
+                    dep_lead[f,n] = 1
                 if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but lead innovation subsidy
-                    dep_t[f,n] = 1
+                    dep_lead[f,n] = 1
         
         r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
         ν_adjust = np.tile(self.ν.reshape((1,self.Θ+1)), (Periods, 1))
