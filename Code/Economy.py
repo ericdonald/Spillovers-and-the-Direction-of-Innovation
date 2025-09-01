@@ -431,7 +431,7 @@ class Economy:
                     dep_t[f,n] = 1
                 if f==3 and (n in N_ξtilde or n in N_A): #Technology condition on innovation subsidy or technology
                     dep_t[f,n] = 1
-                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but innovation subsidy
+                if f==4 and not (n in N_ξtilde): #Crazy recursion condition on all but innovation subsidy
                     dep_t[f,n] = 1
         
         dep_lead = np.zeros((F, N))
@@ -440,9 +440,9 @@ class Economy:
             for n in range(N):
                 if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but lead innovation subsidy or crazy recursion
                     dep_lead[f,n] = 1
-                if f==2 and not n in N_ς: #Innovation subsidy condition on all but lead crazy recursion
+                if f==2 and not (n in N_ς): #Innovation subsidy condition on all but lead crazy recursion
                     dep_lead[f,n] = 1
-                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but lead innovation subsidy
+                if f==4 and not (n in N_ξtilde): #Crazy recursion condition on all but lead innovation subsidy
                     dep_lead[f,n] = 1
         
         r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
@@ -635,7 +635,7 @@ class Economy:
                     dep_t[f,n] = 1
                 if f==3 and (n in N_ξtilde or n in N_A): #Technology condition on innovation subsidy or technology
                     dep_t[f,n] = 1
-                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but innovation subsidy
+                if f==4 and not (n in N_ξtilde): #Crazy recursion condition on all but innovation subsidy
                     dep_t[f,n] = 1
         
         dep_lead = np.zeros((F, N))
@@ -644,9 +644,9 @@ class Economy:
             for n in range(N):
                 if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but lead innovation subsidy or crazy recursion
                     dep_lead[f,n] = 1
-                if f==2 and not n in N_ς: #Innovation subsidy condition on all but lead crazy recursion
+                if f==2 and not (n in N_ς): #Innovation subsidy condition on all but lead crazy recursion
                     dep_lead[f,n] = 1
-                if f==4 and not n in N_ξtilde: #Crazy recursion condition on all but lead innovation subsidy
+                if f==4 and not (n in N_ξtilde): #Crazy recursion condition on all but lead innovation subsidy
                     dep_lead[f,n] = 1
         
         r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
