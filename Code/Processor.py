@@ -739,7 +739,10 @@ class Processor:
         phi["clean_sender"] = ((phi["tech_citee"] == "car_clean") | (phi["tech_citee"] == "elec_clean")).astype(int)
         phi["car_clean_sender"] = (phi["tech_citee"] == "car_clean").astype(int)
         phi["elec_clean_sender"] = (phi["tech_citee"] == "elec_clean").astype(int)
+        
+        phi["clean_trend"] = phi["clean_sender"] * phi["t_trend"]
         phi["car_clean_trend"] = phi["car_clean_sender"] * phi["t_trend"]
+        phi["elec_clean_trend"] = phi["elec_clean_sender"] * phi["t_trend"]
     
         spill_panel = phi.dropna(subset=["phi_lag"]).copy()
         
@@ -756,10 +759,9 @@ class Processor:
     
         m1 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag"]], cluster_groups)
     
-        spill_panel["clean_trend"] = spill_panel["clean_sender"] * spill_panel["t_trend"]
         m2 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "clean_trend"]], cluster_groups)
     
-        m3 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_sender"]], cluster_groups)
+        m3 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_trend"]], cluster_groups)
     
         def coef_se(res, name, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
             b = res.params.get(name, np.nan)
@@ -773,7 +775,7 @@ class Processor:
 
         b31, se31 = coef_se(m3, "phi_lag")
         b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.5f}", sefmt=lambda x: f"({x:.4f})")
-        b33, se33 = coef_se(m3, "elec_clean_sender", fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.3f})")
+        b33, se33 = coef_se(m3, "elec_clean_trend", fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.3f})")
     
         r1, r2, r3 = f"{m1.rsquared:.3f}", f"{m2.rsquared:.3f}", f"{m3.rsquared:.3f}"
         n1, n2, n3 = f"{int(m1.nobs)}", f"{int(m2.nobs)}", f"{int(m3.nobs)}"
