@@ -45,6 +45,9 @@ def SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead, Max
         # Check Convergence #
         # ----------------- #
         max_resid = np.max(np.abs(y))
+        
+        #print(max_resid)
+        
         if max_resid < ε:
             print("Root Found")
             qe.toc()
