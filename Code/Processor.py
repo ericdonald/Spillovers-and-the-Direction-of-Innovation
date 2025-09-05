@@ -2036,7 +2036,7 @@ class Processor:
         κ_CES = np.linalg.eig(φ_tilde_ss_CES.T)[0]
         unit_CES = np.argmin(np.abs(κ_CES-1))
         Cent_CES = np.linalg.eig(φ_tilde_ss_CES.T)[1][:,unit_CES]
-        Cent_CES = Cent_CES / np.sum(Cent_CES)*100, 2
+        Cent_CES = Cent_CES / np.sum(Cent_CES)*100
         CES_Results.add('Eigenvector Centrality for Clean Transport (CES)', gpf.clean_round(Cent_CES[0], 2))
         CES_Results.add('Eigenvector Centrality for Clean Electricity (CES)', gpf.clean_round(Cent_CES[2], 2))
     
