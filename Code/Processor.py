@@ -971,12 +971,12 @@ class Processor:
         κ = np.linalg.eig(disagg_spill_matrix.T)[0]
         unit = np.argmin(np.abs(κ-1))
         Cent = np.real(np.linalg.eig(disagg_spill_matrix.T)[1][:,unit])
-        Cent = np.round(Cent / np.sum(Cent)*100, 2)
+        Cent = Cent / np.sum(Cent)*100
         
-        Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Transport', Cent[0])
-        Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Transport', Cent[1])
-        Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Electricity', Cent[2])
-        Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Electricity', Cent[3])
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Transport', gpf.clean_round(Cent[0], 2))
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Transport', gpf.clean_round(Cent[1], 2))
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Electricity', gpf.clean_round(Cent[2], 2))
+        Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Electricity', gpf.clean_round(Cent[3], 2))
         
         Disagg_Results.to_csv(f'{self.Directory}/Results/Tables/Disagg_Results.csv')
         
@@ -1726,11 +1726,11 @@ class Processor:
         κ = np.linalg.eig(self.E.φ_tilde_0.T)[0]
         unit = np.argmin(np.abs(κ-1))
         Cent = np.linalg.eig(self.E.φ_tilde_0.T)[1][:,unit]
-        Cent = np.round(Cent / np.sum(Cent)*100, 2)
-        IAM_Results.add('Eigenvector Centrality for Clean Transport', round(Cent[0], 2))
-        IAM_Results.add('Eigenvector Centrality for Dirty Transport', round(Cent[1], 2))
-        IAM_Results.add('Eigenvector Centrality for Clean Electricity', round(Cent[2], 2))
-        IAM_Results.add('Eigenvector Centrality for Dirty Electricity', round(Cent[3], 2))
+        Cent = Cent / np.sum(Cent)*100
+        IAM_Results.add('Eigenvector Centrality for Clean Transport', gpf.clean_round(Cent[0], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Transport', gpf.clean_round(Cent[1], 2))
+        IAM_Results.add('Eigenvector Centrality for Clean Electricity', gpf.clean_round(Cent[2], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Electricity', gpf.clean_round(Cent[3], 2))
         
         
         ξ_hat_FB_avg = np.mean(ξ_hat_FB[:100,:],0)*100
@@ -2036,9 +2036,9 @@ class Processor:
         κ_CES = np.linalg.eig(φ_tilde_ss_CES.T)[0]
         unit_CES = np.argmin(np.abs(κ_CES-1))
         Cent_CES = np.linalg.eig(φ_tilde_ss_CES.T)[1][:,unit_CES]
-        Cent_CES = np.round(Cent_CES / np.sum(Cent_CES)*100, 2)
-        CES_Results.add('Eigenvector Centrality for Clean Transport (CES)', round(Cent_CES[0], 2))
-        CES_Results.add('Eigenvector Centrality for Clean Electricity (CES)', round(Cent_CES[2], 2))
+        Cent_CES = Cent_CES / np.sum(Cent_CES)*100, 2
+        CES_Results.add('Eigenvector Centrality for Clean Transport (CES)', gpf.clean_round(Cent_CES[0], 2))
+        CES_Results.add('Eigenvector Centrality for Clean Electricity (CES)', gpf.clean_round(Cent_CES[2], 2))
     
         
         A_ss_CES = np.append(Abar_ss_CES, 1)
