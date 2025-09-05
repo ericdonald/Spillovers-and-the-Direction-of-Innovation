@@ -1553,7 +1553,7 @@ class Processor:
         dlnΞ = np.log(pf.var_bar(ξ_cleansub, J)) - np.log(pf.var_bar(ξ_lf, J))
         
         σ_var_A = np.linspace(1.25, 2.13, P)
-        σ_var_J = np.linspace(1.25, 2.35, P)
+        σ_var_J = np.linspace(1.25, 2.45, P)
         Amy_sub = np.zeros((P,J-1,J-1))
         Σ_sub = np.zeros((P,J-1,J-1))
         dlnBbar_sub = np.zeros((P,self.E.Θ))
@@ -1561,7 +1561,7 @@ class Processor:
         spec_sub = np.zeros(P)
         
         ζ_A = np.linspace(0.8, 1.2, P)
-        ζ_J = np.linspace(0.62, 1.1, P)
+        ζ_J = np.linspace(0.58, 1.1, P)
         Amy_spill = np.zeros((P,J-1,J-1))
         Σ_spill = np.zeros((P,J-1,J-1))
         dlnBbar_spill = np.zeros((P,self.E.Θ))
