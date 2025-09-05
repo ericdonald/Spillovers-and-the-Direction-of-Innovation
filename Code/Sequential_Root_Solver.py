@@ -36,10 +36,12 @@ def SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead, Max
         x_lag = np.vstack((Init, x[:-1,:]))
         x_lead = np.vstack((x[1:,:], Term))
         
+        
         # ------------------------ #
         # Evaluate Entire Function #
         # ------------------------ #
         y, blocks_base = ev.full_eval(x_lag, x, x_lead)
+        
         
         # ----------------- #
         # Check Convergence #
@@ -52,6 +54,7 @@ def SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead, Max
             print("Root Found")
             qe.toc()
             break
+        
         
         # --------------- #
         # Sparse Jacobian #
@@ -99,6 +102,7 @@ def SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead, Max
             B_blocks.append(B_t)
             C_blocks.append(C_t)
             d_blocks.append(d_t)
+        
         
         # ------------ #
         # Update Guess #
@@ -166,6 +170,7 @@ def solve_block_tridiagonal(A_blocks, B_blocks, C_blocks, d_blocks):
     d_tilde = [None] * T
     M = [np.zeros((N, N)) for _ in range(T)]
 
+
     # ---------- #
     # Factor B_0 #
     # ---------- #
@@ -173,6 +178,7 @@ def solve_block_tridiagonal(A_blocks, B_blocks, C_blocks, d_blocks):
     B_fact[0] = lu0
     d_tilde[0] = lu_solve(lu0, d_blocks[0])
     M[0] = lu_solve(lu0, C_blocks[0])
+
 
     # ------------- #
     # Forward Sweep #
@@ -187,6 +193,7 @@ def solve_block_tridiagonal(A_blocks, B_blocks, C_blocks, d_blocks):
         d_tilde[t] = lu_solve(lu_t, rhs_t)
 
         M[t] = lu_solve(lu_t, C_blocks[t])
+
 
     # ----------------- #
     # Back Substitution #
