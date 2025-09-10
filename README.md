@@ -2,7 +2,7 @@
 
 ## Data Sources:
 
-Below is the list of all data sources required for replication. The first group are those programmatically retrieved via APIs or direct download, and the second group are those contained in the Raw Data folder. The links below are for reference only; a user does not need to visit these sites to extract the data.
+Below is the list of all data sources required for replication. The first group are those programmatically retrieved via APIs or direct download, the second group are those contained in the Raw Data folder, and the third group are those that require the user to have a license. The links below are for reference only; a user does not need to visit these sites to extract the data.
 To make use of the API commands, the user will need to make a `.keys` file with the following lines:
 ```
 FRED_API = XX
@@ -40,6 +40,9 @@ where `XX` is the user's API key for the relevant data source.
 - [Congressional Research Service Report IF11017](https://www.congress.gov/crs-product/IF11017)
 - [Congressional Research Service Report IF10479](https://www.congress.gov/crs-product/IF10479)
 - Crosswalks from Patents to Firms from [Arora et al. (2021)](https://zenodo.org/records/13619821)
+
+### Requires License:
+- [Compustat](https://wrds-www.wharton.upenn.edu/)
 
 ## Software Requirements:
 
