@@ -74,6 +74,7 @@ class Processor:
         Output: Raw Data/Patent_CPC.pkl
                 Raw Data/Patent_Citations.pkl
                 Clean Data/RICE.pkl
+                Clean Data/pat_firm_crosswalk.pkl
                 Clean Data/relevant_patents.pkl
                 Clean Data/cal_panel.pkl
                 Clean Data/clim_cal_panel.pkl
@@ -399,7 +400,20 @@ class Processor:
                     } #Manually enter
         
         CRS_df = pd.DataFrame(CRS_data) #Nominal tax credit expenditures in billions of dollars
+        
+        
+        ### Arora et al. (2021) Patent to Firm Crosswalk
+        discern_df = pd.read_csv(f'{self.Directory}/Raw Data/discern_pat_grant_1980_2021.csv')
+        gvkey_df = pd.read_csv(f'{self.Directory}/Raw Data/permno_gvkey.csv')
 
+        pat_firm_crosswalk_df = pd.merge(discern_df[['patent_id', 'permno_adj']],
+                                         gvkey_df[['gvkey', 'permno_adj']],
+                                         on='permno_adj',
+                                         how='inner'
+                                         )
+
+        pat_firm_crosswalk_df.to_pickle(f'{self.Directory}/Clean Data/pat_firm_crosswalk.pkl')
+        
 
         # ----------------------------------------------------------------
 
