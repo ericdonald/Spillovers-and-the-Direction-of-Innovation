@@ -72,6 +72,7 @@ class Processor:
         Clean Data
         
         Output: Raw Data/Patent_CPC.pkl
+                Raw Data/Patent_Applications.pkl
                 Raw Data/Patent_Citations.pkl
                 Clean Data/RICE.pkl
                 Clean Data/pat_firm_crosswalk.pkl
@@ -266,6 +267,9 @@ class Processor:
         PV_applications_df = PV_applications_df.dropna(subset=["year"])
         PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
         PV_applications_df['patent_id'] = PV_applications_df['patent_id'].astype(str)
+        
+        PV_CPC_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Applications.pkl')
+        
         
         # --------------------- #
         # PatentsView Citations #
@@ -993,6 +997,64 @@ class Processor:
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Electricity', gpf.clean_round(Cent[3], 2))
         
         Disagg_Results.to_csv(f'{self.Directory}/Results/Tables/Disagg_Results.csv')
+        
+        
+        
+    def SpillReg(self, δ_A=0.15):
+        """""
+        Reduced Form Evidence for Spillover Network
+        
+        Output: 
+        """""
+        
+        # ----------------------------------------------------------------
+
+        # Build up regression variables.
+
+        # ----------------------------------------------------------------
+        
+        ### Citation Weighting
+        citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        
+        citations_df['cites'] = citations_df.groupby('citation_patent_id')['citation_patent_id'].transform('count')
+        citations_df = citations_df[['citation_patent_id', 'cites']]
+        citations_df.rename(columns={'citation_patent_id': 'patent_id'}, inplace=True)
+        
+        cpc_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        
+        citations_df = pd.merge(
+            citations_df,
+            cpc_df[['patent_id', 'cpc_class']],
+            on='patent_id',
+            how='right'
+        )
+        citations_df['cites'] = citations_df['cites'] + 1
+        
+        applications_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Applications.pkl')
+        
+        citations_df = pd.merge(
+            citations_df,
+            applications_df[['patent_id', 'year']],
+            on='patent_id',
+            how='inner'
+        )
+        
+        citations_df['cpc_cites'] = citations_df.groupby(['cpc_class', 'year'])['cites'].transform('mean')
+        citations_df['norm_cites'] = citations_df['cites'] / citations_df.groupby('patent_id')['cpc_cites'].transform('mean')
+        
+        
+        
+        ### Knowledge Stocks
+        
+        ### R&D Spending
+        
+        
+        # ----------------------------------------------------------------
+
+        # Build .
+
+        # ----------------------------------------------------------------
+        
         
         
         

@@ -37,6 +37,10 @@ P.Cleaner()
 P.SpillAnalysis()
 
 
+### Spillover Regressions
+P.SpillReg()
+
+
 # --------- #
 # Calibrate #
 # --------- #
