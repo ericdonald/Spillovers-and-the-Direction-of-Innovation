@@ -1013,7 +1013,7 @@ class Processor:
 
         # ----------------------------------------------------------------
         
-        ### Citation Weighting
+        ### Patent Citation Panel
         citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         
         citations_df['cites'] = citations_df.groupby('citation_patent_id')['citation_patent_id'].transform('count')
@@ -1041,7 +1041,31 @@ class Processor:
         
         citations_df['cpc_cites'] = citations_df.groupby(['cpc_class', 'year'])['cites'].transform('mean')
         citations_df['norm_cites'] = citations_df['cites'] / citations_df.groupby('patent_id')['cpc_cites'].transform('mean')
+        citations_df = citations_df[['patent_id', 'norm_cites']].drop_duplicates()
         
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+
+        pat_panel_df = pd.merge(
+            relevant_df,
+            citations_df,
+            on='patent_id',
+            how='inner'
+        )
+        
+        pat_panel_df = pat_panel_df.melt(id_vars=[['patent_id', 'year', 'norm_cites']],
+                          value_vars=[c for c in pat_panel_df.columns if c.endswith('_patent')], 
+                          var_name='patent_type_raw',
+                          value_name='value')
+
+        pat_panel_df['patent_type'] = pat_panel_df['patent_type_raw'].str.replace('_patent', '', regex=False)
+        pat_panel_df = pat_panel_df.drop(columns='patent_type_raw')
+        
+        pat_panel_df['cites'] = citations_df['norm_cites'] * citations_df['value']
+        
+        pat_panel_df['pat_cites'] = pat_panel_df.groupby(['patent_type', 'year'])['cites'].transform('sum')
+        pat_panel_df['pat_raw'] = pat_panel_df.groupby(['patent_type', 'year'])['value'].transform('sum')
+        
+        pat_panel_df = pat_panel_df[['patent_type', 'year', 'pat_cites', 'pat_cites']].drop_duplicates()
         
         
         ### Knowledge Stocks
