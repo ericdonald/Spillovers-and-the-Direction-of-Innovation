@@ -37,7 +37,9 @@ P.Cleaner()
 P.SpillAnalysis()
 
 
-### Spillover Regressions
+# --------------------- #
+# Spillover Regressions #
+# --------------------- #
 P.SpillReg()
 
 

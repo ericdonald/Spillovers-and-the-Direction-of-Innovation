@@ -406,7 +406,9 @@ class Processor:
         CRS_df = pd.DataFrame(CRS_data) #Nominal tax credit expenditures in billions of dollars
         
         
-        ### Arora et al. (2021) Patent to Firm Crosswalk
+        # -------------------------------------------- #
+        # Arora et al. (2021) Patent to Firm Crosswalk #
+        # -------------------------------------------- #
         discern_df = pd.read_csv(f'{self.Directory}/Raw Data/discern_pat_grant_1980_2021.csv')
         gvkey_df = pd.read_csv(f'{self.Directory}/Raw Data/permno_gvkey.csv')
 
@@ -1000,7 +1002,7 @@ class Processor:
         
         
         
-    def SpillReg(self, δ_A=0.15):
+    def SpillReg(self, year_start=1975, year_end=2021, δ_A=0.15):
         """""
         Reduced Form Evidence for Spillover Network
         
@@ -1013,7 +1015,9 @@ class Processor:
 
         # ----------------------------------------------------------------
         
-        ### Patent Citation Panel
+        # --------------------- #
+        # Patent Citation Panel #
+        # --------------------- #
         citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         
         citations_df['cites'] = citations_df.groupby('citation_patent_id')['citation_patent_id'].transform('count')
@@ -1060,17 +1064,53 @@ class Processor:
         pat_panel_df['patent_type'] = pat_panel_df['patent_type_raw'].str.replace('_patent', '', regex=False)
         pat_panel_df = pat_panel_df.drop(columns='patent_type_raw')
         
-        pat_panel_df['cites'] = citations_df['norm_cites'] * citations_df['value']
+        pat_panel_df['cites'] = pat_panel_df['norm_cites'] * pat_panel_df['value']
         
         pat_panel_df['pat_cites'] = pat_panel_df.groupby(['patent_type', 'year'])['cites'].transform('sum')
         pat_panel_df['pat_raw'] = pat_panel_df.groupby(['patent_type', 'year'])['value'].transform('sum')
         
-        pat_panel_df = pat_panel_df[['patent_type', 'year', 'pat_cites', 'pat_cites']].drop_duplicates()
+        pat_panel_df = pat_panel_df[['patent_type', 'year', 'pat_cites', 'pat_raw']].drop_duplicates()
+        pat_panel_df = pat_panel_df[(pat_panel_df["year"] >= year_start) & (pat_panel_df["year"] <= year_end)]
+
+        
+        # ---------------- #
+        # Knowledge Stocks #
+        # ---------------- #
+        tech_labels = [f"{c}_{t}" for c, t in product(self.classes, self.types)] + ["gen"]
+        J = 2*self.E.Θ+1
+        T = year_start + 1 - year_end
+        
+        wide_cites = pat_panel_df.pivot(index='year', columns='patent_type', values='pat_cites').sort_index()[tech_labels]
+        pat_cites = wide_cites.to_numpy()
+        wide_raw = pat_panel_df.pivot(index='year', columns='patent_type', values='pat_raw').sort_index()[tech_labels]
+        pat_raw = wide_raw.to_numpy()
+        
+        A_cites = np.zeros((T,J))
+        A_raw = np.zeros((T,J))
+        
+        for j in range(J):
+            A_cites[0,j] = pat_cites[0,j] / (δ_A + self.E.g)
+            A_raw[0,j] = pat_raw[0,j] / (δ_A + self.E.g)
+            
+            for t in range(1,T):
+                A_cites[t,j] = pat_cites[t,j] + (1-δ_A) * A_cites[t-1,j]
+                A_raw[t,j] = pat_raw[t,j] + (1-δ_A) * A_raw[t-1,j]
+                
+        φ = self.E.φ_tilde_0 - np.eye((J,J))
+        spill_cites = np.zeros((T,J))
+        spill_raw = np.zeros((T,J))
+        
+        for j in range(J):
+            for t in range(T):
+                spill_cites[t,j] = np.sum(A_cites[t-1,:] * φ[j,:])
+                spill_raw[t,j] = np.sum(A_raw[t-1,:] * φ[j,:])
         
         
-        ### Knowledge Stocks
+        # ------------ #
+        # R&D Spending #
+        # ------------ #
         
-        ### R&D Spending
+        
         
         
         # ----------------------------------------------------------------
