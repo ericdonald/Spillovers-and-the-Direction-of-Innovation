@@ -419,7 +419,9 @@ class Processor:
         pat_firm_crosswalk_df.to_pickle(f'{self.Directory}/Clean Data/pat_firm_crosswalk.pkl')
         
         
-        ### Compustat
+        # --------- #
+        # Compustat #
+        # --------- #
         compustat_df = pd.read_csv(f'{self.Directory}/Raw Data/compustat.csv')
         
         compustat_df = compustat_df[(compustat_df['fic']=="USA") & (compustat_df['final']=="Y")]
