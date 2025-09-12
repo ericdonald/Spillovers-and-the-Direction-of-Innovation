@@ -428,6 +428,15 @@ class Processor:
         compustat_df = compustat_df[compustat_df.groupby('gvkey')['gvkey'].transform('size') > 1]
         compustat_df.rename(columns={'fyear': 'year'}, inplace=True)
         
+        compustat_df = pd.merge(compustat_df,
+                                FRED_CPI_df,
+                                on='year',
+                                how='inner'
+                                )
+        
+        compustat_df['firm_rd'] = compustat_df['xrd'] / compustat_df['CPI']
+        compustat_df = compustat_df[['gvkey', 'year', 'firm_rd']]
+        
         compustat_df.to_pickle(f'{self.Directory}/Clean Data/compustat.pkl')
         
 
@@ -1119,6 +1128,7 @@ class Processor:
         # R&D Spending #
         # ------------ #
         pat_firm_crosswalk_df = pd.read_pickle(f'{self.Directory}/lean Data/pat_firm_crosswalk.pkl')
+        compustat_df = pd.read_pickle(f'{self.Directory}/lean Data/compustat.pkl')
         
         firm_pats_df = pd.merge(pat_panel_df,
                                 pat_firm_crosswalk_df,
@@ -1140,6 +1150,16 @@ class Processor:
             
         firm_pat_shares_df = pd.concat(windows, ignore_index=True)
         firm_pat_shares_df['tech_shares'] = firm_pat_shares_df['tech_cites'] / firm_pat_shares_df.groupby(['gvkey', 'year'])['tech_cites'].transform('sum')
+        
+        RD_df = pd.merge(compustat_df,
+                          firm_pat_shares_df,
+                          on=['gvkey', 'year'],
+                          how='inner'
+                          )
+        RD_df['firm_tech_rd'] = RD_df['tech_shares'] * RD_df['firm_rd']
+        
+        RD_df['tech_rd'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd'].transform('sum')
+        RD_df = RD_df[['patent_type', 'year', 'tech_rd']]
         
         
         # ----------------------------------------------------------------
