@@ -72,7 +72,6 @@ class Processor:
         Clean Data
         
         Output: Raw Data/Patent_CPC.pkl
-                Raw Data/Patent_Applications.pkl
                 Raw Data/Patent_Citations.pkl
                 Clean Data/RICE.pkl
                 Clean Data/pat_firm_crosswalk.pkl
@@ -267,9 +266,7 @@ class Processor:
         PV_applications_df = PV_applications_df.dropna(subset=["year"])
         PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
         PV_applications_df['patent_id'] = PV_applications_df['patent_id'].astype(str)
-        
-        PV_CPC_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Applications.pkl')
-        
+                
         
         # --------------------- #
         # PatentsView Citations #
@@ -599,7 +596,7 @@ class Processor:
          
         
          
-    def SpillAnalysis(self, year_start=1970, year_end=2015, tbin=5):
+    def SpillAnalysis(self, year_start=1975, year_end=2015, tbin=5):
         """""
         Spillover Network Analysis
         
@@ -671,7 +668,7 @@ class Processor:
         # ---------------------------------- #
         tech_labels = [f"{c}_{t}" for c, t in product(self.classes, self.types)] + ["gen"]
 
-        tbins = list(range(year_start, year_end, tbin))
+        tbins = list(range(year_start, year_end+tbin, tbin))
         def five_year_bin(y):
             for right in tbins:
                 if (y > right - tbin) and (y <= right):
@@ -758,7 +755,7 @@ class Processor:
         phi = phi.sort_values(["tech_citer", "tech_citee", "t_int"]).reset_index(drop=True)
         phi["phi_lag"] = phi.groupby(["tech_citer", "tech_citee"])["phi_tilde"].shift(1)
     
-        phi["t_trend"] = phi["t_int"] - (year_start + tbin)
+        phi["t_trend"] = phi["t_int"] - year_start
         phi["clean_sender"] = ((phi["tech_citee"] == "car_clean") | (phi["tech_citee"] == "elec_clean")).astype(int)
         phi["car_clean_sender"] = (phi["tech_citee"] == "car_clean").astype(int)
         phi["elec_clean_sender"] = (phi["tech_citee"] == "elec_clean").astype(int)
@@ -1002,7 +999,7 @@ class Processor:
         
         
         
-    def SpillReg(self, year_start=1975, year_end=2021, δ_A=0.15):
+    def SpillReg(self, year_start=1975, year_end=2021, δ_A=0.15, tback=4, tfor=5):
         """""
         Reduced Form Evidence for Spillover Network
         
@@ -1019,12 +1016,12 @@ class Processor:
         # Patent Citation Panel #
         # --------------------- #
         citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        cpc_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
         citations_df['cites'] = citations_df.groupby('citation_patent_id')['citation_patent_id'].transform('count')
         citations_df = citations_df[['citation_patent_id', 'cites']]
         citations_df.rename(columns={'citation_patent_id': 'patent_id'}, inplace=True)
-        
-        cpc_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
         
         citations_df = pd.merge(
             citations_df,
@@ -1032,13 +1029,12 @@ class Processor:
             on='patent_id',
             how='right'
         )
+        citations_df['cites'] = citations_df['cites'].fillna(0)
         citations_df['cites'] = citations_df['cites'] + 1
-        
-        applications_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Applications.pkl')
         
         citations_df = pd.merge(
             citations_df,
-            applications_df[['patent_id', 'year']],
+            relevant_df[['patent_id', 'year']],
             on='patent_id',
             how='inner'
         )
@@ -1046,8 +1042,6 @@ class Processor:
         citations_df['cpc_cites'] = citations_df.groupby(['cpc_class', 'year'])['cites'].transform('mean')
         citations_df['norm_cites'] = citations_df['cites'] / citations_df.groupby('patent_id')['cpc_cites'].transform('mean')
         citations_df = citations_df[['patent_id', 'norm_cites']].drop_duplicates()
-        
-        relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
 
         pat_panel_df = pd.merge(
             relevant_df,
@@ -1063,14 +1057,16 @@ class Processor:
 
         pat_panel_df['patent_type'] = pat_panel_df['patent_type_raw'].str.replace('_patent', '', regex=False)
         pat_panel_df = pat_panel_df.drop(columns='patent_type_raw')
+        pat_panel_df = pat_panel_df[(pat_panel_df['value'] != 0)]
         
-        pat_panel_df['cites'] = pat_panel_df['norm_cites'] * pat_panel_df['value']
+        pat_panel_df = pat_panel_df[['patent_id', 'patent_type', 'year', 'norm_cites']]
         
-        pat_panel_df['pat_cites'] = pat_panel_df.groupby(['patent_type', 'year'])['cites'].transform('sum')
-        pat_panel_df['pat_raw'] = pat_panel_df.groupby(['patent_type', 'year'])['value'].transform('sum')
+        tech_panel_df = pat_panel_df.copy()
+        tech_panel_df['pat_cites'] = tech_panel_df.groupby(['patent_type', 'year'])['norm_cites'].transform('sum')
+        tech_panel_df['pat_raw'] = tech_panel_df.groupby(['patent_type', 'year'])['norm_cites'].transform('count')
         
-        pat_panel_df = pat_panel_df[['patent_type', 'year', 'pat_cites', 'pat_raw']].drop_duplicates()
-        pat_panel_df = pat_panel_df[(pat_panel_df["year"] >= year_start) & (pat_panel_df["year"] <= year_end)]
+        tech_panel_df = tech_panel_df[['patent_type', 'year', 'pat_cites', 'pat_raw']].drop_duplicates()
+        tech_panel_df = tech_panel_df[(tech_panel_df["year"] >= year_start) & (tech_panel_df["year"] <= year_end)]
 
         
         # ---------------- #
@@ -1080,9 +1076,9 @@ class Processor:
         J = 2*self.E.Θ+1
         T = year_start + 1 - year_end
         
-        wide_cites = pat_panel_df.pivot(index='year', columns='patent_type', values='pat_cites').sort_index()[tech_labels]
+        wide_cites = tech_panel_df.pivot(index='year', columns='patent_type', values='pat_cites').sort_index()[tech_labels]
         pat_cites = wide_cites.to_numpy()
-        wide_raw = pat_panel_df.pivot(index='year', columns='patent_type', values='pat_raw').sort_index()[tech_labels]
+        wide_raw = tech_panel_df.pivot(index='year', columns='patent_type', values='pat_raw').sort_index()[tech_labels]
         pat_raw = wide_raw.to_numpy()
         
         A_cites = np.zeros((T,J))
@@ -1109,7 +1105,27 @@ class Processor:
         # ------------ #
         # R&D Spending #
         # ------------ #
+        pat_firm_crosswalk_df = pd.read_pickle(f'{self.Directory}/lean Data/pat_firm_crosswalk.pkl')
         
+        firm_pats_df = pd.merge(pat_panel_df,
+                                pat_firm_crosswalk_df,
+                                on='patent_id',
+                                how='inner'
+                                )
+        
+        firm_pats_df['year_cites'] = firm_pats_df.groupby(['gvkey', 'patent_type', 'year'])['norm_cites'].transform('sum')
+        firm_pats_df = firm_pats_df[['gvkey', 'patent_type', 'year', 'year_cites']].drop_duplicates()
+        
+        windows = []
+        for t in range(year_start, year_end+1):
+            window_df = firm_pats_df[(firm_pats_df["year"] >= t-tback) & (firm_pats_df["year"] <= t+tfor)]
+            window_df['tech_cites'] = window_df.groupby(['gvkey', 'patent_type'])['year_cites'].transform('sum')
+            window_df['year'] = t
+            window_df = window_df[['gvkey', 'patent_type', 'year', 'tech_cites']].drop_duplicates()
+            
+            windows.append(window_df)
+            
+        firm_pat_shares_df = pd.concat(windows, ignore_index=True)
         
         
         
