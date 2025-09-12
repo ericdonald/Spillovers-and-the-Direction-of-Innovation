@@ -75,6 +75,7 @@ class Processor:
                 Raw Data/Patent_Citations.pkl
                 Clean Data/RICE.pkl
                 Clean Data/pat_firm_crosswalk.pkl
+                Clean Data/compustat.pkl
                 Clean Data/relevant_patents.pkl
                 Clean Data/cal_panel.pkl
                 Clean Data/clim_cal_panel.pkl
@@ -416,6 +417,18 @@ class Processor:
                                          )
 
         pat_firm_crosswalk_df.to_pickle(f'{self.Directory}/Clean Data/pat_firm_crosswalk.pkl')
+        
+        
+        ### Compustat
+        compustat_df = pd.read_csv(f'{self.Directory}/Raw Data/compustat.csv')
+        
+        compustat_df = compustat_df[(compustat_df['fic']=="USA") & (compustat_df['final']=="Y")]
+        terry_cols = ['at', 'ppent', 'emp', 'capxv', 'sale', 'xrd']
+        compustat_df = compustat_df[compustat_df[terry_cols].gt(0).all(axis=1)]
+        compustat_df = compustat_df[compustat_df.groupby('gvkey')['gvkey'].transform('size') > 1]
+        compustat_df.rename(columns={'fyear': 'year'}, inplace=True)
+        
+        compustat_df.to_pickle(f'{self.Directory}/Clean Data/compustat.pkl')
         
 
         # ----------------------------------------------------------------
@@ -1020,7 +1033,7 @@ class Processor:
         relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
         citations_df['cites'] = citations_df.groupby('citation_patent_id')['citation_patent_id'].transform('count')
-        citations_df = citations_df[['citation_patent_id', 'cites']]
+        citations_df = citations_df[['citation_patent_id', 'cites']].drop_duplicates()
         citations_df.rename(columns={'citation_patent_id': 'patent_id'}, inplace=True)
         
         citations_df = pd.merge(
@@ -1126,7 +1139,7 @@ class Processor:
             windows.append(window_df)
             
         firm_pat_shares_df = pd.concat(windows, ignore_index=True)
-        
+        firm_pat_shares_df['tech_shares'] = firm_pat_shares_df['tech_cites'] / firm_pat_shares_df.groupby(['gvkey', 'year'])['tech_cites'].transform('sum')
         
         
         # ----------------------------------------------------------------
