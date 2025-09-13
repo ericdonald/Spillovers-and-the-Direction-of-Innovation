@@ -31,6 +31,8 @@ where `XX` is the user's API key for the relevant data source.
   - [CPC Codes](https://patentsview.org/download/data-download-tables)
   - [Applications](https://patentsview.org/download/data-download-tables)
   - [Citations](https://patentsview.org/download/data-download-tables)
+  - [Inventors](https://patentsview.org/download/data-download-tables)
+  - [Location Crosswalk](https://patentsview.org/download/data-download-tables)
 - [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
 
 ### Contained in Raw Data:
