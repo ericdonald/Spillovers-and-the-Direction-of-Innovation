@@ -283,14 +283,24 @@ class Processor:
         del PV_citations_df
         
         
-        ### Patentsview Inventors
+        # --------------------- #
+        # Patentsview Inventors #
+        # --------------------- #
         PV_inventors_df = gpf.Extract_PatentsView('g_inventor_disambiguated')
         
         PV_inventors_df['patent_id'] = PV_inventors_df['patent_id'].astype(str)
         
+        PV_location_df = gpf.Extract_PatentsView('g_location_disambiguated')
+        
+        PV_inventors_df = pd.merge(PV_inventors_df,
+                                   PV_location_df[['location_id', 'disambig_state', 'state_fips']],
+                                   on='location_id',
+                                   how='inner'
+                                    )
+        
         PV_inventors_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
         
-        del PV_inventors_df
+        del PV_inventors_df, PV_location_df
         
         
         # ------------------------------------------- #
