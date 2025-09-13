@@ -73,6 +73,7 @@ class Processor:
         
         Output: Raw Data/Patent_CPC.pkl
                 Raw Data/Patent_Citations.pkl
+                Raw Data/Patent_Inventors.pkl
                 Clean Data/RICE.pkl
                 Clean Data/pat_firm_crosswalk.pkl
                 Clean Data/compustat.pkl
@@ -280,6 +281,16 @@ class Processor:
         PV_citations_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         
         del PV_citations_df
+        
+        
+        ### Patentsview Inventors
+        PV_inventors_df = gpf.Extract_PatentsView('g_inventor_disambiguated')
+        
+        PV_inventors_df['patent_id'] = PV_inventors_df['patent_id'].astype(str)
+        
+        PV_inventors_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
+        
+        del PV_inventors_df
         
         
         # ------------------------------------------- #
@@ -1163,12 +1174,42 @@ class Processor:
         RD_df['tech_rd'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd'].transform('sum')
         RD_df = RD_df[['patent_type', 'year', 'tech_rd']]
         
+        tech_panel_df = pd.merge(tech_panel_df,
+                                 RD_df,
+                                 on=['patent_type', 'year'],
+                                 how='inner'
+                                 )
+        
+        
+        # ------------------------ #
+        # State R&D Price Exposure #
+        # ------------------------ #
+        
+        
+        # ----------------------- #
+        # Predicted Patent Shocks #
+        # ----------------------- #
+        
+        
+        # -------------------- #
+        # Knowledge Instrument #
+        # -------------------- #
+        
         
         # ----------------------------------------------------------------
 
-        # Build .
+        # Run regressions.
 
         # ----------------------------------------------------------------
+        
+        # --- #
+        # OLS #
+        # --- #
+        
+        
+        # -- #
+        # IV #
+        # -- #
         
         
         
