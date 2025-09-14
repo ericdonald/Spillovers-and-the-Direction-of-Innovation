@@ -76,6 +76,7 @@ class Processor:
                 Raw Data/Patent_Inventors.pkl
                 Clean Data/RICE.pkl
                 Clean Data/pat_firm_crosswalk.pkl
+                Clean Data/state_rd_price.pkl
                 Clean Data/compustat.pkl
                 Clean Data/relevant_patents.pkl
                 Clean Data/cal_panel.pkl
@@ -438,6 +439,14 @@ class Processor:
                                          )
 
         pat_firm_crosswalk_df.to_pickle(f'{self.Directory}/Clean Data/pat_firm_crosswalk.pkl')
+        
+        
+        ### State-Level R&D Prices
+        state_rdp_df = pd.read_stata(f'{self.Directory}/Raw Data/RDusercost_2017.dta')
+        
+        state_rdp_df = state_rdp_df[['state', 'fips', 'year', 'rho_h']]
+        
+        state_rdp_df.to_pickle(f'{self.Directory}/Clean Data/state_rd_price.pkl')
         
         
         # --------- #
