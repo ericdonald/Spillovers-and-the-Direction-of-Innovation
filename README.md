@@ -42,6 +42,7 @@ where `XX` is the user's API key for the relevant data source.
 - [Congressional Research Service Report IF11017](https://www.congress.gov/crs-product/IF11017)
 - [Congressional Research Service Report IF10479](https://www.congress.gov/crs-product/IF10479)
 - Crosswalks from Patents to Firms from [Arora et al. (2021)](https://zenodo.org/records/13619821)
+- State-Level R&D Prices from [Lucking et al. (2019)](https://www.dropbox.com/s/d1nrtacxk6qke0a/spillovers_rep.zip?dl=0)
 
 ### Requires License:
 - [Compustat](https://wrds-www.wharton.upenn.edu/)
