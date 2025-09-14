@@ -1095,10 +1095,10 @@ class Processor:
             how='inner'
         )
         
-        pat_panel_df = pat_panel_df.melt(id_vars=[['patent_id', 'year', 'norm_cites']],
-                          value_vars=[c for c in pat_panel_df.columns if c.endswith('_patent')], 
-                          var_name='patent_type_raw',
-                          value_name='value')
+        pat_panel_df = pat_panel_df.melt(id_vars=['patent_id', 'year', 'norm_cites'],
+                                         value_vars=[c for c in pat_panel_df.columns if c.endswith('_patent')], 
+                                         var_name='patent_type_raw',
+                                         value_name='value')
 
         pat_panel_df['patent_type'] = pat_panel_df['patent_type_raw'].str.replace('_patent', '', regex=False)
         pat_panel_df = pat_panel_df.drop(columns='patent_type_raw')
@@ -1118,40 +1118,53 @@ class Processor:
         # Knowledge Stocks #
         # ---------------- #
         tech_labels = [f"{c}_{t}" for c, t in product(self.classes, self.types)] + ["gen"]
+        years = np.arange(year_start, year_end + 1)
         J = 2*self.E.Θ+1
-        T = year_start + 1 - year_end
+        T = year_end + 1 - year_start
         
-        wide_cites = tech_panel_df.pivot(index='year', columns='patent_type', values='pat_cites').sort_index()[tech_labels]
-        pat_cites = wide_cites.to_numpy()
-        wide_raw = tech_panel_df.pivot(index='year', columns='patent_type', values='pat_raw').sort_index()[tech_labels]
-        pat_raw = wide_raw.to_numpy()
+        wide_cites = (tech_panel_df.pivot_table(index='year', columns='patent_type',
+                                                values='pat_cites', aggfunc='sum')
+                                                      .reindex(index=years, columns=tech_labels, fill_value=0.0))
+        wide_raw = (tech_panel_df.pivot_table(index='year', columns='patent_type',
+                                              values='pat_raw', aggfunc='sum')
+                                                    .reindex(index=years, columns=tech_labels, fill_value=0.0))
         
-        A_cites = np.zeros((T,J))
-        A_raw = np.zeros((T,J))
+        A_cites = wide_cites.copy()
+        A_raw = wide_raw.copy()
         
-        for j in range(J):
-            A_cites[0,j] = pat_cites[0,j] / (δ_A + self.E.g)
-            A_raw[0,j] = pat_raw[0,j] / (δ_A + self.E.g)
-            
-            for t in range(1,T):
-                A_cites[t,j] = pat_cites[t,j] + (1-δ_A) * A_cites[t-1,j]
-                A_raw[t,j] = pat_raw[t,j] + (1-δ_A) * A_raw[t-1,j]
+        A_cites.iloc[0, :] = wide_cites.iloc[0, :] / (δ_A + self.E.g)
+        A_raw.iloc[0, :] = wide_raw.iloc[0, :] / (δ_A +  self.E.g)
+        for t in range(1, T):
+            A_cites.iloc[t, :] = wide_cites.iloc[t, :] + (1 - δ_A) * A_cites.iloc[t - 1, :]
+            A_raw.iloc[t, :] = wide_raw.iloc[t, :] + (1 - δ_A) * A_raw.iloc[t - 1, :]
                 
-        φ = self.E.φ_tilde_0 - np.eye((J,J))
-        spill_cites = np.zeros((T,J))
-        spill_raw = np.zeros((T,J))
+        φ = self.E.φ_tilde_0 - np.eye(J)
+        spill_cites_w = pd.DataFrame(A_cites.to_numpy()[:-1] @ φ.T,
+                                     index=years[1:], columns=tech_labels
+                                     ).reindex(years).fillna(0.0)
+        spill_raw_w = pd.DataFrame(A_raw.to_numpy()[:-1] @ φ.T,
+                                   index=years[1:], columns=tech_labels
+                                   ).reindex(years).fillna(0.0)
         
-        for j in range(J):
-            for t in range(T):
-                spill_cites[t,j] = np.sum(A_cites[t-1,:] * φ[j,:])
-                spill_raw[t,j] = np.sum(A_raw[t-1,:] * φ[j,:])
-        
+        stocks_long = (A_cites.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_cites')
+                               .merge(A_raw.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_raw'),
+                                      on=['year','patent_type']
+                                      )
+                               )
+        spills_long = (spill_cites_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_cites')
+                                     .merge(spill_raw_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_raw'),
+                                            on=['year','patent_type']
+                                            )
+                                     )
+        tech_panel_df.merge(stocks_long, on=['year','patent_type'], how='inner')
+        tech_panel_df.merge(spills_long, on=['year','patent_type'], how='inner')
+
         
         # ------------ #
         # R&D Spending #
         # ------------ #
-        pat_firm_crosswalk_df = pd.read_pickle(f'{self.Directory}/lean Data/pat_firm_crosswalk.pkl')
-        compustat_df = pd.read_pickle(f'{self.Directory}/lean Data/compustat.pkl')
+        pat_firm_crosswalk_df = pd.read_pickle(f'{self.Directory}/Clean Data/pat_firm_crosswalk.pkl')
+        compustat_df = pd.read_pickle(f'{self.Directory}/Clean Data/compustat.pkl')
         
         firm_pats_df = pd.merge(pat_panel_df,
                                 pat_firm_crosswalk_df,
