@@ -1158,7 +1158,25 @@ class Processor:
                                      )
         tech_panel_df.merge(stocks_long, on=['year','patent_type'], how='inner')
         tech_panel_df.merge(spills_long, on=['year','patent_type'], how='inner')
-
+        
+        
+        # --------------------- #
+        # Downstream Spillovers #
+        # --------------------- #
+        spill_down_cites_w = pd.DataFrame(A_cites.to_numpy()[:-1] @ φ,
+                                     index=years[1:], columns=tech_labels
+                                     ).reindex(years).fillna(0.0)
+        spill_down_raw_w = pd.DataFrame(A_raw.to_numpy()[:-1] @ φ,
+                                   index=years[1:], columns=tech_labels
+                                   ).reindex(years).fillna(0.0)
+        
+        spills_down_long = (spill_down_cites_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_down_cites')
+                                     .merge(spill_down_raw_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_down_raw'),
+                                            on=['year','patent_type']
+                                            )
+                                     )
+        tech_panel_df.merge(spills_down_long, on=['year','patent_type'], how='inner')
+        
         
         # ------------ #
         # R&D Spending #
