@@ -839,7 +839,7 @@ class Processor:
         b22, se22 = coef_se(m2, "clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
 
         b31, se31 = coef_se(m3, "phi_lag")
-        b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+        b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.5f}", sefmt=lambda x: f"({x:.4f})")
         b33, se33 = coef_se(m3, "elec_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
     
         r1, r2, r3 = f"{m1.rsquared:.3f}", f"{m2.rsquared:.3f}", f"{m3.rsquared:.3f}"
@@ -1139,12 +1139,14 @@ class Processor:
             A_raw.iloc[t, :] = wide_raw.iloc[t, :] + (1 - δ_A) * A_raw.iloc[t - 1, :]
                 
         φ = self.E.φ_tilde_0 - np.eye(J)
-        spill_cites_w = pd.DataFrame(A_cites.to_numpy()[:-1] @ φ.T,
+        spill_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ.T),
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
-        spill_raw_w = pd.DataFrame(A_raw.to_numpy()[:-1] @ φ.T,
+        spill_cites_w.index.name = 'year'
+        spill_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ.T),
                                    index=years[1:], columns=tech_labels
                                    ).reindex(years).fillna(0.0)
+        spill_raw_w.index.name = 'year'
         
         stocks_long = (A_cites.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_cites')
                                .merge(A_raw.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_raw'),
@@ -1156,26 +1158,28 @@ class Processor:
                                             on=['year','patent_type']
                                             )
                                      )
-        tech_panel_df.merge(stocks_long, on=['year','patent_type'], how='inner')
-        tech_panel_df.merge(spills_long, on=['year','patent_type'], how='inner')
+        tech_panel_df = tech_panel_df.merge(stocks_long, on=['year','patent_type'], how='inner')
+        tech_panel_df = tech_panel_df.merge(spills_long, on=['year','patent_type'], how='inner')
         
         
-        # --------------------- #
-        # Downstream Spillovers #
-        # --------------------- #
-        spill_down_cites_w = pd.DataFrame(A_cites.to_numpy()[:-1] @ φ,
+        # ------------------ #
+        # Spillovers Created #
+        # ------------------ #
+        spill_down_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ),
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
-        spill_down_raw_w = pd.DataFrame(A_raw.to_numpy()[:-1] @ φ,
+        spill_down_cites_w.index.name = 'year'
+        spill_down_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ),
                                    index=years[1:], columns=tech_labels
                                    ).reindex(years).fillna(0.0)
+        spill_down_raw_w.index.name = 'year'
         
         spills_down_long = (spill_down_cites_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_down_cites')
                                      .merge(spill_down_raw_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_down_raw'),
                                             on=['year','patent_type']
                                             )
                                      )
-        tech_panel_df.merge(spills_down_long, on=['year','patent_type'], how='inner')
+        tech_panel_df = tech_panel_df.merge(spills_down_long, on=['year','patent_type'], how='inner')
         
         
         # ------------ #
@@ -1191,35 +1195,37 @@ class Processor:
                                 )
         
         firm_pats_df['year_cites'] = firm_pats_df.groupby(['gvkey', 'patent_type', 'year'])['norm_cites'].transform('sum')
-        firm_pats_df = firm_pats_df[['gvkey', 'patent_type', 'year', 'year_cites']].drop_duplicates()
+        firm_pats_df['year_pats'] = firm_pats_df.groupby(['gvkey', 'patent_type', 'year'])['patent_id'].transform('count')
+        firm_pats_df = firm_pats_df[['gvkey', 'patent_type', 'year', 'year_cites', 'year_pats']].drop_duplicates()
         
         windows = []
         for t in range(year_start, year_end+1):
             window_df = firm_pats_df[(firm_pats_df["year"] >= t-tback) & (firm_pats_df["year"] <= t+tfor)]
             window_df['tech_cites'] = window_df.groupby(['gvkey', 'patent_type'])['year_cites'].transform('sum')
+            window_df['tech_pats'] = window_df.groupby(['gvkey', 'patent_type'])['year_pats'].transform('sum')
             window_df['year'] = t
-            window_df = window_df[['gvkey', 'patent_type', 'year', 'tech_cites']].drop_duplicates()
+            window_df = window_df[['gvkey', 'patent_type', 'year', 'tech_cites', 'tech_pats']].drop_duplicates()
             
             windows.append(window_df)
             
         firm_pat_shares_df = pd.concat(windows, ignore_index=True)
-        firm_pat_shares_df['tech_shares'] = firm_pat_shares_df['tech_cites'] / firm_pat_shares_df.groupby(['gvkey', 'year'])['tech_cites'].transform('sum')
+        firm_pat_shares_df['tech_shares_cites'] = firm_pat_shares_df['tech_cites'] / firm_pat_shares_df.groupby(['gvkey', 'year'])['tech_cites'].transform('sum')
+        firm_pat_shares_df['tech_shares_pats'] = firm_pat_shares_df['tech_pats'] / firm_pat_shares_df.groupby(['gvkey', 'year'])['tech_pats'].transform('sum')
+
         
         RD_df = pd.merge(compustat_df,
                           firm_pat_shares_df,
                           on=['gvkey', 'year'],
                           how='inner'
                           )
-        RD_df['firm_tech_rd'] = RD_df['tech_shares'] * RD_df['firm_rd']
+        RD_df['firm_tech_rd_cites'] = RD_df['tech_shares_cites'] * RD_df['firm_rd']
+        RD_df['firm_tech_rd_pats'] = RD_df['tech_shares_pats'] * RD_df['firm_rd']
         
-        RD_df['tech_rd'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd'].transform('sum')
-        RD_df = RD_df[['patent_type', 'year', 'tech_rd']]
+        RD_df['tech_rd_cites'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd_cites'].transform('sum')
+        RD_df['tech_rd_pats'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd_pats'].transform('sum')
+        RD_df = RD_df[['patent_type', 'year', 'tech_rd_cites', 'tech_rd_pats']]
         
-        tech_panel_df = pd.merge(tech_panel_df,
-                                 RD_df,
-                                 on=['patent_type', 'year'],
-                                 how='inner'
-                                 )
+        tech_panel_df = tech_panel_df.merge(RD_df, on=['patent_type', 'year'], how='inner' )
         
         
         # ------------------------ #
