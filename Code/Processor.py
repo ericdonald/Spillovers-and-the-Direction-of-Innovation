@@ -1138,7 +1138,7 @@ class Processor:
             A_cites.iloc[t, :] = wide_cites.iloc[t, :] + (1 - δ_A) * A_cites.iloc[t - 1, :]
             A_raw.iloc[t, :] = wide_raw.iloc[t, :] + (1 - δ_A) * A_raw.iloc[t - 1, :]
                 
-        φ = self.E.φ_tilde_0 - np.eye(J)
+        φ = np.load(f'{self.Directory}/Clean Data/citation_shares.npy') - np.eye(J)
         spill_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ.T),
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
@@ -1223,9 +1223,9 @@ class Processor:
         
         RD_df['tech_rd_cites'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd_cites'].transform('sum')
         RD_df['tech_rd_pats'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd_pats'].transform('sum')
-        RD_df = RD_df[['patent_type', 'year', 'tech_rd_cites', 'tech_rd_pats']]
+        RD_df = RD_df[['patent_type', 'year', 'tech_rd_cites', 'tech_rd_pats']].drop_duplicates()
         
-        tech_panel_df = tech_panel_df.merge(RD_df, on=['patent_type', 'year'], how='inner' )
+        tech_panel_df = tech_panel_df.merge(RD_df, on=['patent_type', 'year'], how='left')
         
         
         # ------------------------ #
