@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import statsmodels.api as sm
+from linearmodels.panel import PanelOLS
 from pathlib import Path
 import io, sys, zipfile
 from datetime import datetime
@@ -1155,12 +1156,15 @@ class Processor:
             A_cites.iloc[t, :] = wide_cites.iloc[t, :] + (1 - δ_A) * A_cites.iloc[t - 1, :]
             A_raw.iloc[t, :] = wide_raw.iloc[t, :] + (1 - δ_A) * A_raw.iloc[t - 1, :]
                 
-        φ = np.load(f'{self.Directory}/Clean Data/citation_shares.npy') - np.eye(J)
-        spill_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ.T),
+        φ_cross = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
+        for j in range(J):
+            φ_cross[j,j] = 0
+        
+        spill_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ_cross.T),
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
         spill_cites_w.index.name = 'year'
-        spill_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ.T),
+        spill_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ_cross.T),
                                    index=years[1:], columns=tech_labels
                                    ).reindex(years).fillna(0.0)
         spill_raw_w.index.name = 'year'
@@ -1182,11 +1186,11 @@ class Processor:
         # ------------------ #
         # Spillovers Created #
         # ------------------ #
-        spill_down_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ),
+        spill_down_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ_cross),
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
         spill_down_cites_w.index.name = 'year'
-        spill_down_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ),
+        spill_down_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ_cross),
                                    index=years[1:], columns=tech_labels
                                    ).reindex(years).fillna(0.0)
         spill_down_raw_w.index.name = 'year'
@@ -1240,7 +1244,11 @@ class Processor:
         
         RD_df['tech_rd_cites'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd_cites'].transform('sum')
         RD_df['tech_rd_pats'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd_pats'].transform('sum')
-        RD_df = RD_df[['patent_type', 'year', 'tech_rd_cites', 'tech_rd_pats']].drop_duplicates()
+        RD_df = RD_df[['patent_type','year','tech_rd_cites','tech_rd_pats']].drop_duplicates().sort_values(['patent_type','year'])
+        
+        RD_df['rd_stock_cites'] = RD_df.groupby('patent_type', group_keys=False)['tech_rd_cites'].apply(lambda s: s.ewm(alpha=δ_A, adjust=False).mean() / δ_A)
+        RD_df['rd_stock_pats'] = RD_df.groupby('patent_type', group_keys=False)['firm_tech_rd_pats'].apply(lambda s: s.ewm(alpha=δ_A, adjust=False).mean() / δ_A)
+
         
         tech_panel_df = tech_panel_df.merge(RD_df, on=['patent_type', 'year'], how='left')
         
@@ -1269,6 +1277,26 @@ class Processor:
         # --- #
         # OLS #
         # --- #
+        tech_panel_df = tech_panel_df[(tech_panel_df["year"] >= year_start+tfor)]
+        tech_panel_df = tech_panel_df[(tech_panel_df["year"] >= year_start) & (tech_panel_df["year"] <= year_end)]
+        
+        tech_panel_df = tech_panel_df.set_index(['patent_type', 'year'])
+        
+        tech_panel_df['ln_pat_cites'] = np.log(tech_panel_df['pat_cites'])
+        tech_panel_df['ln_tech_rd_cites'] = np.log(tech_panel_df['tech_rd_cites'])
+        tech_panel_df['ln_spill_cites'] = np.log(tech_panel_df['spill_cites'])
+        tech_panel_df['ln_spill_down_cites'] = np.log(tech_panel_df['spill_down_cites'])
+        
+
+        model = PanelOLS(
+            tech_panel_df['ln_pat_cites'],
+            tech_panel_df[['ln_tech_rd_cites', 'ln_spill_cites']],
+            entity_effects=True, 
+            time_effects=True 
+        )
+        
+        res = model.fit(cov_type='clustered', cluster_entity=True)
+
         
         
         # -- #
