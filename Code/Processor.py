@@ -427,17 +427,26 @@ class Processor:
         CRS_df = pd.DataFrame(CRS_data) #Nominal tax credit expenditures in billions of dollars
         
         
-        # -------------------------------------------- #
-        # Arora et al. (2021) Patent to Firm Crosswalk #
-        # -------------------------------------------- #
+        # ------------------------ #
+        # Patent to Firm Crosswalk #
+        # ------------------------ #
         discern_df = pd.read_csv(f'{self.Directory}/Raw Data/discern_pat_grant_1980_2021.csv')
+        KPSS_df = pd.read_csv(f'{self.Directory}/Raw Data/KPSS_match_patent_permno_2023.csv')
         gvkey_df = pd.read_csv(f'{self.Directory}/Raw Data/permno_gvkey.csv')
+        
+        KPSS_df = KPSS_df.rename(columns={"patent_num": "patent_id"})
+        discern_df = discern_df.rename(columns={"permno_adj": "permno"})
+        gvkey_df = gvkey_df.rename(columns={"permno_adj": "permno"})
+        
+        new_pats = KPSS_df[~KPSS_df['patent_id'].isin(discern_df['patent_id'])]
 
-        pat_firm_crosswalk_df = pd.merge(discern_df[['patent_id', 'permno_adj']],
-                                         gvkey_df[['gvkey', 'permno_adj']],
-                                         on='permno_adj',
-                                         how='inner'
+        pat_firm_crosswalk_df = pd.concat([discern_df, new_pats], ignore_index=True)
+
+        pat_firm_crosswalk_df.merge(gvkey_df[['gvkey', 'permno']],
+                                    on='permno',
+                                    how='inner'
                                          )
+        pat_firm_crosswalk_df = pat_firm_crosswalk_df[['patent_id', 'gvkey']]
 
         pat_firm_crosswalk_df.to_pickle(f'{self.Directory}/Clean Data/pat_firm_crosswalk.pkl')
         
@@ -1247,7 +1256,7 @@ class Processor:
         RD_df = RD_df[['patent_type','year','tech_rd_cites','tech_rd_pats']].drop_duplicates().sort_values(['patent_type','year'])
         
         RD_df['rd_stock_cites'] = RD_df.groupby('patent_type', group_keys=False)['tech_rd_cites'].apply(lambda s: s.ewm(alpha=δ_A, adjust=False).mean() / δ_A)
-        RD_df['rd_stock_pats'] = RD_df.groupby('patent_type', group_keys=False)['firm_tech_rd_pats'].apply(lambda s: s.ewm(alpha=δ_A, adjust=False).mean() / δ_A)
+        RD_df['rd_stock_pats'] = RD_df.groupby('patent_type', group_keys=False)['tech_rd_pats'].apply(lambda s: s.ewm(alpha=δ_A, adjust=False).mean() / δ_A)
 
         
         tech_panel_df = tech_panel_df.merge(RD_df, on=['patent_type', 'year'], how='left')
