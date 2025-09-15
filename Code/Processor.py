@@ -8,8 +8,6 @@ Notes: This file defines a class for processing the economy of "Spillovers and t
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import statsmodels.api as sm
-from linearmodels.panel import PanelOLS
 from pathlib import Path
 import io, sys, zipfile
 from datetime import datetime
@@ -442,7 +440,7 @@ class Processor:
 
         pat_firm_crosswalk_df = pd.concat([discern_df, new_pats], ignore_index=True)
 
-        pat_firm_crosswalk_df.merge(gvkey_df[['gvkey', 'permno']],
+        pat_firm_crosswalk_df = pat_firm_crosswalk_df.merge(gvkey_df[['gvkey', 'permno']],
                                     on='permno',
                                     how='inner'
                                          )
@@ -451,7 +449,9 @@ class Processor:
         pat_firm_crosswalk_df.to_pickle(f'{self.Directory}/Clean Data/pat_firm_crosswalk.pkl')
         
         
-        ### State-Level R&D Prices
+        # ---------------------- #
+        # State-Level R&D Prices #
+        # ---------------------- #
         state_rdp_df = pd.read_stata(f'{self.Directory}/Raw Data/RDusercost_2017.dta')
         
         state_rdp_df = state_rdp_df[['state', 'fips', 'year', 'rho_h']]
@@ -835,39 +835,21 @@ class Processor:
         # Stability Regressions #
         # --------------------- #
         cluster_groups = spill_panel["tech_citer"]
+    
+        m1 = gpf.run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag"]], clusters=cluster_groups)
+    
+        m2 = gpf.run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "clean_trend"]], clusters=cluster_groups)
+    
+        m3 = gpf.run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_trend"]], clusters=cluster_groups)
         
-        def run_ols(y, X, cluster):
-            model = sm.OLS(y, X)
-            res = model.fit(cov_type="cluster", cov_kwds={"groups": cluster})
-            return res
-    
-        m1 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag"]], cluster_groups)
-    
-        m2 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "clean_trend"]], cluster_groups)
-    
-        m3 = run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_trend"]], cluster_groups)
-    
-        def coef_se(res, name, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
-            b = res.params.get(name, np.nan)
-            se = res.bse.get(name, np.nan)
-            p = res.bse.get(name, np.nan)
-            
-            def star(p):
-                if p < 0.01: return "***"
-                elif p < 0.05: return "**"
-                elif p < 0.1: return "*"
-                else: return ""
-            
-            return fmt(b) + star(p), sefmt(se)
+        b11, se11 = gpf.reg_out(m1, "phi_lag")
         
-        b11, se11 = coef_se(m1, "phi_lag")
-        
-        b21, se21 = coef_se(m2, "phi_lag")
-        b22, se22 = coef_se(m2, "clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+        b21, se21 = gpf.reg_out(m2, "phi_lag")
+        b22, se22 = gpf.reg_out(m2, "clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
 
-        b31, se31 = coef_se(m3, "phi_lag")
-        b32, se32 = coef_se(m3, "car_clean_trend", fmt=lambda x: f"{x:.5f}", sefmt=lambda x: f"({x:.4f})")
-        b33, se33 = coef_se(m3, "elec_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
+        b31, se31 = gpf.reg_out(m3, "phi_lag")
+        b32, se32 = gpf.reg_out(m3, "car_clean_trend", fmt=lambda x: f"{x:.5f}", sefmt=lambda x: f"({x:.4f})")
+        b33, se33 = gpf.reg_out(m3, "elec_clean_trend", fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
     
         r1, r2, r3 = f"{m1.rsquared:.3f}", f"{m2.rsquared:.3f}", f"{m3.rsquared:.3f}"
         n1, n2, n3 = f"{int(m1.nobs)}", f"{int(m2.nobs)}", f"{int(m3.nobs)}"
@@ -1071,11 +1053,11 @@ class Processor:
         
         
         
-    def SpillReg(self, year_start=1975, year_end=2021, δ_A=0.15, tback=4, tfor=5):
+    def SpillReg(self, year_start=1975, year_end=2023, δ_A=0.15, tback=4, tfor=5):
         """""
         Reduced Form Evidence for Spillover Network
         
-        Output: 
+        Output: Results/Tables/ReducedForm_Regressions.txt
         """""
         
         # ----------------------------------------------------------------
@@ -1295,58 +1277,29 @@ class Processor:
         tech_panel_df['ln_rd_stock_cites'] = np.log(tech_panel_df['rd_stock_cites'])
         tech_panel_df['ln_spill_cites'] = np.log(tech_panel_df['spill_cites'])
         tech_panel_df['ln_spill_down_cites'] = np.log(tech_panel_df['spill_down_cites'])
-
-        model = PanelOLS(
-            tech_panel_df['ln_pat_cites'],
-            tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites']],
-            entity_effects=True, 
-            time_effects=True 
-        )
         
-        res = model.fit(cov_type='clustered', cluster_entity=True)
-        print(res.summary)
-        
-        model = PanelOLS(
-            tech_panel_df['ln_pat_cites'],
-            tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites', 'ln_spill_down_cites']],
-            entity_effects=True, 
-            time_effects=True 
-        )
-        
-        res = model.fit(cov_type='clustered', cluster_entity=True)
-        print(res.summary)
+        m1 = gpf.run_ols(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites']], panel=1)
+        m2 = gpf.run_ols(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites', 'ln_spill_down_cites']], panel=1)
         
         
         tech_panel_df['ln_pat_raw'] = np.log(tech_panel_df['pat_raw'])
         tech_panel_df['ln_rd_stock_pats'] = np.log(tech_panel_df['rd_stock_pats'])
         tech_panel_df['ln_spill_pats'] = np.log(tech_panel_df['spill_pats'])
         tech_panel_df['ln_spill_down_pats'] = np.log(tech_panel_df['spill_down_pats'])
-
-        model = PanelOLS(
-            tech_panel_df['ln_pat_raw'],
-            tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats']],
-            entity_effects=True, 
-            time_effects=True 
-        )
         
-        res = model.fit(cov_type='clustered', cluster_entity=True)
-        print(res.summary)
-        
-        model = PanelOLS(
-            tech_panel_df['ln_pat_raw'],
-            tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats', 'ln_spill_down_pats']],
-            entity_effects=True, 
-            time_effects=True 
-        )
-        
-        res = model.fit(cov_type='clustered', cluster_entity=True)
-        print(res.summary)
+        m3 = gpf.run_ols(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats']], panel=1)
+        m4 = gpf.run_ols(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats', 'ln_spill_down_pats']], panel=1)
 
         
         
         # -- #
         # IV #
         # -- #
+        
+        
+        # ---------- #
+        # Save Table #
+        # ---------- #
         
         
         

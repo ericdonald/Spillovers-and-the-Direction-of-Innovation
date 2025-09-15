@@ -7,6 +7,8 @@ Notes: Functions that accomplish basic processing for the project.
 
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
+from linearmodels.panel import PanelOLS
 import requests
 import zipfile
 import io
@@ -110,3 +112,41 @@ def citation_shares(citations_df, relevant_df, classes, types):
     return shares
 
 
+
+def run_ols(y, X, panel=0, clusters=0):
+    "Run OLS Regressions"
+    
+    if panel==1:
+        model = PanelOLS(
+            y,
+            X,
+            entity_effects=True, 
+            time_effects=True)
+        res = model.fit(cov_type='clustered', cluster_entity=True)
+
+    else:
+        model = sm.OLS(y, X)
+        res = model.fit(cov_type="cluster", cov_kwds={"groups": clusters})
+
+    return res
+
+
+
+def reg_out(res, name, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
+    "Regression Output"
+    
+    b = res.params.get(name, np.nan)
+    se = res.bse.get(name, np.nan)
+    p = res.pvalues.get(name, np.nan)
+    
+    return fmt(b) + star(p), sefmt(se)
+
+
+
+def star(p):
+    "Regression Coefficient Stars"
+    
+    if p < 0.01: return "***"
+    elif p < 0.05: return "**"
+    elif p < 0.1: return "*"
+    else: return ""
