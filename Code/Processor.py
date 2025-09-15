@@ -840,7 +840,15 @@ class Processor:
         def coef_se(res, name, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
             b = res.params.get(name, np.nan)
             se = res.bse.get(name, np.nan)
-            return fmt(b), sefmt(se)
+            p = res.bse.get(name, np.nan)
+            
+            def star(p):
+                if p < 0.01: return "***"
+                elif p < 0.05: return "**"
+                elif p < 0.1: return "*"
+                else: return ""
+            
+            return fmt(b) + star(p), sefmt(se)
         
         b11, se11 = coef_se(m1, "phi_lag")
         
