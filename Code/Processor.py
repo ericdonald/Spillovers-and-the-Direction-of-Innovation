@@ -1143,18 +1143,18 @@ class Processor:
         wide_cites = (tech_panel_df.pivot_table(index='year', columns='patent_type',
                                                 values='pat_cites', aggfunc='sum')
                                                       .reindex(index=years, columns=tech_labels, fill_value=0.0))
-        wide_raw = (tech_panel_df.pivot_table(index='year', columns='patent_type',
+        wide_pats = (tech_panel_df.pivot_table(index='year', columns='patent_type',
                                               values='pat_raw', aggfunc='sum')
                                                     .reindex(index=years, columns=tech_labels, fill_value=0.0))
         
         A_cites = wide_cites.copy()
-        A_raw = wide_raw.copy()
+        A_pats = wide_pats.copy()
         
         A_cites.iloc[0, :] = wide_cites.iloc[0, :] / (δ_A + self.E.g)
-        A_raw.iloc[0, :] = wide_raw.iloc[0, :] / (δ_A +  self.E.g)
+        A_pats.iloc[0, :] = wide_pats.iloc[0, :] / (δ_A +  self.E.g)
         for t in range(1, T):
             A_cites.iloc[t, :] = wide_cites.iloc[t, :] + (1 - δ_A) * A_cites.iloc[t - 1, :]
-            A_raw.iloc[t, :] = wide_raw.iloc[t, :] + (1 - δ_A) * A_raw.iloc[t - 1, :]
+            A_pats.iloc[t, :] = wide_pats.iloc[t, :] + (1 - δ_A) * A_pats.iloc[t - 1, :]
                 
         φ_cross = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         for j in range(J):
@@ -1164,18 +1164,18 @@ class Processor:
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
         spill_cites_w.index.name = 'year'
-        spill_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ_cross.T),
+        spill_pats_w = pd.DataFrame(np.exp(np.log(A_pats.to_numpy()[:-1]) @ φ_cross.T),
                                    index=years[1:], columns=tech_labels
                                    ).reindex(years).fillna(0.0)
-        spill_raw_w.index.name = 'year'
+        spill_pats_w.index.name = 'year'
         
         stocks_long = (A_cites.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_cites')
-                               .merge(A_raw.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_raw'),
+                               .merge(A_pats.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_pats'),
                                       on=['year','patent_type']
                                       )
                                )
         spills_long = (spill_cites_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_cites')
-                                     .merge(spill_raw_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_raw'),
+                                     .merge(spill_pats_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_pats'),
                                             on=['year','patent_type']
                                             )
                                      )
@@ -1190,13 +1190,13 @@ class Processor:
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
         spill_down_cites_w.index.name = 'year'
-        spill_down_raw_w = pd.DataFrame(np.exp(np.log(A_raw.to_numpy()[:-1]) @ φ_cross),
+        spill_down_pats_w = pd.DataFrame(np.exp(np.log(A_pats.to_numpy()[:-1]) @ φ_cross),
                                    index=years[1:], columns=tech_labels
                                    ).reindex(years).fillna(0.0)
-        spill_down_raw_w.index.name = 'year'
+        spill_down_pats_w.index.name = 'year'
         
         spills_down_long = (spill_down_cites_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_down_cites')
-                                     .merge(spill_down_raw_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_down_raw'),
+                                     .merge(spill_down_pats_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_down_pats'),
                                             on=['year','patent_type']
                                             )
                                      )
@@ -1278,24 +1278,60 @@ class Processor:
         # OLS #
         # --- #
         tech_panel_df = tech_panel_df[(tech_panel_df["year"] >= year_start+tfor)]
-        tech_panel_df = tech_panel_df[(tech_panel_df["year"] >= year_start) & (tech_panel_df["year"] <= year_end)]
+        tech_panel_df = tech_panel_df[(tech_panel_df["patent_type"] != 'gen')]
         
         tech_panel_df = tech_panel_df.set_index(['patent_type', 'year'])
         
         tech_panel_df['ln_pat_cites'] = np.log(tech_panel_df['pat_cites'])
-        tech_panel_df['ln_tech_rd_cites'] = np.log(tech_panel_df['tech_rd_cites'])
+        tech_panel_df['ln_rd_stock_cites'] = np.log(tech_panel_df['rd_stock_cites'])
         tech_panel_df['ln_spill_cites'] = np.log(tech_panel_df['spill_cites'])
         tech_panel_df['ln_spill_down_cites'] = np.log(tech_panel_df['spill_down_cites'])
-        
 
         model = PanelOLS(
             tech_panel_df['ln_pat_cites'],
-            tech_panel_df[['ln_tech_rd_cites', 'ln_spill_cites']],
+            tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites']],
             entity_effects=True, 
             time_effects=True 
         )
         
         res = model.fit(cov_type='clustered', cluster_entity=True)
+        print(res.summary)
+        
+        model = PanelOLS(
+            tech_panel_df['ln_pat_cites'],
+            tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites', 'ln_spill_down_cites']],
+            entity_effects=True, 
+            time_effects=True 
+        )
+        
+        res = model.fit(cov_type='clustered', cluster_entity=True)
+        print(res.summary)
+        
+        
+        tech_panel_df['ln_pat_raw'] = np.log(tech_panel_df['pat_raw'])
+        tech_panel_df['ln_rd_stock_pats'] = np.log(tech_panel_df['rd_stock_pats'])
+        tech_panel_df['ln_spill_pats'] = np.log(tech_panel_df['spill_pats'])
+        tech_panel_df['ln_spill_down_pats'] = np.log(tech_panel_df['spill_down_pats'])
+
+        model = PanelOLS(
+            tech_panel_df['ln_pat_raw'],
+            tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats']],
+            entity_effects=True, 
+            time_effects=True 
+        )
+        
+        res = model.fit(cov_type='clustered', cluster_entity=True)
+        print(res.summary)
+        
+        model = PanelOLS(
+            tech_panel_df['ln_pat_raw'],
+            tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats', 'ln_spill_down_pats']],
+            entity_effects=True, 
+            time_effects=True 
+        )
+        
+        res = model.fit(cov_type='clustered', cluster_entity=True)
+        print(res.summary)
 
         
         
