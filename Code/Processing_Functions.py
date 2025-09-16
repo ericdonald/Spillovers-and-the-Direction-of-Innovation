@@ -130,12 +130,18 @@ def run_reg(y, X, model, clusters=[]):
 
 
 
-def reg_out(res, name, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
+def reg_out(res, name, model, fmt=lambda x: f"{x:.3f}", sefmt=lambda x: f"({x:.2f})"):
     "Regression Output"
     
-    b = res.params.get(name, np.nan)
-    se = res.bse.get(name, np.nan)
-    p = res.pvalues.get(name, np.nan)
+    if model == 'sm':
+        b = res.params.get(name, np.nan)
+        se = res.bse.get(name, np.nan)
+        p = res.pvalues.get(name, np.nan)
+        
+    if model == 'panel':
+        b = res.params.get(name, np.nan)
+        se = res.std_errors.get(name, np.nan)
+        p = res.pvalues.get(name, np.nan)
     
     return fmt(b) + star(p), sefmt(se)
 
