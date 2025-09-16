@@ -836,11 +836,11 @@ class Processor:
         # --------------------- #
         cluster_groups = spill_panel["tech_citer"]
     
-        m1 = gpf.run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag"]], clusters=cluster_groups)
+        m1 = gpf.run_reg(spill_panel["phi_tilde"], spill_panel[["phi_lag"]], 'sm', cluster_groups)
     
-        m2 = gpf.run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "clean_trend"]], clusters=cluster_groups)
+        m2 = gpf.run_reg(spill_panel["phi_tilde"], spill_panel[["phi_lag", "clean_trend"]], 'sm', cluster_groups)
     
-        m3 = gpf.run_ols(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_trend"]], clusters=cluster_groups)
+        m3 = gpf.run_reg(spill_panel["phi_tilde"], spill_panel[["phi_lag", "car_clean_trend", "elec_clean_trend"]], 'sm', cluster_groups)
         
         b11, se11 = gpf.reg_out(m1, "phi_lag")
         
@@ -1053,7 +1053,7 @@ class Processor:
         
         
         
-    def SpillReg(self, year_start=1975, year_end=2023, δ_A=0.15, tback=4, tfor=5):
+    def SpillReg(self, year_start=1970, reg_start=1980, year_end=2023, δ_A=0.15, tback=4, tfor=5):
         """""
         Reduced Form Evidence for Spillover Network
         
@@ -1174,9 +1174,9 @@ class Processor:
         tech_panel_df = tech_panel_df.merge(spills_long, on=['year','patent_type'], how='inner')
         
         
-        # ------------------ #
-        # Spillovers Created #
-        # ------------------ #
+        # --------------------- #
+        # Downstream Spillovers #
+        # --------------------- #
         spill_down_cites_w = pd.DataFrame(np.exp(np.log(A_cites.to_numpy()[:-1]) @ φ_cross),
                                      index=years[1:], columns=tech_labels
                                      ).reindex(years).fillna(0.0)
@@ -1268,7 +1268,7 @@ class Processor:
         # --- #
         # OLS #
         # --- #
-        tech_panel_df = tech_panel_df[(tech_panel_df["year"] >= year_start+tfor)]
+        tech_panel_df = tech_panel_df[(tech_panel_df["year"] >= reg_start)]
         tech_panel_df = tech_panel_df[(tech_panel_df["patent_type"] != 'gen')]
         
         tech_panel_df = tech_panel_df.set_index(['patent_type', 'year'])
@@ -1278,8 +1278,16 @@ class Processor:
         tech_panel_df['ln_spill_cites'] = np.log(tech_panel_df['spill_cites'])
         tech_panel_df['ln_spill_down_cites'] = np.log(tech_panel_df['spill_down_cites'])
         
-        m1 = gpf.run_ols(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites']], panel=1)
-        m2 = gpf.run_ols(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites', 'ln_spill_down_cites']], panel=1)
+        m1 = gpf.run_reg(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites']], 'panel')
+        b11, se11 = gpf.reg_out(m1, "ln_rd_stock_cites")
+        b12, se12 = gpf.reg_out(m1, "ln_spill_cites")
+        r1, n1 = f"{m1.rsquared:.3f}", f"{int(m1.nobs)}"
+        
+        m2 = gpf.run_reg(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites', 'ln_spill_down_cites']], 'panel')
+        b21, se21 = gpf.reg_out(m2, "ln_rd_stock_cites")
+        b22, se22 = gpf.reg_out(m2, "ln_spill_cites")
+        b23, se23 = gpf.reg_out(m2, "ln_spill_down_cites")
+        r2, n2 = f"{m2.rsquared:.3f}", f"{int(m2.nobs)}"
         
         
         tech_panel_df['ln_pat_raw'] = np.log(tech_panel_df['pat_raw'])
@@ -1287,9 +1295,16 @@ class Processor:
         tech_panel_df['ln_spill_pats'] = np.log(tech_panel_df['spill_pats'])
         tech_panel_df['ln_spill_down_pats'] = np.log(tech_panel_df['spill_down_pats'])
         
-        m3 = gpf.run_ols(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats']], panel=1)
-        m4 = gpf.run_ols(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats', 'ln_spill_down_pats']], panel=1)
-
+        m3 = gpf.run_reg(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats']], 'panel')
+        b31, se31 = gpf.reg_out(m3, "ln_rd_stock_pats")
+        b32, se32 = gpf.reg_out(m3, "ln_spill_pats")
+        r3, n3 = f"{m3.rsquared:.3f}", f"{int(m3.nobs)}"
+        
+        m4 = gpf.run_reg(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats', 'ln_spill_down_pats']], 'panel')
+        b41, se41 = gpf.reg_out(m4, "ln_rd_stock_pats")
+        b42, se42 = gpf.reg_out(m4, "ln_spill_pats")
+        b43, se43 = gpf.reg_out(m4, "ln_spill_down_pats")
+        r4, n4 = f"{m4.rsquared:.3f}", f"{int(m4.nobs)}"
         
         
         # -- #
@@ -1300,7 +1315,26 @@ class Processor:
         # ---------- #
         # Save Table #
         # ---------- #
+    
+        lines = []
+        lines.append(f"ln(R&D Spending) & {b11} & {b21} & & & {b31} & {b41} & \\\\")
+        lines.append(f"& {se11} & {se21} & & & {se31} & {se41} & \\\\[3pt]")
         
+        lines.append(f"Ln(Cross-Technology Spillovers) & {b12} & {b22} & & & {b32} & {b42} & \\\\")
+        lines.append(f"& {se12} & {se22} & & & {se32} & {se42} & \\\\[3pt]")
+        
+        lines.append(f"Ln(Downstream Spillovers) & & {b23} & & & & {b43} & \\\\")
+        lines.append(f"& {se11} & & & & & {se43} & \\\\[3pt]")
+        
+        lines.append("Specification & OLS & OLS & IV & & OLS & OLS & IV \\\\")
+        lines.append(f"IV 1st Stage F-Stat &  &  &  & &  &  &  \\\\")
+        lines.append(f"$R^2$ & {r1} & {r2} & & & {r3} & {r4} & \\\\")
+        lines.append(f"Obs & {n1} & {n2} & & & {n3} & {n4} &")
+    
+        tex_body = "\n".join(lines)
+    
+        with open(f'{self.Directory}/Results/Tables/ReducedForm_Regressions.tex', "w") as f:
+            f.write(tex_body)
         
         
         

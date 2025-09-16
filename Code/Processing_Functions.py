@@ -113,20 +113,18 @@ def citation_shares(citations_df, relevant_df, classes, types):
 
 
 
-def run_ols(y, X, panel=0, clusters=0):
-    "Run OLS Regressions"
+def run_reg(y, X, model, clusters=[]):
+    "Run Regressions"
     
-    if panel==1:
-        model = PanelOLS(
-            y,
-            X,
-            entity_effects=True, 
-            time_effects=True)
-        res = model.fit(cov_type='clustered', cluster_entity=True)
-
-    else:
+    if model == 'sm':
         model = sm.OLS(y, X)
         res = model.fit(cov_type="cluster", cov_kwds={"groups": clusters})
+        
+    if model == 'panel':
+        model = PanelOLS(y, X,
+                         entity_effects=True, 
+                         time_effects=True)
+        res = model.fit(cov_type='clustered', cluster_entity=True)
 
     return res
 
