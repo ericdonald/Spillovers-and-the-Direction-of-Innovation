@@ -428,7 +428,7 @@ class Processor:
         # ------------------------ #
         # Patent to Firm Crosswalk #
         # ------------------------ #
-        discern_df = pd.read_csv(f'{self.Directory}/Raw Data/discern_pat_grant_1980_2021.csv')
+        discern_df = pd.read_csv(f'{self.Directory}/Raw Data/discern_pat_grant_1980_2021.csv', low_memory=False)
         KPSS_df = pd.read_csv(f'{self.Directory}/Raw Data/KPSS_match_patent_permno_2023.csv')
         gvkey_df = pd.read_csv(f'{self.Directory}/Raw Data/permno_gvkey.csv')
         
