@@ -863,6 +863,8 @@ class Processor:
         lines.append(f"&  &  & {se32} \\\\[3pt]")
         lines.append(f"Clean Electricity Trend &  &  & {b33} \\\\")
         lines.append(f"&  &  & {se33} \\\\[3pt]")
+        
+        lines.append("\midrule")
         lines.append(f"$R^2$ & {r1} & {r2} & {r3} \\\\")
         lines.append(f"Obs & {n1} & {n2} & {n3}")
     
@@ -1319,15 +1321,16 @@ class Processor:
         # ---------- #
     
         lines = []
-        lines.append(f"ln(R&D Spending) & {b11} & {b21} & & & {b31} & {b41} & \\\\")
+        lines.append(f"ln(R\&D Spending) & {b11} & {b21} & & & {b31} & {b41} & \\\\")
         lines.append(f"& {se11} & {se21} & & & {se31} & {se41} & \\\\[3pt]")
         
-        lines.append(f"Ln(Cross-Technology Spillovers) & {b12} & {b22} & & & {b32} & {b42} & \\\\")
+        lines.append(f"ln(Cross-Technology Spillovers) & {b12} & {b22} & & & {b32} & {b42} & \\\\")
         lines.append(f"& {se12} & {se22} & & & {se32} & {se42} & \\\\[3pt]")
         
-        lines.append(f"Ln(Downstream Spillovers) & & {b23} & & & & {b43} & \\\\")
-        lines.append(f"& {se11} & & & & & {se43} & \\\\[3pt]")
+        lines.append(f"ln(Downstream Spillovers) & & {b23} & & & & {b43} & \\\\")
+        lines.append(f"& & {se23} & & & & {se43} & \\\\[3pt]")
         
+        lines.append("\midrule")
         lines.append("Specification & OLS & OLS & IV & & OLS & OLS & IV \\\\")
         lines.append(f"IV 1st Stage F-Stat &  &  &  & &  &  &  \\\\")
         lines.append(f"$R^2$ & {r1} & {r2} & & & {r3} & {r4} & \\\\")
