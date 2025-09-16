@@ -1129,24 +1129,31 @@ class Processor:
         tech_labels = [f"{c}_{t}" for c, t in product(self.classes, self.types)] + ["gen"]
         years = np.arange(year_start, year_end + 1)
         J = 2*self.E.Θ+1
-        T = year_end + 1 - year_start
         
-        wide_cites = (tech_panel_df.pivot_table(index='year', columns='patent_type',
-                                                values='pat_cites', aggfunc='sum')
-                                                      .reindex(index=years, columns=tech_labels, fill_value=0.0))
-        wide_pats = (tech_panel_df.pivot_table(index='year', columns='patent_type',
-                                              values='pat_raw', aggfunc='sum')
-                                                    .reindex(index=years, columns=tech_labels, fill_value=0.0))
-        
-        A_cites = wide_cites.copy()
-        A_pats = wide_pats.copy()
-        
-        A_cites.iloc[0, :] = wide_cites.iloc[0, :] / (δ_A + self.E.g)
-        A_pats.iloc[0, :] = wide_pats.iloc[0, :] / (δ_A +  self.E.g)
-        for t in range(1, T):
-            A_cites.iloc[t, :] = wide_cites.iloc[t, :] + (1 - δ_A) * A_cites.iloc[t - 1, :]
-            A_pats.iloc[t, :] = wide_pats.iloc[t, :] + (1 - δ_A) * A_pats.iloc[t - 1, :]
-                
+        def stock_block(s):
+            x = s.to_numpy(float)
+            out = x.copy()
+            out[0] = x[0] / (δ_A + self.E.g)
+            for k in range(1, len(x)):
+                out[k] = x[k] + (1-δ_A) * out[k-1]
+            return pd.Series(out, index=s.index)
+            
+        tech_panel_df['A_cites'] = tech_panel_df.sort_values(['patent_type','year']).groupby('patent_type', group_keys=False)['pat_cites'].apply(stock_block)
+        tech_panel_df['A_pats'] = tech_panel_df.sort_values(['patent_type','year']).groupby('patent_type', group_keys=False)['pat_raw'].apply(stock_block)
+
+    
+        ### Cross-Technology Spillovers
+        A_cites_w = (tech_panel_df.pivot(index='year', columns='patent_type', values='A_cites')
+                                     .reindex(index=years, columns=tech_labels, fill_value=0.0)
+                                     )
+
+        A_pats_w = (tech_panel_df.pivot(index='year', columns='patent_type', values='A_pats')
+                                     .reindex(index=years, columns=tech_labels, fill_value=0.0)
+                                     )
+
+        A_cites = A_cites_w.to_numpy()
+        A_pats  = A_pats_w.to_numpy()
+
         φ_cross = np.load(f'{self.Directory}/Clean Data/citation_shares.npy')
         for j in range(J):
             φ_cross[j,j] = 0
@@ -1160,17 +1167,11 @@ class Processor:
                                    ).reindex(years).fillna(0.0)
         spill_pats_w.index.name = 'year'
         
-        stocks_long = (A_cites.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_cites')
-                               .merge(A_pats.reset_index().melt(id_vars='year', var_name='patent_type', value_name='A_pats'),
-                                      on=['year','patent_type']
-                                      )
-                               )
         spills_long = (spill_cites_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_cites')
                                      .merge(spill_pats_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_pats'),
                                             on=['year','patent_type']
                                             )
                                      )
-        tech_panel_df = tech_panel_df.merge(stocks_long, on=['year','patent_type'], how='inner')
         tech_panel_df = tech_panel_df.merge(spills_long, on=['year','patent_type'], how='inner')
         
         
@@ -1237,9 +1238,8 @@ class Processor:
         RD_df['tech_rd_pats'] = RD_df.groupby(['patent_type', 'year'])['firm_tech_rd_pats'].transform('sum')
         RD_df = RD_df[['patent_type','year','tech_rd_cites','tech_rd_pats']].drop_duplicates().sort_values(['patent_type','year'])
         
-        RD_df['rd_stock_cites'] = RD_df.groupby('patent_type', group_keys=False)['tech_rd_cites'].apply(lambda s: s.ewm(alpha=δ_A, adjust=False).mean() / δ_A)
-        RD_df['rd_stock_pats'] = RD_df.groupby('patent_type', group_keys=False)['tech_rd_pats'].apply(lambda s: s.ewm(alpha=δ_A, adjust=False).mean() / δ_A)
-
+        RD_df['rd_stock_cites'] = RD_df.groupby('patent_type', group_keys=False)['tech_rd_cites'].apply(stock_block)
+        RD_df['rd_stock_pats'] = RD_df.groupby('patent_type', group_keys=False)['tech_rd_pats'].apply(stock_block)
         
         tech_panel_df = tech_panel_df.merge(RD_df, on=['patent_type', 'year'], how='left')
         
