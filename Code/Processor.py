@@ -1063,6 +1063,7 @@ class Processor:
         
         Output: Results/Tables/ZeroStage_Regressions.tex
                 Results/Tables/ReducedForm_Regressions.tex
+                Results/Tables/FirstStage_Regressions.tex
         """""
         
         # ----------------------------------------------------------------
@@ -1465,9 +1466,9 @@ class Processor:
         tech_panel_IV_df['ln_pat_raw'] = np.log(tech_panel_IV_df['pat_raw'])
         tech_panel_IV_df['ln_rd_stock_pats'] = np.log(tech_panel_IV_df['rd_stock_pats'])
         tech_panel_IV_df['ln_spill_pats'] = np.log(tech_panel_IV_df['spill_pats'])
-        tech_panel_IV_df['ln_spill_pats_hat'] = np.log(tech_panel_IV_df['spill_pats_hat'])
+        tech_panel_IV_df['ln_spill_pats_iv'] = np.log(tech_panel_IV_df['spill_pats_hat'])
         
-        mod_iv_pats = IV2SLS.from_formula('ln_pat_raw ~ 1 + ln_rd_stock_pats + C(patent_type) + C(year) + [ln_spill_pats ~ ln_spill_pats_hat]',
+        mod_iv_pats = IV2SLS.from_formula('ln_pat_raw ~ 1 + ln_rd_stock_pats + C(patent_type) + C(year) + [ln_spill_pats ~ ln_spill_pats_iv]',
                                            data=tech_panel_IV_df
                                            )
         
@@ -1501,6 +1502,38 @@ class Processor:
         tex_body = "\n".join(lines)
     
         with open(f'{self.Directory}/Results/Tables/ReducedForm_Regressions.tex', "w") as f:
+            f.write(tex_body)
+            
+            
+        # ----------------- #
+        # First-Stage Table #
+        # ----------------- #
+        tech_panel_IV_df = tech_panel_IV_df.set_index(['patent_type', 'year'])
+
+        miv1 = gpf.run_reg(tech_panel_IV_df['ln_spill_cites'], tech_panel_IV_df[['ln_rd_stock_cites', 'ln_spill_cites_iv']], 'panel')
+        biv11, seiv11 = gpf.reg_out(miv1, "ln_rd_stock_cites", 'panel')
+        biv12, seiv12 = gpf.reg_out(miv1, "ln_spill_cites_iv", 'panel')
+        riv1, niv1 = f"{miv1.rsquared:.3f}", f"{int(miv1.nobs):,}"
+        
+        miv2 = gpf.run_reg(tech_panel_IV_df['ln_spill_pats'], tech_panel_IV_df[['ln_rd_stock_pats', 'ln_spill_pats_iv']], 'panel')
+        biv21, seiv21 = gpf.reg_out(miv2, "ln_rd_stock_pats", 'panel')
+        biv22, seiv22 = gpf.reg_out(miv2, "ln_spill_pats_iv", 'panel')
+        riv2, niv2 = f"{miv2.rsquared:.3f}", f"{int(miv2.nobs):,}"
+        
+        lines = []
+        lines.append(f"ln(R\&D Spending) & {biv11} & & {biv21}  \\\\")
+        lines.append(f" & {seiv11} & & {seiv21}  \\\\[3pt]")
+        
+        lines.append(f"ln(Spillover Instrument) & {biv12} & & {biv22}  \\\\")
+        lines.append(f" & {seiv12} & & {seiv22}  \\\\[3pt]")
+        
+        lines.append("\midrule")
+        lines.append(f"$R^2$ & {riv1} & & {riv2}  \\\\")
+        lines.append(f"Obs & {niv1} & & {niv2}  ")
+    
+        tex_body = "\n".join(lines)
+    
+        with open(f'{self.Directory}/Results/Tables/FirstStage_Regressions.tex', "w") as f:
             f.write(tex_body)
         
         
