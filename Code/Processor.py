@@ -1333,10 +1333,10 @@ class Processor:
         # Patent Shock Regression Table #
         # ----------------------------- #
         b01, se01 = gpf.reg_out(m_cites, "ln_E_rho_cites", 'panel')
-        r0, n0 = f"{m_cites.rsquared:.3f}", f"{int(m_cites.nobs):,}"
+        r0, n0 = f"{m_cites.rsquared:.4f}", f"{int(m_cites.nobs):,}"
         
         b001, se001 = gpf.reg_out(m_pats, "ln_E_rho_pats", 'panel')
-        r00, n00 = f"{m_pats.rsquared:.3f}", f"{int(m_pats.nobs):,}"
+        r00, n00 = f"{m_pats.rsquared:.4f}", f"{int(m_pats.nobs):,}"
         
         lines = []
         lines.append(f"ln(State-Level R\&D Price) & {b01} & & {b001}  \\\\")
