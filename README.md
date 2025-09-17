@@ -62,6 +62,7 @@ All of the replication codes run on Python `3.11.13`. Prior to running the codes
 | quantecon | 0.10.1 |
 | statsmodels | 0.14.5 |
 | openpyxl | 3.1.5 |
+| linearmodels | 0.0.0 |
 
 ## Description of Code:
 
