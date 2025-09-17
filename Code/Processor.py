@@ -8,6 +8,7 @@ Notes: This file defines a class for processing the economy of "Spillovers and t
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from linearmodels.iv import IV2SLS
 from pathlib import Path
 import io, sys, zipfile
 from datetime import datetime
@@ -1056,7 +1057,7 @@ class Processor:
         
         
         
-    def SpillReg(self, year_start=1970, reg_start=1980, year_end=2023, δ_A=0.15, tback=4, tfor=5):
+    def SpillReg(self, year_start=1972, reg_start=1980, year_end=2023, δ_A=0.15, tback=4, tfor=5):
         """""
         Reduced Form Evidence for Spillover Network
         
@@ -1218,7 +1219,7 @@ class Processor:
         
         windows = []
         for t in range(year_start, year_end+1):
-            window_df = firm_pats_df[(firm_pats_df["year"] >= t-tback) & (firm_pats_df["year"] <= t+tfor)]
+            window_df = firm_pats_df[(firm_pats_df["year"] >= t-tback) & (firm_pats_df["year"] <= t+tfor)].copy()
             window_df['tech_cites'] = window_df.groupby(['gvkey', 'patent_type'])['year_cites'].transform('sum')
             window_df['tech_pats'] = window_df.groupby(['gvkey', 'patent_type'])['year_pats'].transform('sum')
             window_df['year'] = t
@@ -1253,7 +1254,7 @@ class Processor:
         # State R&D Price Exposure #
         # ------------------------ #
         inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
-        state_rdp_df = pd.read_pickle(f'{self.Directory}/Raw Data/state_rd_price.pkl')
+        state_rdp_df = pd.read_pickle(f'{self.Directory}/Clean Data/state_rd_price.pkl')
         
         firm_invent_df = pd.merge(pat_panel_df,
                                   pat_firm_crosswalk_df,
@@ -1263,17 +1264,17 @@ class Processor:
         
         firm_invent_df = firm_invent_df.merge(inventors_df, on='patent_id', how='inner')
         
-        firm_invent_df['pat_authors'] = firm_invent_df.groupby(['firm_invent_df', 'gvkey', 'patent_type'])['inventor_id'].transform('count')
+        firm_invent_df['pat_authors'] = firm_invent_df.groupby(['patent_id', 'gvkey', 'patent_type'])['inventor_id'].transform('count')
         firm_invent_df['author_cites'] = firm_invent_df['norm_cites'] / firm_invent_df['pat_authors']
         firm_invent_df['author_pats'] = 1 / firm_invent_df['pat_authors']
         
         firm_invent_df['year_state_cites'] = firm_invent_df.groupby(['gvkey', 'patent_type', 'year', 'state_fips'])['author_cites'].transform('sum')
         firm_invent_df['year_state_pats'] = firm_invent_df.groupby(['gvkey', 'patent_type', 'year', 'state_fips'])['author_pats'].transform('sum')
-        firm_invent_df = firm_invent_df[['gvkey', 'patent_type', 'year', 'state_fips', 'year_cites', 'year_pats']].drop_duplicates()
+        firm_invent_df = firm_invent_df[['gvkey', 'patent_type', 'year', 'state_fips', 'year_state_cites', 'year_state_pats']].drop_duplicates()
         
         windows = []
         for t in range(year_start, year_end+1):
-            window_df = firm_invent_df[(firm_invent_df["year"] >= t-tback) & (firm_invent_df["year"] <= t+tfor)]
+            window_df = firm_invent_df[(firm_invent_df["year"] >= t-tback) & (firm_invent_df["year"] <= t+tfor)].copy()
             window_df['tech_state_cites'] = window_df.groupby(['gvkey', 'patent_type', 'state_fips'])['year_state_cites'].transform('sum')
             window_df['tech_state_pats'] = window_df.groupby(['gvkey', 'patent_type', 'state_fips'])['year_state_pats'].transform('sum')
             window_df['year'] = t
@@ -1282,17 +1283,17 @@ class Processor:
             windows.append(window_df)
         
         firm_state_shares_df = pd.concat(windows, ignore_index=True)
-        firm_state_shares_df['tech_state_shares_cites'] = firm_pat_shares_df['tech_state_cites'] / firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['tech_state_cites'].transform('sum')
-        firm_state_shares_df['tech_state_shares_pats'] = firm_pat_shares_df['tech_state_pats'] / firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['tech_state_pats'].transform('sum')
+        firm_state_shares_df['tech_state_shares_cites'] = firm_state_shares_df['tech_state_cites'] / firm_state_shares_df.groupby(['gvkey', 'patent_type', 'year'])['tech_state_cites'].transform('sum')
+        firm_state_shares_df['tech_state_shares_pats'] = firm_state_shares_df['tech_state_pats'] / firm_state_shares_df.groupby(['gvkey', 'patent_type', 'year'])['tech_state_pats'].transform('sum')
         
         firm_state_shares_df = firm_state_shares_df.merge(state_rdp_df, on=['year', 'state_fips'], how='inner')
         firm_state_shares_df['weighted_rho_cites'] = firm_state_shares_df['tech_state_shares_cites'] * firm_state_shares_df['rho_h']
         firm_state_shares_df['weighted_rho_pats'] = firm_state_shares_df['tech_state_shares_pats'] * firm_state_shares_df['rho_h']
         
-        firm_state_shares_df['E_rho_cites'] = firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['weighted_rho_cites'].transform('sum')
-        firm_state_shares_df['E_rho_pats'] = firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['weighted_rho_pats'].transform('sum')
+        firm_state_shares_df['E_rho_cites'] = firm_state_shares_df.groupby(['gvkey', 'patent_type', 'year'])['weighted_rho_cites'].transform('sum')
+        firm_state_shares_df['E_rho_pats'] = firm_state_shares_df.groupby(['gvkey', 'patent_type', 'year'])['weighted_rho_pats'].transform('sum')
         
-        firm_state_shares_df = firm_pat_shares_df[['gvkey', 'patent_type', 'year', 'E_rho_cites', 'E_rho_pats']].drop_duplicates()
+        firm_state_shares_df = firm_state_shares_df[['gvkey', 'patent_type', 'year', 'E_rho_cites', 'E_rho_pats']].drop_duplicates()
         
         
         # ----------------------- #
@@ -1304,23 +1305,27 @@ class Processor:
                             how='inner'
                             )
         
-        IV_panel['ihs_year_cites'] = np.arcsinh(IV_panel['year_cites'])
-        IV_panel['ihs_year_pats'] = np.arcsinh(IV_panel['year_pats'])
-        IV_panel['ihs_E_rho_cites'] = np.arcsinh(IV_panel['E_rho_cites'])
-        IV_panel['ihs_E_rho_pats'] = np.arcsinh(IV_panel['E_rho_pats'])
+        valid_years = (IV_panel.groupby('year')['patent_type']
+                        .nunique()
+                        .loc[lambda x: x == J]
+                        .index
+                        )
+        IV_panel = IV_panel[IV_panel['year'].isin(valid_years)]
         
-        FE = pd.get_dummies(IV_panel[['gvkey','patent_type','year']], drop_first=True)
-        FE['intercept'] = 1
-        X_cites = pd.concat([IV_panel['ihs_E_rho_cites'], FE], axis=1)
-        X_pats = pd.concat([IV_panel['ihs_E_rho_pats'], FE], axis=1)
+        IV_panel['ln_year_cites'] = np.log(IV_panel['year_cites'])
+        IV_panel['ln_year_pats'] = np.log(IV_panel['year_pats'])
+        IV_panel['ln_E_rho_cites'] = np.log(IV_panel['E_rho_cites'])
+        IV_panel['ln_E_rho_pats'] = np.log(IV_panel['E_rho_pats'])
         
-        cluster_groups = IV_panel["patent_type"]
+        IV_panel['entity'] = IV_panel['gvkey'].astype(str) + "_" + IV_panel['patent_type'].astype(str)
+        IV_panel = IV_panel.set_index(['entity','year']).sort_index()
     
-        m_cites = gpf.run_reg(IV_panel['ihs_year_cites'], X_cites, 'sm', cluster_groups)
-        m_pats = gpf.run_reg(IV_panel['ihs_year_pats'], X_pats, 'sm', cluster_groups)
+        m_cites = gpf.run_reg(IV_panel['ln_year_cites'], IV_panel['ln_E_rho_cites'], 'panel')
+        m_pats = gpf.run_reg(IV_panel['ln_year_pats'], IV_panel['ln_E_rho_pats'], 'panel')
         
-        IV_panel['year_cites_hat'] = np.sinh(m_cites.predict(X_cites))
-        IV_panel['year_pats_hat'] = np.sinh(m_pats.predict(X_pats))
+        IV_panel['year_cites_hat'] = np.exp(m_cites.predict().fitted_values)
+        IV_panel['year_pats_hat'] = np.exp(m_pats.predict().fitted_values)
+        IV_panel = IV_panel.reset_index()
         
         
         # -------------------- #
@@ -1333,7 +1338,34 @@ class Processor:
         IV_panel['A_cites_hat'] = IV_panel.groupby('patent_type', group_keys=False)['tech_cites_hat'].apply(stock_block)
         IV_panel['A_pats_hat'] = IV_panel.groupby('patent_type', group_keys=False)['tech_pats_hat'].apply(stock_block)
 
-        tech_panel_IV_df = tech_panel_df.merge(IV_panel[['patent_type','year','A_cites_hat','A_pats_hat']], on=['patent_type', 'year'], how='left')
+        years = valid_years.to_numpy()
+
+        A_cites_hat_w = (IV_panel.pivot(index='year', columns='patent_type', values='A_cites_hat')
+                                     .reindex(index=years, columns=tech_labels, fill_value=0.0)
+                                     )
+
+        A_pats_hat_w = (IV_panel.pivot(index='year', columns='patent_type', values='A_pats_hat')
+                                     .reindex(index=years, columns=tech_labels, fill_value=0.0)
+                                     )
+
+        A_cites_hat = A_cites_hat_w.to_numpy()
+        A_pats_hat  = A_pats_hat_w.to_numpy()
+
+        spill_cites_hat_w = pd.DataFrame(np.exp(np.log(A_cites_hat[:-1]) @ φ_cross.T),
+                                     index=years[1:], columns=tech_labels
+                                     ).reindex(years).fillna(0.0)
+        spill_cites_hat_w.index.name = 'year'
+        spill_pats_hat_w = pd.DataFrame(np.exp(np.log(A_pats_hat[:-1]) @ φ_cross.T),
+                                   index=years[1:], columns=tech_labels
+                                   ).reindex(years).fillna(0.0)
+        spill_pats_hat_w.index.name = 'year'
+        
+        spills_hat_long = (spill_cites_hat_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_cites_hat')
+                                     .merge(spill_pats_hat_w.reset_index().melt(id_vars='year', var_name='patent_type', value_name='spill_pats_hat'),
+                                            on=['year','patent_type']
+                                            )
+                                     )
+        tech_panel_IV_df = tech_panel_df.merge(spills_hat_long, on=['year','patent_type'], how='inner')
         
         
         # ----------------------------------------------------------------
@@ -1387,6 +1419,39 @@ class Processor:
         # -- #
         # IV #
         # -- #
+        tech_panel_IV_df = tech_panel_IV_df[(tech_panel_IV_df["year"] >= reg_start)]
+        tech_panel_IV_df = tech_panel_IV_df[(tech_panel_IV_df["patent_type"] != 'gen')]
+                
+        tech_panel_IV_df['ln_pat_cites'] = np.log(tech_panel_IV_df['pat_cites'])
+        tech_panel_IV_df['ln_rd_stock_cites'] = np.log(tech_panel_IV_df['rd_stock_cites'])
+        tech_panel_IV_df['ln_spill_cites'] = np.log(tech_panel_IV_df['spill_cites'])
+        tech_panel_IV_df['ln_spill_cites_iv'] = np.log(tech_panel_IV_df['spill_cites_hat'])
+        
+        mod_iv_cites = IV2SLS.from_formula('ln_pat_cites ~ 1 + ln_rd_stock_cites + C(patent_type) + C(year) + [ln_spill_cites ~ ln_spill_cites_iv]',
+                                           data=tech_panel_IV_df
+                                           )
+        
+        m5 = mod_iv_cites.fit(cov_type='clustered', clusters=tech_panel_IV_df['patent_type'])
+        b51, se51 = gpf.reg_out(m5, "ln_rd_stock_cites", 'panel')
+        b52, se52 = gpf.reg_out(m5, "ln_spill_cites", 'panel')
+        f_stat5 = m5.first_stage.diagnostics['f.stat'].iloc[0]
+        r5, n5, f5 = f"{m5.rsquared:.3f}", f"{int(m5.nobs)}", f"{f_stat5:.2f}"
+        
+        
+        tech_panel_IV_df['ln_pat_raw'] = np.log(tech_panel_IV_df['pat_raw'])
+        tech_panel_IV_df['ln_rd_stock_pats'] = np.log(tech_panel_IV_df['rd_stock_pats'])
+        tech_panel_IV_df['ln_spill_pats'] = np.log(tech_panel_IV_df['spill_pats'])
+        tech_panel_IV_df['ln_spill_pats_hat'] = np.log(tech_panel_IV_df['spill_pats_hat'])
+        
+        mod_iv_pats = IV2SLS.from_formula('ln_pat_raw ~ 1 + ln_rd_stock_pats + C(patent_type) + C(year) + [ln_spill_pats ~ ln_spill_pats_hat]',
+                                           data=tech_panel_IV_df
+                                           )
+        
+        m6 = mod_iv_pats.fit(cov_type='clustered', clusters=tech_panel_IV_df['patent_type'])
+        b61, se61 = gpf.reg_out(m6, "ln_rd_stock_pats", 'panel')
+        b62, se62 = gpf.reg_out(m6, "ln_spill_pats", 'panel')
+        f_stat6 = m6.first_stage.diagnostics['f.stat'].iloc[0]
+        r6, n6, f6 = f"{m6.rsquared:.3f}", f"{int(m6.nobs)}", f"{f_stat6:.2f}"
         
         
         # ---------- #
@@ -1394,20 +1459,20 @@ class Processor:
         # ---------- #
     
         lines = []
-        lines.append(f"ln(R\&D Spending) & {b11} & {b21} & & & {b31} & {b41} & \\\\")
-        lines.append(f"& {se11} & {se21} & & & {se31} & {se41} & \\\\[3pt]")
+        lines.append(f"ln(R\&D Spending) & {b11} & {b21} & {b51} & & {b31} & {b41} & {b61} \\\\")
+        lines.append(f"& {se11} & {se21} & {se51} & & {se31} & {se41} & {se61} \\\\[3pt]")
         
-        lines.append(f"ln(Cross-Technology Spillovers) & {b12} & {b22} & & & {b32} & {b42} & \\\\")
-        lines.append(f"& {se12} & {se22} & & & {se32} & {se42} & \\\\[3pt]")
+        lines.append(f"ln(Cross-Technology Spillovers) & {b12} & {b22} & {b52} & & {b32} & {b42} & {b62} \\\\")
+        lines.append(f"& {se12} & {se22} & {se52} & & {se32} & {se42} & {se62} \\\\[3pt]")
         
         lines.append(f"ln(Downstream Spillovers) & & {b23} & & & & {b43} & \\\\")
         lines.append(f"& & {se23} & & & & {se43} & \\\\[3pt]")
         
         lines.append("\midrule")
         lines.append("Specification & OLS & OLS & IV & & OLS & OLS & IV \\\\")
-        lines.append(f"IV 1st Stage F-Stat &  &  &  & &  &  &  \\\\")
-        lines.append(f"$R^2$ & {r1} & {r2} & & & {r3} & {r4} & \\\\")
-        lines.append(f"Obs & {n1} & {n2} & & & {n3} & {n4} &")
+        lines.append(f"IV 1st Stage F-Stat &  &  & {f5} & &  &  & {f6} \\\\")
+        lines.append(f"$R^2$ & {r1} & {r2} & {r5} & & {r3} & {r4} & {r6} \\\\")
+        lines.append(f"Obs & {n1} & {n2} & {n5} & & {n3} & {n4} & {n6} ")
     
         tex_body = "\n".join(lines)
     
