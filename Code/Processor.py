@@ -455,6 +455,7 @@ class Processor:
         state_rdp_df = pd.read_stata(f'{self.Directory}/Raw Data/RDusercost_2017.dta')
         
         state_rdp_df = state_rdp_df[['state', 'fips', 'year', 'rho_h']]
+        state_rdp_df = state_rdp_df.rename(columns={"fips": "state_fips"})
         
         state_rdp_df.to_pickle(f'{self.Directory}/Clean Data/state_rd_price.pkl')
         
@@ -1251,6 +1252,47 @@ class Processor:
         # ------------------------ #
         # State R&D Price Exposure #
         # ------------------------ #
+        inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
+        state_rdp_df = pd.read_pickle(f'{self.Directory}/Raw Data/state_rd_price.pkl')
+        
+        firm_invent_df = pd.merge(pat_panel_df,
+                                  pat_firm_crosswalk_df,
+                                  on='patent_id',
+                                  how='inner'
+                                  )
+        
+        firm_invent_df = firm_invent_df.merge(inventors_df, on='patent_id', how='inner')
+        
+        firm_invent_df['pat_authors'] = firm_invent_df.groupby(['firm_invent_df', 'gvkey', 'patent_type'])['inventor_id'].transform('count')
+        firm_invent_df['author_cites'] = firm_invent_df['norm_cites'] / firm_invent_df['pat_authors']
+        firm_invent_df['author_pats'] = 1 / firm_invent_df['pat_authors']
+        
+        firm_invent_df['year_state_cites'] = firm_invent_df.groupby(['gvkey', 'patent_type', 'year', 'state_fips'])['author_cites'].transform('sum')
+        firm_invent_df['year_state_pats'] = firm_invent_df.groupby(['gvkey', 'patent_type', 'year', 'state_fips'])['author_pats'].transform('sum')
+        firm_invent_df = firm_invent_df[['gvkey', 'patent_type', 'year', 'state_fips', 'year_cites', 'year_pats']].drop_duplicates()
+        
+        windows = []
+        for t in range(year_start, year_end+1):
+            window_df = firm_invent_df[(firm_invent_df["year"] >= t-tback) & (firm_invent_df["year"] <= t+tfor)]
+            window_df['tech_state_cites'] = window_df.groupby(['gvkey', 'patent_type', 'state_fips'])['year_state_cites'].transform('sum')
+            window_df['tech_state_pats'] = window_df.groupby(['gvkey', 'patent_type', 'state_fips'])['year_state_pats'].transform('sum')
+            window_df['year'] = t
+            window_df = window_df[['gvkey', 'patent_type', 'year', 'state_fips', 'tech_state_cites', 'tech_state_pats']].drop_duplicates()
+            
+            windows.append(window_df)
+        
+        firm_state_shares_df = pd.concat(windows, ignore_index=True)
+        firm_state_shares_df['tech_state_shares_cites'] = firm_pat_shares_df['tech_state_cites'] / firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['tech_state_cites'].transform('sum')
+        firm_state_shares_df['tech_state_shares_pats'] = firm_pat_shares_df['tech_state_pats'] / firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['tech_state_pats'].transform('sum')
+        
+        firm_state_shares_df = firm_state_shares_df.merge(state_rdp_df, on=['year', 'state_fips'], how='inner')
+        firm_state_shares_df['weighted_rho_cites'] = firm_state_shares_df['tech_state_shares_cites'] * firm_state_shares_df['rho_h']
+        firm_state_shares_df['weighted_rho_pats'] = firm_state_shares_df['tech_state_shares_pats'] * firm_state_shares_df['rho_h']
+        
+        firm_state_shares_df['E_rho_cites'] = firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['weighted_rho_cites'].transform('sum')
+        firm_state_shares_df['E_rho_pats'] = firm_pat_shares_df.groupby(['gvkey', 'patent_type', 'year'])['weighted_rho_pats'].transform('sum')
+        
+        firm_state_shares_df = firm_pat_shares_df[['gvkey', 'patent_type', 'year', 'E_rho_cites', 'E_rho_pats']].drop_duplicates()
         
         
         # ----------------------- #
