@@ -1298,11 +1298,42 @@ class Processor:
         # ----------------------- #
         # Predicted Patent Shocks #
         # ----------------------- #
+        IV_panel = pd.merge(firm_pats_df,
+                            firm_state_shares_df,
+                            on=['gvkey', 'patent_type', 'year'],
+                            how='inner'
+                            )
+        
+        IV_panel['ihs_year_cites'] = np.arcsinh(IV_panel['year_cites'])
+        IV_panel['ihs_year_pats'] = np.arcsinh(IV_panel['year_pats'])
+        IV_panel['ihs_E_rho_cites'] = np.arcsinh(IV_panel['E_rho_cites'])
+        IV_panel['ihs_E_rho_pats'] = np.arcsinh(IV_panel['E_rho_pats'])
+        
+        FE = pd.get_dummies(IV_panel[['gvkey','patent_type','year']], drop_first=True)
+        FE['intercept'] = 1
+        X_cites = pd.concat([IV_panel['ihs_E_rho_cites'], FE], axis=1)
+        X_pats = pd.concat([IV_panel['ihs_E_rho_pats'], FE], axis=1)
+        
+        cluster_groups = IV_panel["patent_type"]
+    
+        m_cites = gpf.run_reg(IV_panel['ihs_year_cites'], X_cites, 'sm', cluster_groups)
+        m_pats = gpf.run_reg(IV_panel['ihs_year_pats'], X_pats, 'sm', cluster_groups)
+        
+        IV_panel['year_cites_hat'] = np.sinh(m_cites.predict(X_cites))
+        IV_panel['year_pats_hat'] = np.sinh(m_pats.predict(X_pats))
         
         
         # -------------------- #
         # Knowledge Instrument #
         # -------------------- #
+        IV_panel['tech_cites_hat'] = IV_panel.groupby(['patent_type', 'year'])['year_cites_hat'].transform('sum')
+        IV_panel['tech_pats_hat'] = IV_panel.groupby(['patent_type', 'year'])['year_pats_hat'].transform('sum')
+        IV_panel = IV_panel[['patent_type','year','tech_cites_hat','tech_pats_hat']].drop_duplicates().sort_values(['patent_type','year'])
+        
+        IV_panel['A_cites_hat'] = IV_panel.groupby('patent_type', group_keys=False)['tech_cites_hat'].apply(stock_block)
+        IV_panel['A_pats_hat'] = IV_panel.groupby('patent_type', group_keys=False)['tech_pats_hat'].apply(stock_block)
+
+        tech_panel_IV_df = tech_panel_df.merge(IV_panel[['patent_type','year','A_cites_hat','A_pats_hat']], on=['patent_type', 'year'], how='left')
         
         
         # ----------------------------------------------------------------
