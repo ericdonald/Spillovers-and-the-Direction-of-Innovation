@@ -854,7 +854,7 @@ class Processor:
         b33, se33 = gpf.reg_out(m3, "elec_clean_trend", 'sm', fmt=lambda x: f"{x:.4f}", sefmt=lambda x: f"({x:.4f})")
     
         r1, r2, r3 = f"{m1.rsquared:.3f}", f"{m2.rsquared:.3f}", f"{m3.rsquared:.3f}"
-        n1, n2, n3 = f"{int(m1.nobs)}", f"{int(m2.nobs)}", f"{int(m3.nobs)}"
+        n1, n2, n3 = f"{int(m1.nobs):,}", f"{int(m2.nobs):,}", f"{int(m3.nobs):,}"
     
         lines = []
         lines.append(f"Lagged Spillover Elasticity & {b11} & {b21} & {b31} \\\\")
@@ -1333,13 +1333,13 @@ class Processor:
         # Patent Shock Regression Table #
         # ----------------------------- #
         b01, se01 = gpf.reg_out(m_cites, "ln_E_rho_cites", 'panel')
-        r0, n0 = f"{m_cites.rsquared:.3f}", f"{int(m_cites.nobs)}"
+        r0, n0 = f"{m_cites.rsquared:.3f}", f"{int(m_cites.nobs):,}"
         
         b001, se001 = gpf.reg_out(m_pats, "ln_E_rho_pats", 'panel')
-        r00, n00 = f"{m_pats.rsquared:.3f}", f"{int(m_pats.nobs)}"
+        r00, n00 = f"{m_pats.rsquared:.3f}", f"{int(m_pats.nobs):,}"
         
         lines = []
-        lines.append(f"ln(State-Level R\&D Pric) & {b01} & & {b001}  \\\\")
+        lines.append(f"ln(State-Level R\&D Price) & {b01} & & {b001}  \\\\")
         lines.append(f" & {se01} & & {se001}  \\\\[3pt]")
         
         lines.append("\midrule")
@@ -1414,13 +1414,13 @@ class Processor:
         m1 = gpf.run_reg(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites']], 'panel')
         b11, se11 = gpf.reg_out(m1, "ln_rd_stock_cites", 'panel')
         b12, se12 = gpf.reg_out(m1, "ln_spill_cites", 'panel')
-        r1, n1 = f"{m1.rsquared:.3f}", f"{int(m1.nobs)}"
+        r1, n1 = f"{m1.rsquared:.3f}", f"{int(m1.nobs):,}"
         
         m2 = gpf.run_reg(tech_panel_df['ln_pat_cites'], tech_panel_df[['ln_rd_stock_cites', 'ln_spill_cites', 'ln_spill_down_cites']], 'panel')
         b21, se21 = gpf.reg_out(m2, "ln_rd_stock_cites", 'panel')
         b22, se22 = gpf.reg_out(m2, "ln_spill_cites", 'panel')
         b23, se23 = gpf.reg_out(m2, "ln_spill_down_cites", 'panel')
-        r2, n2 = f"{m2.rsquared:.3f}", f"{int(m2.nobs)}"
+        r2, n2 = f"{m2.rsquared:.3f}", f"{int(m2.nobs):,}"
         
         
         tech_panel_df['ln_pat_raw'] = np.log(tech_panel_df['pat_raw'])
@@ -1431,13 +1431,13 @@ class Processor:
         m3 = gpf.run_reg(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats']], 'panel')
         b31, se31 = gpf.reg_out(m3, "ln_rd_stock_pats", 'panel')
         b32, se32 = gpf.reg_out(m3, "ln_spill_pats", 'panel')
-        r3, n3 = f"{m3.rsquared:.3f}", f"{int(m3.nobs)}"
+        r3, n3 = f"{m3.rsquared:.3f}", f"{int(m3.nobs):,}"
         
         m4 = gpf.run_reg(tech_panel_df['ln_pat_raw'], tech_panel_df[['ln_rd_stock_pats', 'ln_spill_pats', 'ln_spill_down_pats']], 'panel')
         b41, se41 = gpf.reg_out(m4, "ln_rd_stock_pats", 'panel')
         b42, se42 = gpf.reg_out(m4, "ln_spill_pats", 'panel')
         b43, se43 = gpf.reg_out(m4, "ln_spill_down_pats", 'panel')
-        r4, n4 = f"{m4.rsquared:.3f}", f"{int(m4.nobs)}"
+        r4, n4 = f"{m4.rsquared:.3f}", f"{int(m4.nobs):,}"
         
         
         # -- #
@@ -1459,7 +1459,7 @@ class Processor:
         b51, se51 = gpf.reg_out(m5, "ln_rd_stock_cites", 'panel')
         b52, se52 = gpf.reg_out(m5, "ln_spill_cites", 'panel')
         f_stat5 = m5.first_stage.diagnostics['f.stat'].iloc[0]
-        r5, n5, f5 = f"{m5.rsquared:.3f}", f"{int(m5.nobs)}", f"{f_stat5:.2f}"
+        r5, n5, f5 = f"{m5.rsquared:.3f}", f"{int(m5.nobs):,}", f"{f_stat5:.2f}"
         
         
         tech_panel_IV_df['ln_pat_raw'] = np.log(tech_panel_IV_df['pat_raw'])
@@ -1475,7 +1475,7 @@ class Processor:
         b61, se61 = gpf.reg_out(m6, "ln_rd_stock_pats", 'panel')
         b62, se62 = gpf.reg_out(m6, "ln_spill_pats", 'panel')
         f_stat6 = m6.first_stage.diagnostics['f.stat'].iloc[0]
-        r6, n6, f6 = f"{m6.rsquared:.3f}", f"{int(m6.nobs)}", f"{f_stat6:.2f}"
+        r6, n6, f6 = f"{m6.rsquared:.3f}", f"{int(m6.nobs):,}", f"{f_stat6:.2f}"
         
         
         # ---------- #
