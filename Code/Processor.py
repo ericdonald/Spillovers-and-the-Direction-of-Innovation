@@ -669,7 +669,7 @@ class Processor:
         Output: Clean Data/citation_shares.npy
                 Clean Data/citation_shares_applicant.npy
                 Results/Figures/Spillover_Network.png
-                Results/Tables/Stability_Regressions.txt
+                Results/Tables/Stability_Regressions.tex
                 Results/Figures/Clean_Centrality.csv
                 Results/Tables/Disagg_Results.csv
         """""
@@ -1061,7 +1061,8 @@ class Processor:
         """""
         Reduced Form Evidence for Spillover Network
         
-        Output: Results/Tables/ReducedForm_Regressions.txt
+        Output: Results/Tables/ZeroStage_Regressions.tex
+                Results/Tables/ReducedForm_Regressions.tex
         """""
         
         # ----------------------------------------------------------------
@@ -1326,6 +1327,29 @@ class Processor:
         IV_panel['year_cites_hat'] = np.exp(m_cites.predict().fitted_values)
         IV_panel['year_pats_hat'] = np.exp(m_pats.predict().fitted_values)
         IV_panel = IV_panel.reset_index()
+        
+        
+        # ----------------------------- #
+        # Patent Shock Regression Table #
+        # ----------------------------- #
+        b01, se01 = gpf.reg_out(m_cites, "ln_E_rho_cites", 'panel')
+        r0, n0 = f"{m_cites.rsquared:.3f}", f"{int(m_cites.nobs)}"
+        
+        b001, se001 = gpf.reg_out(m_pats, "ln_E_rho_pats", 'panel')
+        r00, n00 = f"{m_pats.rsquared:.3f}", f"{int(m_pats.nobs)}"
+        
+        lines = []
+        lines.append(f"ln(State-Level R\&D Pric) & {b01} & & {b001}  \\\\")
+        lines.append(f" & {se01} & & {se001}  \\\\[3pt]")
+        
+        lines.append("\midrule")
+        lines.append(f"$R^2$ & {r0} & & {r00}  \\\\")
+        lines.append(f"Obs & {n0} & & {n00}  ")
+    
+        tex_body = "\n".join(lines)
+    
+        with open(f'{self.Directory}/Results/Tables/ZeroStage_Regressions.tex', "w") as f:
+            f.write(tex_body)
         
         
         # -------------------- #
