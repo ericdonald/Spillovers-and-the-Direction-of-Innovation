@@ -1135,7 +1135,7 @@ class Processor:
         def stock_block(s):
             x = s.to_numpy(float)
             out = x.copy()
-            out[0] = x[0] / (δ_A + self.E.g)
+            out[0] = (1+self.g) * x[0] / (δ_A + self.E.g)
             for k in range(1, len(x)):
                 out[k] = x[k] + (1-δ_A) * out[k-1]
             return pd.Series(out, index=s.index)
