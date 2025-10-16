@@ -76,7 +76,7 @@ P.CES_Spill(500,200,1.25)
 # ----------------------- #
 # Record Package Versions #
 # ----------------------- #
-packages = ["numpy", "pandas", "scipy", "matplotlib", "numba", "quantecon", "statsmodels", "openpyxl", "linearmodels"]
+packages = ["linearmodels", "matplotlib", "numba", "numpy", "openpyxl", "pandas", "quantecon", "scipy", "statsmodels"]
 P.write_package_versions(packages)
 
 
