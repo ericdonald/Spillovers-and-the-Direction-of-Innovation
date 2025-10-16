@@ -83,6 +83,7 @@ class Economy:
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
         
+        
         # ------------ #
         # Input Prices #
         # ------------ #
@@ -216,6 +217,7 @@ class Economy:
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
     
+    
         # ------------------ #
         # Initial Technology #
         # ------------------ #
@@ -290,6 +292,7 @@ class Economy:
         J = 2*self.Θ + 1
         N = 6 + 2*J
         
+        
         # -------------------- #
         # Select Discount Rate #
         # -------------------- #
@@ -297,6 +300,7 @@ class Economy:
             ρ = (1+self.ρ_h)**self.T - 1
         else:
             ρ = (1+self.ρ_l)**self.T - 1
+            
             
         # ------------------------ #
         # Select Spillover Network #
@@ -313,6 +317,7 @@ class Economy:
             var_ρ = 4*self.var_ρ
         else:
             var_ρ = self.var_ρ
+            
             
         # ----------------- #
         # Outside Emissions #
@@ -331,6 +336,7 @@ class Economy:
             end_idx = start_idx + self.T
             group_sum = np.sum(Em_out[start_idx:end_idx])
             sum_Em_out[t,:] = group_sum
+            
             
         # ------------------- #
         # Steady-State Policy #
@@ -353,6 +359,7 @@ class Economy:
         
         ς1_ss = 0
         ς2_ss = 0
+        
         
         # ------------- #
         # Initial Guess #
@@ -395,6 +402,7 @@ class Economy:
         ς2_g = np.zeros((Periods,1))
         
         X_g = np.hstack((np.log(τ1_g), np.log(τ2_g), np.log(C1_g), np.log(C2_g), ξtilde_g, np.log(A_g), ς1_g, ς2_g))
+        
         
         # --------- #
         # Functions #
@@ -450,6 +458,7 @@ class Economy:
         ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
         args = (Periods, ρ, self.var_θ, φ_hat_IAM, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, var_ρ, self.ψ_p, self.ψ_0, self.ψ, sum_Em_out, self.Θ, SCC_frac, self.o)
         
+        
         # ----------------------------- #
         # Initial & Terminal Conditions #
         # ----------------------------- #
@@ -466,10 +475,12 @@ class Economy:
         Term[0,-2] = ς1_ss
         Term[0,-1] = ς2_ss
         
+        
         # ----- #
         # Solve #
         # ----- #
         X = srs.SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead)
+    
     
         # -------------------------------------------------------------------- #
         # Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology #
@@ -548,6 +559,7 @@ class Economy:
             group_sum = np.sum(Em_out[start_idx:end_idx])
             sum_Em_out[t,:] = group_sum
             
+            
         # ------------------- #
         # Steady-State Policy #
         # ------------------- #
@@ -561,6 +573,7 @@ class Economy:
         
         ς1_ss = 0
         ς2_ss = 0
+        
         
         # ------------- #
         # Initial Guess #
@@ -599,6 +612,7 @@ class Economy:
         ς2_g = np.zeros((Periods,1))
         
         X_g = np.hstack((np.log(τ1_g), np.log(τ2_g), np.log(C1_g), np.log(C2_g), ξtilde_g, np.log(A_g), ς1_g, ς2_g))
+        
         
         # --------- #
         # Functions #
@@ -654,6 +668,7 @@ class Economy:
         ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
         args = (Periods, ρ, self.var_θ, self.φ_hat, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, self.var_ρ, self.ψ_p, self.ψ_0, self.ψ, sum_Em_out, self.Θ, 1, self.o)
         
+        
         # ----------------------------- #
         # Initial & Terminal Conditions #
         # ----------------------------- #
@@ -670,10 +685,12 @@ class Economy:
         Term[0,-2] = ς1_ss
         Term[0,-1] = ς2_ss
         
+        
         # ----- #
         # Solve #
         # ----- #
         X = srs.SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead)
+    
     
         # -------------------------------------------------------------------- #
         # Unpack Carbon Price, Carbon Concentration, Subsidies, and Technology #

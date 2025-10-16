@@ -2208,6 +2208,7 @@ class Processor:
         J = 2*self.E.Θ + 1
         IAM_Results = gpf.ResultsTable()
         
+        
         # ----------------------------------------------------------------
 
         # Benchmark policy paths.
@@ -2457,6 +2458,7 @@ class Processor:
                              columns=['Year', 'Temp_FB', 'Temp_ten', 'Temp_zero'])
         DF_temppath.to_csv(f'{self.Directory}/Results/Figures/TempPathIAM.csv', index=False)
          
+        
         # ----------------------------------------------------------------
 
         # Consumption equivalence.

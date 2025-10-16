@@ -288,7 +288,7 @@ def Opt_SS(r, α, λ, γ, χ, ν, η, φ_hat, ρ, var_θ, Θ, o):
                         
             if np.max(np.abs(np.log(SS_trunc) - np.log(SS_g_trunc))) < 10**(-7):
                 break
-            SS_g_trunc = SS_trunc
+            SS_g_trunc = SS_trunc.copy()
             
         ξtilde_ss = np.ones(J)*0.000001
         Abar_ss = np.ones(J-1)*0.000001
