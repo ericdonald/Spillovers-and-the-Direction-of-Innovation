@@ -1,7 +1,7 @@
 """""""""""
 Calibration Functions
 
-Notes: Functions the define the calibration roots of the economy.
+Notes: Functions that define the calibration roots of the economy.
     
 """""""""""
 
