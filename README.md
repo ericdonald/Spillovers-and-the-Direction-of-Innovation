@@ -54,15 +54,15 @@ where `XX` is the user's API key for the relevant data source.
 All of the replication codes run on Python `3.11.13`. Prior to running the codes, install the following packages:
 | Package | Version |
 |---------|---------|
-| numpy | 2.2.6 |
-| pandas | 2.3.2 |
-| scipy | 1.16.1 |
+| linearmodels | 0.0.0 |
 | matplotlib | 3.10.5 |
 | numba | 0.61.2 |
-| quantecon | 0.10.1 |
-| statsmodels | 0.14.5 |
+| numpy | 2.2.6 |
 | openpyxl | 3.1.5 |
-| linearmodels | 0.0.0 |
+| pandas | 2.3.2 |
+| quantecon | 0.10.1 |
+| scipy | 1.16.1 |
+| statsmodels | 0.14.5 |
 
 ## Description of Code:
 
