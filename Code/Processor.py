@@ -1604,6 +1604,8 @@ class Processor:
         Graph Match of 2010s Experience
         
         Output: Results/Figures/2010s_Transition.csv
+                Results/Figures/BasinsTax.csv
+                Results/Figures/BasinsSub.csv
                 Results/Tables/Tens_Results.csv
         """""
         
@@ -1655,6 +1657,71 @@ class Processor:
         κ_low = np.linalg.eig(Jake_low)[0]
         
         
+        # ----------------------------------- #
+        # Basins of Attraction by Policy Tool #
+        # ----------------------------------- #
+        
+        cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
+        Y_start = cal_panel.loc[cal_panel.year == Year_start, ['GDP']].to_numpy()[0,0]
+        X = ssf.X_mat(self.E.Θ)
+        I = np.eye(J-1)
+        
+        #Carbon Price
+        P = 2000
+        τ_dollar_pd = np.linspace(0, P, P)
+        τ_pd = (self.E.Y0 / Y_start) * τ_dollar_pd * (self.CO2_C**(-1))
+        
+        r_tilde_pd = np.zeros((P, J))
+        Abar_ss_low_pd = np.zeros((P, J-1))
+        Jake_low_pd = np.zeros((P, J-1, J-1))
+        A_fan_low_pd = np.zeros((P, J-1))
+        ΔB_fan_low_pd = np.zeros((P, self.E.Θ))
+        
+        for p in range(P):
+            r_tilde_pd[p,:] = r_tilde + self.E.ω * τ_pd[p]
+            Abar_ss_low_pd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_pd[p,:], ξ_0low, self.E.Θ, self.E.o)
+            Jake_low_pd[p,:,:] = ssf.Jacob(Abar_ss_low_pd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde_pd[p,:], self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            A_fan_low_pd[p,:] = np.log(Abar_start) - np.log(Abar_ss_low_pd[p,:])
+            ΔB_fan_low_pd[p,:] = X @ (Jake_low_pd[p,:,:] - I) @ A_fan_low_pd[p,:] * 100
+        
+        Tens_Results.add('Carbon Price for Clean Growth in Transport (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,0]))]))
+        Tens_Results.add('Carbon Price for Clean Growth in Electricity (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,1]))]))
+    
+        
+        τ_dollar_pd = τ_dollar_pd[:500]
+        ΔB_fan_low_pd = ΔB_fan_low_pd[:500,:]
+        
+        DF_taxbasin = pd.DataFrame(np.hstack((τ_dollar_pd.reshape((-1,1)), ΔB_fan_low_pd)), 
+                             columns=['τ_dollar_pd', 'ΔB_fan_low_pd_Transport', 'ΔB_fan_low_pd_Electricity'])
+        DF_taxbasin.to_csv(f'{self.Directory}/Results/Figures/BasinsTax.csv', index=False)
+        
+        
+        #Innovation Subsidies
+        ξ_clean_pd = np.linspace(1, 5, P).reshape((P,1))
+        ξ_pd = np.hstack((ξ_clean_pd, np.ones((P,1)), ξ_clean_pd, np.ones((P,1)), np.ones((P,1))))
+        
+        Abar_ss_low_subpd = np.zeros((P, J-1))
+        Jake_low_subpd = np.zeros((P, J-1, J-1))
+        A_fan_low_subpd = np.zeros((P, J-1))
+        ΔB_fan_low_subpd = np.zeros((P, self.E.Θ))
+        
+        for p in range(P):
+            Abar_ss_low_subpd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_pd[p,:], self.E.Θ, self.E.o)
+            Jake_low_subpd[p,:,:] = ssf.Jacob(Abar_ss_low_subpd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            A_fan_low_subpd[p,:] = np.log(Abar_start) - np.log(Abar_ss_low_subpd[p,:])
+            ΔB_fan_low_subpd[p,:] = X @ (Jake_low_subpd[p,:,:] - I) @ A_fan_low_subpd[p,:] * 100
+        
+        Tens_Results.add('Clean Innovation Subsidy for Clean Growth in Transport (No Spillover)', gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,0])),0], 2))
+        Tens_Results.add('Clean Innovation Subsidy for Clean Growth in Electricity (No Spillover)', gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,1])),0], 2))
+        
+        ξ_clean_pd = ξ_clean_pd[:500]
+        ΔB_fan_low_subpd = ΔB_fan_low_subpd[:500,:]
+        
+        DF_subbasin = pd.DataFrame(np.hstack((ξ_clean_pd.reshape((-1,1)), ΔB_fan_low_subpd)), 
+                             columns=['ξ_clean_pd', 'ΔB_fan_low_subpd_Transport', 'ΔB_fan_low_subpd_Electricity'])
+        DF_subbasin.to_csv(f'{self.Directory}/Results/Figures/BasinsSub.csv', index=False)
+        
+        
         # -------------- #
         # Record Results #
         # -------------- #
@@ -1694,8 +1761,6 @@ class Processor:
         Output: Results/Figures/LinearCompare.csv
                 Results/Figures/TechPathBidenlow.csv
                 Results/Figures/TechPathBidenhigh.csv
-                Results/Figures/BasinsTax.csv
-                Results/Figures/BasinsSub.csv
                 Results/Figures/AmpDeterms.csv
                 Results/Figures/TranDeterms.csv
                 Results/Figures/TranPolicy.csv
@@ -1947,66 +2012,6 @@ class Processor:
         κ_ao = np.linalg.eig(Jake_ao)[0]
         
         PolicyX_Results.add('Applicant Only Spectral Radius', gpf.clean_round(np.max(np.abs(κ_ao)), 3))
-        
-        
-        # ----------------------------------- #
-        # Basins of Attraction by Policy Tool #
-        # ----------------------------------- #
-        
-        #Carbon Price
-        P = 2000
-        τ_dollar_pd = np.linspace(0, P, P)
-        τ_pd = (self.E.Y0 / Y_start) * τ_dollar_pd * (self.CO2_C**(-1))
-        
-        r_tilde_pd = np.zeros((P, J))
-        Abar_ss_low_pd = np.zeros((P, J-1))
-        Jake_low_pd = np.zeros((P, J-1, J-1))
-        A_fan_low_pd = np.zeros((P, J-1))
-        ΔB_fan_low_pd = np.zeros((P, self.E.Θ))
-        
-        for p in range(P):
-            r_tilde_pd[p,:] = self.E.r + self.E.ω * τ_pd[p]
-            Abar_ss_low_pd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_pd[p,:], ξ_cleansub, self.E.Θ, self.E.o)
-            Jake_low_pd[p,:,:] = ssf.Jacob(Abar_ss_low_pd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde_pd[p,:], self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
-            A_fan_low_pd[p,:] = np.log(Abar_0) - np.log(Abar_ss_low_pd[p,:])
-            ΔB_fan_low_pd[p,:] = X @ (Jake_low_pd[p,:,:] - I) @ A_fan_low_pd[p,:] * 100
-        
-        PolicyX_Results.add('Carbon Price for Clean Growth in Transport (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,0]))]))
-        PolicyX_Results.add('Carbon Price for Clean Growth in Electricity (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,1]))]))
-    
-        
-        τ_dollar_pd = τ_dollar_pd[:500]
-        ΔB_fan_low_pd = ΔB_fan_low_pd[:500,:]
-        
-        DF_taxbasin = pd.DataFrame(np.hstack((τ_dollar_pd.reshape((-1,1)), ΔB_fan_low_pd)), 
-                             columns=['τ_dollar_pd', 'ΔB_fan_low_pd_Transport', 'ΔB_fan_low_pd_Electricity'])
-        DF_taxbasin.to_csv(f'{self.Directory}/Results/Figures/BasinsTax.csv', index=False)
-        
-        
-        #Innovation Subsidies
-        ξ_clean_pd = np.linspace(1, 5, P).reshape((P,1))
-        ξ_pd = np.hstack((ξ_clean_pd, np.ones((P,1)), ξ_clean_pd, np.ones((P,1)), np.ones((P,1))))
-        
-        Abar_ss_low_subpd = np.zeros((P, J-1))
-        Jake_low_subpd = np.zeros((P, J-1, J-1))
-        A_fan_low_subpd = np.zeros((P, J-1))
-        ΔB_fan_low_subpd = np.zeros((P, self.E.Θ))
-        
-        for p in range(P):
-            Abar_ss_low_subpd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_pd[p,:], self.E.Θ, self.E.o)
-            Jake_low_subpd[p,:,:] = ssf.Jacob(Abar_ss_low_subpd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
-            A_fan_low_subpd[p,:] = np.log(Abar_0) - np.log(Abar_ss_low_subpd[p,:])
-            ΔB_fan_low_subpd[p,:] = X @ (Jake_low_subpd[p,:,:] - I) @ A_fan_low_subpd[p,:] * 100
-        
-        PolicyX_Results.add('Clean Innovation Subsidy for Clean Growth in Transport (No Spillover)', gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,0])),0], 2))
-        PolicyX_Results.add('Clean Innovation Subsidy for Clean Growth in Electricity (No Spillover)', gpf.clean_round(ξ_clean_pd[np.argmin(np.abs(ΔB_fan_low_subpd[:,1])),0], 2))
-        
-        ξ_clean_pd = ξ_clean_pd[:500]
-        ΔB_fan_low_subpd = ΔB_fan_low_subpd[:500,:]
-        
-        DF_subbasin = pd.DataFrame(np.hstack((ξ_clean_pd.reshape((-1,1)), ΔB_fan_low_subpd)), 
-                             columns=['ξ_clean_pd', 'ΔB_fan_low_subpd_Transport', 'ΔB_fan_low_subpd_Electricity'])
-        DF_subbasin.to_csv(f'{self.Directory}/Results/Figures/BasinsSub.csv', index=False)
         
         
         # --------------------- #
