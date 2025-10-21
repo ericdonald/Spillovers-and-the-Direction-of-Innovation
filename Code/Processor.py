@@ -1660,11 +1660,11 @@ class Processor:
         # ----------------------------------- #
         # Basins of Attraction by Policy Tool #
         # ----------------------------------- #
-        
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         Y_start = cal_panel.loc[cal_panel.year == Year_start, ['GDP']].to_numpy()[0,0]
         X = ssf.X_mat(self.E.Θ)
         I = np.eye(J-1)
+        ξ_0 = np.ones(J)
         
         #Carbon Price
         P = 2000
@@ -1678,8 +1678,8 @@ class Processor:
         ΔB_fan_low_pd = np.zeros((P, self.E.Θ))
         
         for p in range(P):
-            r_tilde_pd[p,:] = r_tilde + self.E.ω * τ_pd[p]
-            Abar_ss_low_pd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_pd[p,:], ξ_0low, self.E.Θ, self.E.o)
+            r_tilde_pd[p,:] = self.E.r + self.E.ω * τ_pd[p]
+            Abar_ss_low_pd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_pd[p,:], ξ_0, self.E.Θ, self.E.o)
             Jake_low_pd[p,:,:] = ssf.Jacob(Abar_ss_low_pd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde_pd[p,:], self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
             A_fan_low_pd[p,:] = np.log(Abar_start) - np.log(Abar_ss_low_pd[p,:])
             ΔB_fan_low_pd[p,:] = X @ (Jake_low_pd[p,:,:] - I) @ A_fan_low_pd[p,:] * 100
@@ -1687,7 +1687,6 @@ class Processor:
         Tens_Results.add('Carbon Price for Clean Growth in Transport (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,0]))]))
         Tens_Results.add('Carbon Price for Clean Growth in Electricity (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,1]))]))
     
-        
         τ_dollar_pd = τ_dollar_pd[:500]
         ΔB_fan_low_pd = ΔB_fan_low_pd[:500,:]
         
@@ -1706,8 +1705,8 @@ class Processor:
         ΔB_fan_low_subpd = np.zeros((P, self.E.Θ))
         
         for p in range(P):
-            Abar_ss_low_subpd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_pd[p,:], self.E.Θ, self.E.o)
-            Jake_low_subpd[p,:,:] = ssf.Jacob(Abar_ss_low_subpd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            Abar_ss_low_subpd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, self.E.r, ξ_pd[p,:], self.E.Θ, self.E.o)
+            Jake_low_subpd[p,:,:] = ssf.Jacob(Abar_ss_low_subpd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.r, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
             A_fan_low_subpd[p,:] = np.log(Abar_start) - np.log(Abar_ss_low_subpd[p,:])
             ΔB_fan_low_subpd[p,:] = X @ (Jake_low_subpd[p,:,:] - I) @ A_fan_low_subpd[p,:] * 100
         
