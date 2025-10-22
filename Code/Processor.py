@@ -1664,7 +1664,7 @@ class Processor:
         Y_start = cal_panel.loc[cal_panel.year == Year_start, ['GDP']].to_numpy()[0,0]
         X = ssf.X_mat(self.E.Θ)
         I = np.eye(J-1)
-        ξ_0 = np.ones(J)
+        ξ_lf = np.ones(J)
         
         #Carbon Price
         P = 2000
@@ -1679,7 +1679,7 @@ class Processor:
         
         for p in range(P):
             r_tilde_pd[p,:] = self.E.r + self.E.ω * τ_pd[p]
-            Abar_ss_low_pd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_pd[p,:], ξ_0, self.E.Θ, self.E.o)
+            Abar_ss_low_pd[p,:] = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_pd[p,:], ξ_lf, self.E.Θ, self.E.o)
             Jake_low_pd[p,:,:] = ssf.Jacob(Abar_ss_low_pd[p,:], self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde_pd[p,:], self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
             A_fan_low_pd[p,:] = np.log(Abar_start) - np.log(Abar_ss_low_pd[p,:])
             ΔB_fan_low_pd[p,:] = X @ (Jake_low_pd[p,:,:] - I) @ A_fan_low_pd[p,:] * 100
