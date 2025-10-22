@@ -1648,9 +1648,7 @@ class Processor:
         Q = np.linalg.eig(Jake)[1]
         A_fan = np.log(Abar_start) - np.log(Abar_ss)
         β = np.linalg.inv(Q) @ A_fan
-        
-        HL = ssf.Half_Life(Q, κ, β, self.E.Θ)
-        
+                
         φ_hat_low = np.eye(J)
         Abar_ss_low = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_0low, self.E.Θ, self.E.o)
         Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
@@ -1745,8 +1743,6 @@ class Processor:
         Tens_Results.add('2021 Clean Quantity Share for Electricity (No Spillover)', gpf.clean_round(100*q_θc_low[-1,1], 1))
         
         Tens_Results.add('2010s Spectral Radius', gpf.clean_round(np.max(np.abs(κ)), 3))
-        Tens_Results.add('2010s Half-Life for Transportation', HL[0])
-        Tens_Results.add('2010s Half-Life for Electricity', HL[1])
         Tens_Results.add('2010s Spectral Radius (No Spillover)', gpf.clean_round(np.max(np.abs(κ_low)), 3))
         
         Tens_Results.to_csv(f'{self.Directory}/Results/Tables/Tens_Results.csv')
