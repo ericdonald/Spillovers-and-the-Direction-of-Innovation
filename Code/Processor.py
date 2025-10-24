@@ -71,7 +71,8 @@ class Processor:
         """""
         Clean Data
         
-        Output: Raw Data/Patent_CPC.pkl
+        Output: Results/Figures/OWID_solar.csv
+                Raw Data/Patent_CPC.pkl
                 Raw Data/Patent_Citations.pkl
                 Raw Data/Patent_Inventors.pkl
                 Clean Data/RICE.pkl
@@ -239,6 +240,41 @@ class Processor:
         )
            
         
+        # ------------------------ #
+        # OWID Photovoltaic Prices #
+        # ------------------------ #
+        OWID_solar_price_df = pd.read_csv("https://ourworldindata.org/grapher/solar-pv-prices.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+
+        OWID_solar_price_df = OWID_solar_price_df[['Year', 'Solar photovoltaic module price']]
+        OWID_solar_price_df = OWID_solar_price_df.rename(columns={"Year": "year", "Solar photovoltaic module price": "solar_price"})
+        
+        OWID_solar_price_df = pd.merge(OWID_solar_price_df,
+                                       FRED_CPI_df,
+                                       on='year',
+                                       how='inner'
+                                       )
+        
+        OWID_solar_price_df['firm_rd'] = OWID_solar_price_df['solar_price'] / OWID_solar_price_df['CPI']
+        OWID_solar_price_df = OWID_solar_price_df[['year', 'solar_price']]
+        
+        
+        # -------------------------------------- #
+        # OWID Solar Share of GLobal Electricity #
+        # -------------------------------------- #
+        OWID_solar_share_df = pd.read_csv("https://ourworldindata.org/grapher/share-electricity-solar.csv?v=1&csvType=filtered&useColumnShortNames=false&tab=line&time=1985..2024&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+
+        OWID_solar_share_df = OWID_solar_share_df[['Year', 'Solar - % electricity']]
+        OWID_solar_share_df = OWID_solar_share_df.rename(columns={"Year": "year", "Solar - % electricity": "solar_share"})
+        
+        OWID_solar_df = pd.merge(OWID_solar_price_df,
+                                       OWID_solar_share_df,
+                                       on='year',
+                                       how='outer'
+                                       )
+        
+        OWID_solar_df.to_csv(f'{self.Directory}/Results/Figures/OWID_solar.csv', index=False)
+
+
         # -------------------------------------- #
         # NOAA Atmospheric Carbon Concentrations #
         # -------------------------------------- #
@@ -1645,10 +1681,7 @@ class Processor:
         Abar_ss = ssf.Abar_SS(self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_0, self.E.Θ, self.E.o)
         Jake = ssf.Jacob(Abar_ss, self.E.η, self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
         κ = np.linalg.eig(Jake)[0]
-        Q = np.linalg.eig(Jake)[1]
-        A_fan = np.log(Abar_start) - np.log(Abar_ss)
-        β = np.linalg.inv(Q) @ A_fan
-                
+        
         φ_hat_low = np.eye(J)
         Abar_ss_low = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_0low, self.E.Θ, self.E.o)
         Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
