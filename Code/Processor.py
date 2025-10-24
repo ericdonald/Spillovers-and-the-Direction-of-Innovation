@@ -254,7 +254,7 @@ class Processor:
                                        how='inner'
                                        )
         
-        OWID_solar_price_df['firm_rd'] = OWID_solar_price_df['solar_price'] / OWID_solar_price_df['CPI']
+        OWID_solar_price_df['solar_price'] = OWID_solar_price_df['solar_price'] / OWID_solar_price_df['CPI']
         OWID_solar_price_df = OWID_solar_price_df[['year', 'solar_price']]
         
         
