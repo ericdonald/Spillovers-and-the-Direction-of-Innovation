@@ -25,6 +25,8 @@ where `XX` is the user's API key for the relevant data source.
 - Our World in Data
   - [Global Industrial Emissions](https://ourworldindata.org/grapher/annual-co2-emissions-per-country?country=~OWID_WRL)
   - [Global Land-Use Emissions](https://ourworldindata.org/grapher/co2-land-use?tab=line&country=~OWID_WRL)
+  - [Photovoltaic Prices](https://ourworldindata.org/grapher/solar-pv-prices)
+  - [Solar Share of Global Electricity](https://ourworldindata.org/grapher/share-electricity-solar?tab=line&time=1985..2024&country=~OWID_WRL)
 - NOAA
   - [Atmospheric Carbon Concentrations](https://gml.noaa.gov/ccgg/trends/data.html)
 - PatentsView
