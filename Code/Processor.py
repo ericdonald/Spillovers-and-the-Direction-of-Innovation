@@ -253,7 +253,14 @@ class Processor:
         OWID_solar_price_df = pd.concat([roser_row, OWID_solar_price_df], ignore_index=True)
         
         OWID_solar_price_df['solar_price'] = OWID_solar_price_df['solar_price'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == 2024, 'CPI'].values[0] #Series is in 2024 prices
-        OWID_solar_price_df = OWID_solar_price_df[['year', 'solar_price']]
+        
+        x = OWID_solar_price_df['year'].values.astype(float)
+        y = np.log(OWID_solar_price_df['solar_price'].values.astype(float))
+        
+        a, b = np.polyfit(x, y, deg=1)
+        OWID_solar_price_df['solar_price_hat'] = np.exp(a * OWID_solar_price_df['year'] + b)
+        
+        OWID_solar_price_df = OWID_solar_price_df[['year', 'solar_price', 'solar_price_hat']]
         
         
         # -------------------------------------- #
@@ -270,7 +277,7 @@ class Processor:
                                        on='year',
                                        how='outer'
                                        )
-        OWID_solar_df["solar_share"].fillna(0)
+        OWID_solar_df["solar_share"] = OWID_solar_df["solar_share"].fillna(0)
         
         OWID_solar_df.to_csv(f'{self.Directory}/Results/Figures/OWID_solar.csv', index=False)
 
