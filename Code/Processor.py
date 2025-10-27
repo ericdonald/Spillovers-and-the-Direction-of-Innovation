@@ -248,13 +248,17 @@ class Processor:
         OWID_solar_price_df = OWID_solar_price_df[['Year', 'Solar photovoltaic module price']]
         OWID_solar_price_df = OWID_solar_price_df.rename(columns={"Year": "year", "Solar photovoltaic module price": "solar_price"})
         
+        roser_row = pd.DataFrame({'year': [1956], 'solar_price': [1865]}) #Manually add 1956 from Roser
+        roser_row['solar_price'] = roser_row['solar_price'] *  OWID_solar_price_df.loc[OWID_solar_price_df['year'] == 2024, 'CPI'].values[0] / OWID_solar_price_df.loc[OWID_solar_price_df['year'] == 2019, 'CPI'].values[0] #Adjust from 2019 to 2024 prices
+        OWID_solar_price_df = pd.concat([roser_row, OWID_solar_price_df], ignore_index=True)
+        
         OWID_solar_price_df = pd.merge(OWID_solar_price_df,
                                        FRED_CPI_df,
                                        on='year',
                                        how='inner'
                                        )
         
-        OWID_solar_price_df['solar_price'] = OWID_solar_price_df['solar_price'] / OWID_solar_price_df['CPI']
+        OWID_solar_price_df['solar_price'] = OWID_solar_price_df['solar_price'] / OWID_solar_price_df.loc[OWID_solar_price_df['year'] == 2024, 'CPI'].values[0] #Series is in 2024 prices
         OWID_solar_price_df = OWID_solar_price_df[['year', 'solar_price']]
         
         
