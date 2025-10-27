@@ -263,12 +263,14 @@ class Processor:
 
         OWID_solar_share_df = OWID_solar_share_df[['Year', 'Solar - % electricity']]
         OWID_solar_share_df = OWID_solar_share_df.rename(columns={"Year": "year", "Solar - % electricity": "solar_share"})
+        OWID_solar_share_df["solar_share"] = OWID_solar_share_df["solar_share"] / 100
         
         OWID_solar_df = pd.merge(OWID_solar_price_df,
                                        OWID_solar_share_df,
                                        on='year',
                                        how='outer'
                                        )
+        OWID_solar_df["solar_share"].fillna(0)
         
         OWID_solar_df.to_csv(f'{self.Directory}/Results/Figures/OWID_solar.csv', index=False)
 
