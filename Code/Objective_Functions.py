@@ -37,7 +37,7 @@ def Eqbm_Path(A_0, T_plus, η, φ_hat, χ, γ, α, λ, ν, σ, L, r_tilde, ξ, �
 
 
 
-def Carb_Path(C1_0, C2_0, T_time, A, sum_Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, r_tilde, α, σ, λ, ν, L, ω, Θ):
+def Carb_Path(C1_0, C2_0, T_time, A, Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, r_tilde, α, σ, λ, ν, L, ω, Θ):
     "Simulation of Carbon Path"
     
     J = 2*Θ+1
@@ -46,22 +46,22 @@ def Carb_Path(C1_0, C2_0, T_time, A, sum_Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, 
     # ------------------ #
     # Initial Conditions #
     # ------------------ #
-    C_g[0,0] = pf.Perm_Carb(C1_0, sum_Em_out[0,:], ψ_p)
-    C_g[0,1] = pf.Tran_Carb(C2_0, sum_Em_out[0,:], ψ_p, ψ_0, ψ)
+    C_g[0,0] = pf.Perm_Carb(C1_0, Em_out[0,:], ψ_p)
+    C_g[0,1] = pf.Tran_Carb(C2_0, Em_out[0,:], ψ_p, ψ_0, ψ)
     
     # ---------------- #
     # Equilibrium Path #
     # ---------------- #
     for t in range(1,T_time):
-        C_g[t,0] = pf.Perm_Carb(C_g[t-1,0], sum_Em_out[t,:], ψ_p)
-        C_g[t,1] = pf.Tran_Carb(C_g[t-1,1], sum_Em_out[t,:], ψ_p, ψ_0, ψ)
+        C_g[t,0] = pf.Perm_Carb(C_g[t-1,0], Em_out[t,:], ψ_p)
+        C_g[t,1] = pf.Tran_Carb(C_g[t-1,1], Em_out[t,:], ψ_p, ψ_0, ψ)
         
     r_tilde_adjust = np.tile(r_tilde.reshape((1,J)), (T_time, 1))
     ν_adjust = np.tile(ν.reshape((1,Θ+1)), (T_time, 1))
     ω_adjust = np.tile(ω.reshape((1,J)), (T_time, 1))
     
     Carb = sp.optimize.root(CarbRoot, C_g,
-                      args=(C1_0, C2_0, T_time, A, sum_Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, r_tilde_adjust, α, σ, λ, ν_adjust, L, ω_adjust, Θ),
+                      args=(C1_0, C2_0, T_time, A, Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, r_tilde_adjust, α, σ, λ, ν_adjust, L, ω_adjust, Θ),
                       method='lm')
         
     C = Carb.x.reshape((T_time,2))
@@ -70,12 +70,12 @@ def Carb_Path(C1_0, C2_0, T_time, A, sum_Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, 
 
 
 
-def CarbRoot(C_g, C1_0, C2_0, T_time, A, sum_Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, r_tilde_adjust, α, σ, λ, ν_adjust, L, ω_adjust, Θ):
+def CarbRoot(C_g, C1_0, C2_0, T_time, A, Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, r_tilde_adjust, α, σ, λ, ν_adjust, L, ω_adjust, Θ):
     "Carbon Path Root"
     
     C_g = C_g.reshape((T_time,2))
     Ω = pf.Damage(np.sum(C_g,1).reshape((-1,1)), C_bar, var_ρ)
-    Em = sum_Em_out + pf.GHG(r_tilde_adjust, A, α, σ, λ, ν_adjust, Ω, L, ω_adjust, Θ)
+    Em = Em_out + pf.GHG(r_tilde_adjust, A, α, σ, λ, ν_adjust, Ω, L, ω_adjust, Θ)
     
     C1_glag = np.vstack((np.array([C1_0]), C_g[:-1,0].reshape((-1,1))))
     C2_glag = np.vstack((np.array([C2_0]), C_g[:-1,1].reshape((-1,1))))
@@ -147,7 +147,7 @@ def CE_root(CE, W_2, c, var_θ, T, ρ, g_ss):
 
 
 
-def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
+def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, Em_out, Θ, SCC_frac, o):
     "Optimality Condition for Carbon Price"
     
     # ------------------------------------------------------------------------------------------- #
@@ -203,7 +203,7 @@ def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
 
 
 
-def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
+def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, Em_out, Θ, SCC_frac, o):
     "Law of Motion for Carbon Concentrations"
     
     # ------------------------------------------------------------------------------------------- #
@@ -226,7 +226,7 @@ def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
     C_t = C_1_t + C_2_t
     Ω_t = pf.Damage(C_t, C_bar, var_ρ)
     
-    Em_t = sum_Em_out + pf.GHG(r_tilde_t, A_t, α, σ, λ, ν, Ω_t, L, ω, Θ)
+    Em_t = Em_out + pf.GHG(r_tilde_t, A_t, α, σ, λ, ν, Ω_t, L, ω, Θ)
 
     # ----- #
     # Roots #
@@ -241,7 +241,7 @@ def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
 
 
 
-def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
+def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, Em_out, Θ, SCC_frac, o):
     "Optimality Condition for Innovation Subsidies x Shares"
 
     # ------------------------------------------------------------------------------------------- #
@@ -304,7 +304,7 @@ def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, �
         
 
 
-def A_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
+def A_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, Em_out, Θ, SCC_frac, o):
     "Technology Law of Motion"
     
     # ------------------------------------------------------------------------------------------- #
@@ -331,7 +331,7 @@ def A_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
 
 
 
-def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, sum_Em_out, Θ, SCC_frac, o):
+def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ, ν, L, ω, C_bar, var_ρ, ψ_p, ψ_0, ψ, Em_out, Θ, SCC_frac, o):
     "Crazy Recursion"
     
     # ------------------------------------------------------------------------------------------- #
@@ -404,6 +404,100 @@ def unpack(x, J, T):
     ς_2 = x[:,-1].reshape((T,1))
 
     return (τ_1, τ_2, C_1, C_2, ξtilde, A, ς_1, ς_2)
+
+
+
+def V_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde, α, σ, λ, ν, L, Θ, o, Ψ):
+    "Value Function Recursion"
+    
+    # ---------------------------------- #
+    # Unpack Profit and Technology Guess #
+    # ---------------------------------- #
+    J = 2*Θ + 1
+    
+    V_t = np.exp(x_t[:,:J])
+    A_t = np.exp(x_t[:,J:])
+    
+    V_lead = np.exp(x_lead[:,:J])
+    A_lead = np.exp(x_lead[:,J:])
+    
+    
+    # -------- #
+    # Outcomes #
+    # -------- #
+    X = np.ones((1,J))
+    
+    g_ss = A_lead[-1,0]
+    
+    Y_t = pf.Output(r_tilde, A_t, α, σ, λ, ν, 1, L, Θ) @ X
+    Y_leadss = (1+g_ss) * Y_t
+    Y_lead = np.vstack((Y_t[1:,:], Y_leadss[-1,:]))
+    
+    con_t = pf.Consump(r, r_tilde, A_t, α, σ, λ, ν, 1, L, Θ)
+    con_leadss = (1+g_ss) * con_t
+    con_lead = np.vstack((con_t[1:,:], con_leadss[-1,:]))
+    
+    Sj_t = pf.Shares_j(r_tilde, A_t, α, σ, λ, ν, Θ)
+    
+    
+    # --- #
+    # MRS #
+    # --- #
+    MU_t = MUtil(con_t, var_θ)
+    MU_lead = MUtil(con_lead, var_θ)
+    R_inv = MU_lead / MU_t / (1+ρ)
+
+
+    # ----- #
+    # Roots #
+    # ----- #
+    RHS = np.empty((T,J))
+    for t in range(T):
+        RHS[t,:] = ((γ-1)/γ) * (1-α) * Sj_t[t,:] + Ψ * R_inv[t,:] * (Y_lead[t,:]/Y_t[t,:]) * V_lead[t,:]
+    
+    Root = np.log(V_t) - np.log(RHS)
+    
+    return Root
+
+
+
+def A_eq_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde, α, σ, λ, ν, L, Θ, o, Ψ):
+    "Equilibrium Technology Law of Motion"
+    
+    # ---------------------------------- #
+    # Unpack Profit and Technology Guess #
+    # ---------------------------------- #
+    J = 2*Θ + 1
+    
+    V_lag = np.exp(x_lag[:,:J])
+    A_lag = np.exp(x_lag[:,J:])
+    
+    V_t = np.exp(x_t[:,:J])
+    A_t = np.exp(x_t[:,J:])
+    
+
+    # -------- #
+    # Outcomes #
+    # -------- #
+    s_t = rf.Science(A_lag, ξtilde_t, η, φ_hat, ν, Θ, o)
+    
+    # ----- #
+    # Roots #
+    # ----- #
+    RHS = rf.A_new(s_t, A_lag, η, φ_hat, χ, γ, ν, o)
+    Root = np.log(A_t) - np.log(RHS)
+    
+    return Root
+
+
+
+
+
+
+
+
+
+
 
 
 

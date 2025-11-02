@@ -236,6 +236,7 @@ class Economy:
         
         A_start = A_0.x
         
+        
         # ------------------------------- #
         # Status Quo Innovation Subsidies #
         # ------------------------------- #
@@ -251,6 +252,7 @@ class Economy:
         ξ_0 = np.ones(J)
         ξ_0[:-1] = ξ_init.x
         
+        
         # ----------------------------------- #
         # Calibration for Low Spillover Model #
         # ----------------------------------- #
@@ -262,6 +264,7 @@ class Economy:
        
         ξ_0low = np.ones(J)
         ξ_0low[:-1] = ξ_init_low.x
+        
         
         # -------------------------- #
         # Simulate Equilibrium Paths #
@@ -279,6 +282,116 @@ class Economy:
             q_θc_low[t,:] = pf.q_c(r_tilde, A_ten_low[t,:], self.α, self.σ, self.Θ)
         
         return (q_θc, q_θc_low, A_start, ξ_0, ξ_0low)
+    
+    
+    
+    def PatentLengthValid(self, Year_start, Year_end, Periods, pat_length, A_start, ξ_0, ξ_0low):
+        "Validation for Longer Patent Lengths"
+        
+        J = 2*self.Θ + 1
+        N = 2*J
+        
+        r_tilde = (1-self.ξbar_0)*self.r
+        Ψ = 1 - 1 / pat_length
+        φ_hat_low = np.eye(J)
+        
+        
+        # ------------------- #
+        # Steady-State Policy #
+        # ------------------- #
+        
+        
+        
+        # ------------- #
+        # Initial Guess #
+        # ------------- #
+        
+        
+        # --------- #
+        # Functions #
+        # --------- #
+        Funcs = (of.V_root, of.A_root)
+        F = len(Funcs)
+        
+        func_widths = [J, J]
+        
+        N_V = tuple(range(J))
+        N_A = tuple(range(J, J*2))
+            
+        dep_lag = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==0 and n in N_C: #Carbon condition on lagged carbon
+                    dep_lag[f,n] = 1
+                if f==1 and n in N_A: #Technology condition on lagged technology
+                    dep_lag[f,n] = 1
+        
+        dep_t = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+                if f==1 and not (n in N_ξtilde or n in N_ς): #Carbon condition on all but innovation subsidy or crazy recursion
+                    dep_t[f,n] = 1
+        
+        dep_lead = np.zeros((F, N))
+        
+        for f in range(F):
+            for n in range(N):
+                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but lead innovation subsidy or crazy recursion
+                    dep_lead[f,n] = 1
+                if f==1 and not (n in N_ς): #Innovation subsidy condition on all but lead crazy recursion
+                    dep_lead[f,n] = 1
+        
+        r_adjust = np.tile(r_tilde.reshape((1,J)), (Periods, 1))
+        ν_adjust = np.tile(self.ν.reshape((1,self.Θ+1)), (Periods, 1))
+        ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
+        args = (Periods, ρ, self.var_θ, φ_hat_IAM, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, var_ρ, self.ψ_p, self.ψ_0, self.ψ, Em_out, self.Θ, SCC_frac, self.o)
+        
+        
+        # ----------------------------- #
+        # Initial & Terminal Conditions #
+        # ----------------------------- #
+        Init = np.ones((1,N))
+        Init[0,J:] = np.log(A_start)
+
+        Term = np.ones((1,N))
+        Term[0,:J] = np.log(V_ss)
+        
+        Term_low = np.ones((1,N))
+        Term_low[0,:J] = np.log(V_low_ss)
+        
+        
+        # ----- #
+        # Solve #
+        # ----- #
+        X = srs.SRS(X_g, Funcs, Init, Term, args, func_widths, dep_lag, dep_t, dep_lead)
+        X_low = srs.SRS(X_low_g, Funcs, Init, Term_low, args_low, func_widths, dep_lag, dep_t, dep_lead)
+    
+    
+        # ---------------------------- #
+        # Unpack Profit and Technology #
+        # ---------------------------- #
+        V = np.exp(X[:,:J])
+        A = np.exp(X[:,J:])
+        
+        V_low = np.exp(X_low[:,:J])
+        A_low = np.exp(X_low[:,J:])
+        
+        
+        # -------------------------- #
+        # Simulate Equilibrium Paths #
+        # -------------------------- #
+        T_year = Year_end - Year_start + 1
+        q_θc = np.zeros((T_year, self.Θ))
+        q_θc_low = np.zeros((T_year, self.Θ))
+        for t in range(T_year):
+            q_θc[t,:] = pf.q_c(r_tilde, A[t,:], self.α, self.σ, self.Θ)
+            q_θc_low[t,:] = pf.q_c(r_tilde, A_low[t,:], self.α, self.σ, self.Θ)
+        
+        return (q_θc, q_θc_low)
         
     
     
@@ -305,6 +418,7 @@ class Economy:
             φ_hat_IAM = np.eye(J)
         else:
             φ_hat_IAM = self.φ_hat
+            
             
         # -------------- #
         # Select Damages #
