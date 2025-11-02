@@ -33,12 +33,12 @@ def phi_hat_root(φ_hat, φ_tilde_0, A_0, o):
 
 
 @njit
-def chi_root(χ, Abar_ss, g, η, φ_hat, γ, ν, T, Θ, o):
+def chi_root(χ, Abar_ss, g, η, φ_hat, γ, ν, Θ, o):
     "Root to Calibrate Research Productivity"
     
     g_hat = ssf.Growth_SS(Abar_ss, φ_hat, η, ν, γ, χ, Θ, o)
     
-    growth = ((1+g)**T - 1) - g_hat
+    growth = g - g_hat
     
     return growth
 
@@ -68,13 +68,13 @@ def A0_root(A_0, Mom_A0, Mom_Y0, r_tilde, α, Θ, σ, λ, ν, L, Ω_0):
 
 
 
-def ξ0_root(ξ_0, Mom_ξ, A_0, T, Year_0, r_tilde, α, Θ, σ, λ, ν, L, η, φ_hat, χ, γ, o):
+def ξ0_root(ξ_0, Mom_ξ, A_0, Year_0, r_tilde, α, Θ, σ, λ, ν, L, η, φ_hat, χ, γ, o):
     "Root to Calibrate Status Quo Innovation Subsidies"
     
     J = 2*Θ+1
     ξ = np.append(ξ_0, 1)
     
-    T_plus = int(np.ceil((2020 - Year_0)/T))-1
+    T_plus = int(np.ceil(2020 - Year_0))-1
     s = of.Eqbm_Path(A_0, T_plus, η, φ_hat, χ, γ, α, λ, ν, σ, L, r_tilde, ξ, Θ, o)[0]
         
     ξ_relsub = np.zeros((T_plus,J-1))

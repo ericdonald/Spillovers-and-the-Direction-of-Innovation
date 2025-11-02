@@ -2062,7 +2062,7 @@ class Processor:
         β = np.linalg.inv(Q) @ A_fan_0
         t_half_tech = ssf.Half_Life(Q, κ, β, self.E.Θ)
         Δ_half = (t_half_tech[1]/t_half_tech[0] - 1)*100
-        t_half = np.concatenate((np.ceil(np.log(1/2)/np.log(κ)), t_half_tech)) * self.E.T
+        t_half = np.concatenate((np.ceil(np.log(1/2)/np.log(κ)), t_half_tech))
         
         Abar_ss_noθ = ssf.Abar_SS(self.E.η, φtilde_noθ, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
         Jake_noθ = ssf.Jacob(Abar_ss_noθ, self.E.η, φtilde_noθ, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
@@ -2073,7 +2073,7 @@ class Processor:
         A_fan_0_noθ = np.log(Abar_0) - np.log(Abar_ss_noθ)
         β_noθ = np.linalg.inv(Q_noθ) @ A_fan_0_noθ
         t_half_tech_noθ = ssf.Half_Life(Q_noθ, κ_noθ, β_noθ, self.E.Θ)
-        t_half_noθ = np.concatenate((np.ceil(np.log(1/2)/np.log(κ_noθ)), t_half_tech_noθ)) * self.E.T
+        t_half_noθ = np.concatenate((np.ceil(np.log(1/2)/np.log(κ_noθ)), t_half_tech_noθ))
         
         Abar_ss_Dub = ssf.Abar_SS(self.E.η, φ_Dub, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_cleansub, self.E.Θ, self.E.o)
         Jake_Dub = ssf.Jacob(Abar_ss_Dub, self.E.η, φ_Dub, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
@@ -2084,7 +2084,7 @@ class Processor:
         A_fan_0_Dub = np.log(Abar_0) - np.log(Abar_ss_Dub)
         β_Dub = np.linalg.inv(Q_Dub) @ A_fan_0_Dub
         t_half_tech_Dub = ssf.Half_Life(Q_Dub, κ_Dub, β_Dub, self.E.Θ)
-        t_half_Dub = np.concatenate((np.ceil(np.log(1/2)/np.log(κ_Dub)), t_half_tech_Dub)) * self.E.T
+        t_half_Dub = np.concatenate((np.ceil(np.log(1/2)/np.log(κ_Dub)), t_half_tech_Dub))
         
         Abar_ss_nogen = ssf.Abar_SS(self.E.η, φtilde_nogen, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_low, ξ_lf, self.E.Θ, self.E.o)
         Jake_nogen = ssf.Jacob(Abar_ss_nogen, self.E.η, φtilde_nogen, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
@@ -2124,7 +2124,7 @@ class Processor:
         Q_high = np.linalg.eig(Jake_high)[1][:,idx_high]
         A_fan_0_high = np.log(Abar_0) - np.log(Abar_ss_high)
         β_high = np.linalg.inv(Q_high) @ A_fan_0_high
-        t_half_tech_high = ssf.Half_Life(Q_high, κ_high, β_high, self.E.Θ) * self.E.T
+        t_half_tech_high = ssf.Half_Life(Q_high, κ_high, β_high, self.E.Θ)
         
         Abar_ss_Dub_high = ssf.Abar_SS(self.E.η, φ_Dub, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde_high, ξ_cleansub, self.E.Θ, self.E.o)
         Jake_Dub_high = ssf.Jacob(Abar_ss_Dub_high, self.E.η, φ_Dub, self.E.α, self.E.σ, self.E.λ, r_tilde_high, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
@@ -2134,7 +2134,7 @@ class Processor:
         Q_Dub_high = np.linalg.eig(Jake_Dub_high)[1][:,idx_Dub_high]
         A_fan_0_Dub_high = np.log(Abar_0) - np.log(Abar_ss_Dub_high)
         β_Dub_high = np.linalg.inv(Q_Dub_high) @ A_fan_0_Dub_high
-        t_half_tech_Dub_high = ssf.Half_Life(Q_Dub_high, κ_Dub_high, β_Dub_high, self.E.Θ) * self.E.T
+        t_half_tech_Dub_high = ssf.Half_Life(Q_Dub_high, κ_Dub_high, β_Dub_high, self.E.Θ)
         PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price)', int(t_half_tech_high[0]))
         PolicyX_Results.add('Half-Life for Electricity (High Biden Carbon Price)', int(t_half_tech_high[1]))
         PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price, Double Spillovers)', int(t_half_tech_Dub_high[0]))
@@ -2266,8 +2266,8 @@ class Processor:
         # ---------- #
         # Parameters #
         # ---------- #
-        ρ_h = (1+self.E.ρ_h)**self.E.T - 1
-        ρ_l = (1+self.E.ρ_l)**self.E.T - 1
+        ρ_h = self.E.ρ_h
+        ρ_l = self.E.ρ_l
         
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         
@@ -2597,7 +2597,7 @@ class Processor:
         J = 2*self.E.Θ + 1
         CES_Results = gpf.ResultsTable()       
         
-        ρ = (1+self.E.ρ_l)**self.E.T - 1
+        ρ = self.E.ρ_l
                 
         r_adjust = np.tile(self.E.r.reshape((1,J)), (T_time, 1))
         ν_adjust = np.tile(self.E.ν.reshape((1,self.E.Θ+1)), (T_time, 1))

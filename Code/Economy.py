@@ -30,7 +30,6 @@ class Economy:
         # Define Externally Calibrated Parameters #
         # --------------------------------------- #
         self.Θ = 2 #Number of Climate-Specific Sectors
-        self.T = 1 #Years per period
         self.σ = 1.86 #Elasticity of Substitution between Clean & Dirty
         self.λ = 0.10 #Elasticity of Substitution across Sectors
         self.γ = 1.07 #Innovation Size
@@ -142,14 +141,14 @@ class Economy:
         # ------------------------- #
         # Carbon Initial Conditions #
         # ------------------------- #
-        self.C1_0 = self.C_bar + self.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year < self.Year_0 + self.T, ['C_em']].to_numpy())
-        self.C2_0 = np.mean(clim_cal_panel.loc[(clim_cal_panel.year >= self.Year_0) & (clim_cal_panel.year < self.Year_0 + self.T), ['C_stock']].to_numpy()) - self.C1_0
+        self.C1_0 = self.C_bar + self.ψ_p*np.sum(clim_cal_panel.loc[clim_cal_panel.year <= self.Year_0, ['C_em']].to_numpy())
+        self.C2_0 = np.mean(clim_cal_panel.loc[clim_cal_panel.year == self.Year_0, ['C_stock']].to_numpy()) - self.C1_0
         
         
         # ------------------ #
         # Initial Technology #
         # ------------------ #
-        S_A0 = cal_panel.loc[(cal_panel.year >= self.Year_0) & (cal_panel.year < self.Year_0 + self.T), ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
+        S_A0 = cal_panel.loc[cal_panel.year == self.Year_0, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
         Mom_A0 = np.mean(S_A0, 0)
         
         r_tilde = (1-self.ξbar_0)*self.r
@@ -169,7 +168,7 @@ class Economy:
         # ---------------- #
         # Carbon Intensity #
         # ---------------- #
-        C_ω = cal_panel.loc[(cal_panel.year >= self.Year_0) & (cal_panel.year < self.Year_0 + self.T), ['car_C_em','elec_C_em']].to_numpy()
+        C_ω = cal_panel.loc[cal_panel.year == self.Year_0, ['car_C_em','elec_C_em']].to_numpy()
         Mom_ω = np.sum(C_ω, 0)
         
         omega_dg = np.ones(self.Θ)
@@ -203,7 +202,7 @@ class Economy:
         chi_g = 1
     
         chi = sp.optimize.root(cf.chi_root, chi_g,
-                      args=(Abar_ss, self.g, self.η, self.φ_hat, self.γ, self.ν, self.T, self.Θ, self.o),
+                      args=(Abar_ss, self.g, self.η, self.φ_hat, self.γ, self.ν, self.Θ, self.o),
                       method='lm')
         
         self.χ = chi.x
@@ -221,12 +220,12 @@ class Economy:
         # ------------------ #
         # Initial Technology #
         # ------------------ #
-        S_A0 = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year < Year_start + self.T), ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
+        S_A0 = cal_panel.loc[cal_panel.year == Year_start, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
         Mom_A0 = np.mean(S_A0, 0)
         
         r_tilde = (1-self.ξbar_0)*self.r
         
-        C_0 = np.mean(clim_cal_panel.loc[(clim_cal_panel.year >= Year_start) & (clim_cal_panel.year < Year_start + self.T), ['C_stock']].to_numpy())
+        C_0 = np.mean(clim_cal_panel.loc[clim_cal_panel.year == Year_start, ['C_stock']].to_numpy())
         Ω_0 = pf.Damage(C_0, self.C_bar, self.var_ρ)
 
         A_0g = np.ones(J)
@@ -246,7 +245,7 @@ class Economy:
         ξ_0g = np.ones(J-1)
     
         ξ_init = sp.optimize.root(cf.ξ0_root, ξ_0g,
-                      args=(Mom_ξ, A_start, self.T, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, self.φ_hat, self.χ, self.γ, self.o),
+                      args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, self.φ_hat, self.χ, self.γ, self.o),
                       method='lm')
        
         ξ_0 = np.ones(J)
@@ -258,7 +257,7 @@ class Economy:
         φ_hat_low = np.eye(J)
         
         ξ_init_low = sp.optimize.root(cf.ξ0_root, ξ_0[:-1],
-                      args=(Mom_ξ, A_start, self.T, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, φ_hat_low, self.χ, self.γ, self.o),
+                      args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, φ_hat_low, self.χ, self.γ, self.o),
                       method='lm')
        
         ξ_0low = np.ones(J)
@@ -267,7 +266,7 @@ class Economy:
         # -------------------------- #
         # Simulate Equilibrium Paths #
         # -------------------------- #
-        T_plus = int(np.ceil((Year_end - Year_start)/self.T))
+        T_plus = int(np.ceil(Year_end - Year_start))
         
         A_ten = of.Eqbm_Path(A_start, T_plus, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0, self.Θ, self.o)[1]
         A_ten_low = of.Eqbm_Path(A_start, T_plus, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0low, self.Θ, self.o)[1]
@@ -276,11 +275,8 @@ class Economy:
         q_θc = np.zeros((T_year, self.Θ))
         q_θc_low = np.zeros((T_year, self.Θ))
         for t in range(T_year):
-            T_up = int(np.ceil(t/self.T))
-            T_down = int(np.floor(t/self.T))
-            T_wght = t/self.T - T_down
-            q_θc[t,:] = (1-T_wght) * pf.q_c(r_tilde, A_ten[T_down,:], self.α, self.σ, self.Θ) + T_wght * pf.q_c(r_tilde, A_ten[T_up,:], self.α, self.σ, self.Θ)
-            q_θc_low[t,:] = (1-T_wght) * pf.q_c(r_tilde, A_ten_low[T_down,:], self.α, self.σ, self.Θ) + T_wght * pf.q_c(r_tilde, A_ten_low[T_up,:], self.α, self.σ, self.Θ)
+            q_θc[t,:] = pf.q_c(r_tilde, A_ten[t,:], self.α, self.σ, self.Θ)
+            q_θc_low[t,:] = pf.q_c(r_tilde, A_ten_low[t,:], self.α, self.σ, self.Θ)
         
         return (q_θc, q_θc_low, A_start, ξ_0, ξ_0low)
         
@@ -297,9 +293,9 @@ class Economy:
         # Select Discount Rate #
         # -------------------- #
         if disc_high == 1:
-            ρ = (1+self.ρ_h)**self.T - 1
+            ρ = self.ρ_h
         else:
-            ρ = (1+self.ρ_l)**self.T - 1
+            ρ = self.ρ_l
             
             
         # ------------------------ #
@@ -327,16 +323,9 @@ class Economy:
         relEm = np.sum(np.mean(C_ω, 0))
         
         RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
-        RICE_optEm = RICE.loc[(RICE.year >= self.Year_0 + self.T) & (RICE.year <= self.Year_0 + Periods*self.T), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
+        RICE_optEm = RICE.loc[(RICE.year > self.Year_0) & (RICE.year <= self.Year_0 + Periods), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
         Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
         
-        sum_Em_out = np.zeros((Periods,1))
-        for t in range(Periods):
-            start_idx = t * self.T
-            end_idx = start_idx + self.T
-            group_sum = np.sum(Em_out[start_idx:end_idx])
-            sum_Em_out[t,:] = group_sum
-            
             
         # ------------------- #
         # Steady-State Policy #
@@ -373,12 +362,12 @@ class Economy:
         C1_g = np.zeros((Periods,1))
         C2_g = np.zeros((Periods,1))
         
-        C1_g[0,:] = pf.Perm_Carb(self.C1_0, sum_Em_out[0,:], self.ψ_p)
-        C2_g[0,:] = pf.Tran_Carb(self.C2_0, sum_Em_out[0,:], self.ψ_p, self.ψ_0, self.ψ)
+        C1_g[0,:] = pf.Perm_Carb(self.C1_0, Em_out[0,:], self.ψ_p)
+        C2_g[0,:] = pf.Tran_Carb(self.C2_0, Em_out[0,:], self.ψ_p, self.ψ_0, self.ψ)
         
         for t in range(1,Periods):
-            C1_g[t,:] = pf.Perm_Carb(C1_g[t-1,:], sum_Em_out[t,:], self.ψ_p)
-            C2_g[t,:] = pf.Tran_Carb(C2_g[t-1,:], sum_Em_out[t,:], self.ψ_p, self.ψ_0, self.ψ)
+            C1_g[t,:] = pf.Perm_Carb(C1_g[t-1,:], Em_out[t,:], self.ψ_p)
+            C2_g[t,:] = pf.Tran_Carb(C2_g[t-1,:], Em_out[t,:], self.ψ_p, self.ψ_0, self.ψ)
         
         if spill_low == 1:
             d = (0.975**np.arange(Periods)).reshape((Periods,1))
@@ -456,7 +445,7 @@ class Economy:
         r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
         ν_adjust = np.tile(self.ν.reshape((1,self.Θ+1)), (Periods, 1))
         ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
-        args = (Periods, ρ, self.var_θ, φ_hat_IAM, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, var_ρ, self.ψ_p, self.ψ_0, self.ψ, sum_Em_out, self.Θ, SCC_frac, self.o)
+        args = (Periods, ρ, self.var_θ, φ_hat_IAM, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, var_ρ, self.ψ_p, self.ψ_0, self.ψ, Em_out, self.Θ, SCC_frac, self.o)
         
         
         # ----------------------------- #
@@ -529,7 +518,7 @@ class Economy:
         chi_g = 1
     
         chi = sp.optimize.root(cf.chi_root, chi_g,
-                      args=(Abar_ss, self.g, self.η, self.φ_hat, self.γ, self.ν, self.T, self.Θ, self.o),
+                      args=(Abar_ss, self.g, self.η, self.φ_hat, self.γ, self.ν, self.Θ, self.o),
                       method='lm')
         
         self.χ = chi.x
@@ -549,21 +538,14 @@ class Economy:
         relEm = np.sum(np.mean(C_ω, 0))
         
         RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
-        RICE_optEm = RICE.loc[(RICE.year >= self.Year_0 + self.T) & (RICE.year <= self.Year_0 + Periods*self.T), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
+        RICE_optEm = RICE.loc[(RICE.year > self.Year_0) & (RICE.year <= self.Year_0 + Periods), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
         Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
         
-        sum_Em_out = np.zeros((Periods,1))
-        for t in range(Periods):
-            start_idx = t * self.T
-            end_idx = start_idx + self.T
-            group_sum = np.sum(Em_out[start_idx:end_idx])
-            sum_Em_out[t,:] = group_sum
-            
             
         # ------------------- #
         # Steady-State Policy #
         # ------------------- #
-        ρ = (1+self.ρ_l)**self.T - 1
+        ρ = self.ρ_l
         (ξtilde_ss, Abar_ss) = ssf.Opt_SS(self.r, self.α, self.λ, self.γ, self.χ, self.ν, self.η, self.φ_hat, ρ, self.var_θ, self.Θ, self.o)
         g_ss = ssf.Growth_SS(Abar_ss, self.φ_hat, self.η, self.ν, self.γ, self.χ, self.Θ, self.o)
         Rtilde_inv = (1+g_ss)**(1-self.var_θ) / (1+ρ)
@@ -587,12 +569,12 @@ class Economy:
         C1_g = np.zeros((Periods,1))
         C2_g = np.zeros((Periods,1))
         
-        C1_g[0,:] = pf.Perm_Carb(self.C1_0, sum_Em_out[0,:], self.ψ_p)
-        C2_g[0,:] = pf.Tran_Carb(self.C2_0, sum_Em_out[0,:], self.ψ_p, self.ψ_0, self.ψ)
+        C1_g[0,:] = pf.Perm_Carb(self.C1_0, Em_out[0,:], self.ψ_p)
+        C2_g[0,:] = pf.Tran_Carb(self.C2_0, Em_out[0,:], self.ψ_p, self.ψ_0, self.ψ)
         
         for t in range(1,Periods):
-            C1_g[t,:] = pf.Perm_Carb(C1_g[t-1,:], sum_Em_out[t,:], self.ψ_p)
-            C2_g[t,:] = pf.Tran_Carb(C2_g[t-1,:], sum_Em_out[t,:], self.ψ_p, self.ψ_0, self.ψ)
+            C1_g[t,:] = pf.Perm_Carb(C1_g[t-1,:], Em_out[t,:], self.ψ_p)
+            C2_g[t,:] = pf.Tran_Carb(C2_g[t-1,:], Em_out[t,:], self.ψ_p, self.ψ_0, self.ψ)
         
         ξtilde_g = np.tile(ξtilde_ss.reshape((1,J)), (Periods,1))
         ξtilde_g[:,1] = ξtilde_g[:,0]
@@ -666,7 +648,7 @@ class Economy:
         r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
         ν_adjust = np.tile(self.ν.reshape((1,self.Θ+1)), (Periods, 1))
         ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
-        args = (Periods, ρ, self.var_θ, self.φ_hat, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, self.var_ρ, self.ψ_p, self.ψ_0, self.ψ, sum_Em_out, self.Θ, 1, self.o)
+        args = (Periods, ρ, self.var_θ, self.φ_hat, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, self.var_ρ, self.ψ_p, self.ψ_0, self.ψ, Em_out, self.Θ, 1, self.o)
         
         
         # ----------------------------- #
