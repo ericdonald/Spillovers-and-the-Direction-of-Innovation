@@ -460,7 +460,7 @@ class Economy:
         
         RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
         RICE_optEm = RICE.loc[(RICE.year > self.Year_0) & (RICE.year <= self.Year_0 + Periods), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
-        Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
+        Em_out = (RICE_optEm[:,0] - relEm * RICE_optEm[:,1]).reshape((-1,1))
         
             
         # ------------------- #
@@ -675,7 +675,8 @@ class Economy:
         
         RICE = pd.read_pickle(f'{self.Directory}/Clean Data/RICE.pkl')
         RICE_optEm = RICE.loc[(RICE.year > self.Year_0) & (RICE.year <= self.Year_0 + Periods), ['Optimal_Global_Em', 'Optimal_US_Em']].to_numpy()
-        Em_out = RICE_optEm[:,0] - relEm * RICE_optEm[:,1]
+        Em_out = (RICE_optEm[:,0] - relEm * RICE_optEm[:,1]).reshape((-1,1))
+
         
             
         # ------------------- #
