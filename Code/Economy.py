@@ -326,6 +326,16 @@ class Economy:
         # Initial Guess #
         # ------------- #
         
+        A_g = of.Eqbm_Path(A_start, Periods, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0, self.Θ, self.o)[1]
+        S_g = pf.Shares_j(r_tilde, A_g, self.α, self.σ, self.λ, self.ν, self.Θ)
+        V_g = ((self.γ-1)/self.γ) * (1-self.α) * S_g / (1 - Ψ * Rtilde_inv)
+        X_g = np.hstack((np.log(V_g), np.log(A_g)))
+
+        A_low_g = of.Eqbm_Path(A_start, Periods, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0low, self.Θ, self.o)[1]
+        S_low_g = pf.Shares_j(r_tilde, A_low_g, self.α, self.σ, self.λ, self.ν, self.Θ)
+        V_low_g = ((self.γ-1)/self.γ) * (1-self.α) * S_low_g / (1 - Ψ * Rtilde_inv_low)
+        X_low_g = np.hstack((np.log(V_low_g), np.log(A_low_g)))
+        
         
         # --------- #
         # Functions #
