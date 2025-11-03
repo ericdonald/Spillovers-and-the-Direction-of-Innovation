@@ -281,6 +281,7 @@ class Economy:
             q_θc[t,:] = pf.q_c(r_tilde, A_ten[t,:], self.α, self.σ, self.Θ)
             q_θc_low[t,:] = pf.q_c(r_tilde, A_ten_low[t,:], self.α, self.σ, self.Θ)
         
+        
         return (q_θc, q_θc_low, A_start, ξ_0, ξ_0low)
     
     
@@ -296,10 +297,29 @@ class Economy:
         φ_hat_low = np.eye(J)
         
         
-        # ------------------- #
-        # Steady-State Policy #
-        # ------------------- #
+        # ------------ #
+        # Steady-State #
+        # ------------ #
+        Abar_ss = ssf.Abar_SS(self.η, self.φ_hat, self.α, self.σ, self.λ, self.ν, r_tilde, ξ_0, self.Θ, self.o)
+        S_ss = pf.Shares_j(r_tilde, np.append(Abar_ss, 1), self.α, self.σ, self.λ, self.ν, self.Θ)
+        g_ss = ssf.Growth_SS(Abar_ss, self.φ_hat, self.η, self.ν, self.γ, self.χ, self.Θ, self.o)
+        Rtilde_inv = (1+g_ss)**(1-self.var_θ) / (1+self.ρ_h)
+        V_ss = ((self.γ-1)/self.γ) * (1-self.α) * S_ss / (1 - Ψ * Rtilde_inv)
         
+        
+        Abar_ss_cornfull = ssf.Abar_SS_corn(self.α, self.λ, r_tilde, ξ_0, self.Θ)
+        Abar_ss_corn = np.array([Abar_ss_cornfull[1], Abar_ss_cornfull[3]])
+        r_tilde_corn = np.array([r_tilde[1], r_tilde[3], r_tilde[-1]])
+        
+        X = np.ascontiguousarray(np.ones((self.Θ+1,1)))
+        p_θ = pf.PseudoP_j(r_tilde_corn, np.append(Abar_ss_corn, 1), self.α)
+        P = ((self.ν * p_θ**(1-self.λ)) @ X)**(1/(1-self.λ))
+        S_θ = self.ν * (p_θ / P)**(1-self.λ)
+        
+        S_low_ss = np.array([0, S_θ[0], 0, S_θ[1], S_θ[2]])
+        g_low_ss = np.log(self.γ) * self.χ
+        Rtilde_inv_low = (1+g_low_ss)**(1-self.var_θ) / (1+self.ρ_h)
+        V_low_ss = ((self.γ-1)/self.γ) * (1-self.α) * S_low_ss / (1 - Ψ * Rtilde_inv_low)
         
         
         # ------------- #
@@ -310,7 +330,7 @@ class Economy:
         # --------- #
         # Functions #
         # --------- #
-        Funcs = (of.V_root, of.A_root)
+        Funcs = (of.V_root, of.A_eq_root)
         F = len(Funcs)
         
         func_widths = [J, J]
@@ -322,33 +342,23 @@ class Economy:
         
         for f in range(F):
             for n in range(N):
-                if f==0 and n in N_C: #Carbon condition on lagged carbon
-                    dep_lag[f,n] = 1
                 if f==1 and n in N_A: #Technology condition on lagged technology
                     dep_lag[f,n] = 1
         
-        dep_t = np.zeros((F, N))
-        
-        for f in range(F):
-            for n in range(N):
-                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but innovation subsidy or crazy recursion
-                    dep_t[f,n] = 1
-                if f==1 and not (n in N_ξtilde or n in N_ς): #Carbon condition on all but innovation subsidy or crazy recursion
-                    dep_t[f,n] = 1
+        dep_t = np.ones((F, N))
         
         dep_lead = np.zeros((F, N))
         
         for f in range(F):
             for n in range(N):
-                if f==0 and not (n in N_ξtilde or n in N_ς): #Carbon price condition on all but lead innovation subsidy or crazy recursion
-                    dep_lead[f,n] = 1
-                if f==1 and not (n in N_ς): #Innovation subsidy condition on all but lead crazy recursion
+                if f==0 and n in N_V: #Profit recursion on lead profit
                     dep_lead[f,n] = 1
         
-        r_adjust = np.tile(r_tilde.reshape((1,J)), (Periods, 1))
+        r_adjust = np.tile(self.r.reshape((1,J)), (Periods, 1))
+        r_tilde_adjust = np.tile(r_tilde.reshape((1,J)), (Periods, 1))
         ν_adjust = np.tile(self.ν.reshape((1,self.Θ+1)), (Periods, 1))
-        ω_adjust = np.tile(self.ω.reshape((1,J)), (Periods, 1))
-        args = (Periods, ρ, self.var_θ, φ_hat_IAM, self.γ, self.χ, self.η, r_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, ω_adjust, self.C_bar, var_ρ, self.ψ_p, self.ψ_0, self.ψ, Em_out, self.Θ, SCC_frac, self.o)
+        args = (Periods, self.ρ_h, self.var_θ, self.φ_hat, self.γ, self.χ, self.η, r_adjust, r_tilde_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, self.Θ, self.o, Ψ, ξ_0)
+        args_low = (Periods, self.ρ_h, self.var_θ, φ_hat_low, self.γ, self.χ, self.η, r_adjust, r_tilde_adjust, self.α, self.σ, self.λ, ν_adjust, self.L, self.Θ, self.o, Ψ, ξ_0low)
         
         
         # ----------------------------- #
@@ -359,9 +369,11 @@ class Economy:
 
         Term = np.ones((1,N))
         Term[0,:J] = np.log(V_ss)
+        Term[0,J:] = np.log(np.full(J, g_ss))
         
         Term_low = np.ones((1,N))
         Term_low[0,:J] = np.log(V_low_ss)
+        Term_low[0,J:] = np.log(np.full(J, g_low_ss))
         
         
         # ----- #
@@ -374,10 +386,8 @@ class Economy:
         # ---------------------------- #
         # Unpack Profit and Technology #
         # ---------------------------- #
-        V = np.exp(X[:,:J])
         A = np.exp(X[:,J:])
         
-        V_low = np.exp(X_low[:,:J])
         A_low = np.exp(X_low[:,J:])
         
         
@@ -390,6 +400,7 @@ class Economy:
         for t in range(T_year):
             q_θc[t,:] = pf.q_c(r_tilde, A[t,:], self.α, self.σ, self.Θ)
             q_θc_low[t,:] = pf.q_c(r_tilde, A_low[t,:], self.α, self.σ, self.Θ)
+        
         
         return (q_θc, q_θc_low)
         

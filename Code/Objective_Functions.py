@@ -21,10 +21,12 @@ def Eqbm_Path(A_0, T_plus, η, φ_hat, χ, γ, α, λ, ν, σ, L, r_tilde, ξ, �
     s = np.zeros((T_plus+1,J))
     A = np.zeros((T_plus+1,J))
     
+    
     # ------------------ #
     # Initial Conditions #
     # ------------------ #
     A[0,:] = A_0
+    
     
     # ---------------- #
     # Equilibrium Path #
@@ -43,11 +45,13 @@ def Carb_Path(C1_0, C2_0, T_time, A, Em_out, ψ_p, ψ_0, ψ, C_bar, var_ρ, r_ti
     J = 2*Θ+1
     C_g = np.zeros((T_time,2))
     
+    
     # ------------------ #
     # Initial Conditions #
     # ------------------ #
     C_g[0,0] = pf.Perm_Carb(C1_0, Em_out[0,:], ψ_p)
     C_g[0,1] = pf.Tran_Carb(C2_0, Em_out[0,:], ψ_p, ψ_0, ψ)
+    
     
     # ---------------- #
     # Equilibrium Path #
@@ -159,6 +163,7 @@ def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
     
     (τ_1_lead, τ_2_lead, C_1_lead, C_2_lead, ξtilde_lead, A_lead, ς_1_lead, ς_2_lead) = unpack(x_lead, J, T)
     
+    
     # -------- #
     # Outcomes #
     # -------- #
@@ -183,12 +188,14 @@ def τ_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
     τ_1_lead[-1,:] = Y_lead[-1,:] * τ_1_lead[-1,:]
     τ_2_lead[-1,:] = Y_lead[-1,:] * τ_2_lead[-1,:]
     
+    
     # --- #
     # MRS #
     # --- #
     MU_t = MUtil(con_t, var_θ)
     MU_lead = MUtil(con_lead, var_θ)
     R_inv = MU_lead / MU_t / (1+ρ)
+
 
     # ----- #
     # Roots #
@@ -215,6 +222,7 @@ def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
     
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
         
+    
     # -------- #
     # Outcomes #
     # -------- #
@@ -227,6 +235,7 @@ def C_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
     Ω_t = pf.Damage(C_t, C_bar, var_ρ)
     
     Em_t = Em_out + pf.GHG(r_tilde_t, A_t, α, σ, λ, ν, Ω_t, L, ω, Θ)
+
 
     # ----- #
     # Roots #
@@ -252,6 +261,7 @@ def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, �
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
     
     (τ_1_lead, τ_2_lead, C_1_lead, C_2_lead, ξtilde_lead, A_lead, ς_1_lead, ς_2_lead) = unpack(x_lead, J, T)
+    
     
     # -------- #
     # Outcomes #
@@ -284,12 +294,14 @@ def ξtilde_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, �
     
     φ_lead = rf.SpillNet(φ_hat, A_t, o)
     
+    
     # --- #
     # MRS #
     # --- #
     MU_t = MUtil(con_t, var_θ)
     MU_lead = MUtil(con_lead, var_θ)
     R_inv = MU_lead / MU_t / (1+ρ)
+    
     
     # ----- #
     # Roots #
@@ -316,10 +328,12 @@ def A_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ,
     
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
 
+
     # -------- #
     # Outcomes #
     # -------- #
     s_t = rf.Science(A_lag, ξtilde_t, η, φ_hat, ν, Θ, o)
+    
     
     # ----- #
     # Roots #
@@ -342,6 +356,7 @@ def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
     (τ_1_t, τ_2_t, C_1_t, C_2_t, ξtilde_t, A_t, ς_1_t, ς_2_t) = unpack(x_t, J, T)
     
     (τ_1_lead, τ_2_lead, C_1_lead, C_2_lead, ξtilde_lead, A_lead, ς_1_lead, ς_2_lead) = unpack(x_lead, J, T)
+    
     
     # -------- #
     # Outcomes #
@@ -367,12 +382,14 @@ def ς_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, α, σ, λ
     con_leadss = (1+g_ss) * con_t
     con_lead = np.vstack((con_t[1:,:], con_leadss[-1,:]))
     
+    
     # --- #
     # MRS #
     # --- #
     MU_t = MUtil(con_t, var_θ)
     MU_lead = MUtil(con_lead, var_θ)
     R_inv = MU_lead / MU_t / (1+ρ)
+
 
     # ----- #
     # Roots #
@@ -407,7 +424,7 @@ def unpack(x, J, T):
 
 
 
-def V_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde, α, σ, λ, ν, L, Θ, o, Ψ):
+def V_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde, α, σ, λ, ν, L, Θ, o, Ψ, ξ):
     "Value Function Recursion"
     
     # ---------------------------------- #
@@ -461,7 +478,7 @@ def V_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde, α
 
 
 
-def A_eq_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde, α, σ, λ, ν, L, Θ, o, Ψ):
+def A_eq_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde, α, σ, λ, ν, L, Θ, o, Ψ, ξ):
     "Equilibrium Technology Law of Motion"
     
     # ---------------------------------- #
@@ -469,7 +486,6 @@ def A_eq_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde,
     # ---------------------------------- #
     J = 2*Θ + 1
     
-    V_lag = np.exp(x_lag[:,:J])
     A_lag = np.exp(x_lag[:,J:])
     
     V_t = np.exp(x_t[:,:J])
@@ -479,7 +495,13 @@ def A_eq_root(x_lag, x_t, x_lead, T, ρ, var_θ, φ_hat, γ, χ, η, r, r_tilde,
     # -------- #
     # Outcomes #
     # -------- #
-    s_t = rf.Science(A_lag, ξtilde_t, η, φ_hat, ν, Θ, o)
+    X = np.ones((T,1))
+    ξ = ξ.reshape((1,-1))
+    
+    π_t = (X @ ξ) * V_t
+    
+    s_t = rf.Science(A_lag, π_t, η, φ_hat, ν, Θ, o)
+    
     
     # ----- #
     # Roots #
