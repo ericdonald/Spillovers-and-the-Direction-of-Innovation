@@ -325,12 +325,12 @@ class Economy:
         # Initial Guess #
         # ------------- #
         
-        A_g = of.Eqbm_Path(A_start, Periods, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0, self.Θ, self.o)[1]
+        A_g = of.Eqbm_Path(A_start, Periods, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0, self.Θ, self.o)[1][1:,:]
         S_g = pf.Shares_j(r_tilde, A_g, self.α, self.σ, self.λ, self.ν, self.Θ)
         V_g = ((self.γ-1)/self.γ) * (1-self.α) * S_g / (1 - Ψ * Rtilde_inv)
         X_g = np.hstack((np.log(V_g), np.log(A_g)))
 
-        A_low_g = of.Eqbm_Path(A_start, Periods, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0low, self.Θ, self.o)[1]
+        A_low_g = of.Eqbm_Path(A_start, Periods, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0low, self.Θ, self.o)[1][1:,:]
         S_low_g = pf.Shares_j(r_tilde, A_low_g, self.α, self.σ, self.λ, self.ν, self.Θ)
         V_low_g = ((self.γ-1)/self.γ) * (1-self.α) * S_low_g / (1 - Ψ * Rtilde_inv_low)
         X_low_g = np.hstack((np.log(V_low_g), np.log(A_low_g)))
@@ -381,7 +381,7 @@ class Economy:
         Term[0,J:] = np.log(np.full(J, g_ss))
         
         Term_low = np.ones((1,N))
-        Term_low[0,:J] = np.log(V_low_ss)
+        Term_low[0,:J] = np.log(V_low_ss+10e-8)
         Term_low[0,J:] = np.log(np.full(J, g_low_ss))
         
         
@@ -395,9 +395,11 @@ class Economy:
         # ---------------------------- #
         # Unpack Profit and Technology #
         # ---------------------------- #
-        A = np.exp(X[:,J:])
+        x_lag = np.vstack((Init, X[:-1,:]))
+        A = np.exp(x_lag[:,J:])
         
-        A_low = np.exp(X_low[:,J:])
+        x_lag_low = np.vstack((Init, X_low[:-1,:]))
+        A_low = np.exp(x_lag_low[:,J:])
         
         
         # -------------------------- #
