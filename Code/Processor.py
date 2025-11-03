@@ -1670,11 +1670,18 @@ class Processor:
         q_elec_clean = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= Year_end), ['q_elec_clean']].to_numpy()
         
         
+        # --------------------------------- #
+        # Simulated Path for Longer Patents #
+        # --------------------------------- #
+        (q_θc_p5, q_θc_low_p5) = self.E.PatentLengthValid(Year_start, Year_end, 500, 5, A_start, ξ_0, ξ_0low)
+        (q_θc_p10, q_θc_low_p10) = self.E.PatentLengthValid(Year_start, Year_end, 500, 10, A_start, ξ_0, ξ_0low)
+        
+        
         # ------------------------------- #
         # Plot Quantity Share Predictions #
         # ------------------------------- #
-        DF_tens = pd.DataFrame(np.hstack((np.arange(Year_start, Year_end+1).reshape((-1,1)), q_car_clean.reshape((-1,1)), q_elec_clean.reshape((-1,1)), q_θc, q_θc_low)), 
-                             columns=['Year', 'Data_Transport', 'Data_Electricity', 'Model_Transport', 'Model_Electricity', 'Model_Transport_Low', 'Model_Electricity_Low'])
+        DF_tens = pd.DataFrame(np.hstack((np.arange(Year_start, Year_end+1).reshape((-1,1)), q_car_clean.reshape((-1,1)), q_elec_clean.reshape((-1,1)), q_θc, q_θc_low, q_θc_p5, q_θc_low_p5, q_θc_p10, q_θc_low_p10)), 
+                             columns=['Year', 'Data_Transport', 'Data_Electricity', 'Model_Transport', 'Model_Electricity', 'Model_Transport_Low', 'Model_Electricity_Low', 'Model_Transport_p5', 'Model_Electricity_p5', 'Model_Transport_Low_p5', 'Model_Electricity_Low_p5', 'Model_Transport_p10', 'Model_Electricity_p10', 'Model_Transport_Low_p10', 'Model_Electricity_Low_p10'])
         DF_tens.to_csv(f'{self.Directory}/Results/Figures/2010s_Transition.csv', index=False)
 
         

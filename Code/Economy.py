@@ -306,7 +306,6 @@ class Economy:
         Rtilde_inv = (1+g_ss)**(1-self.var_θ) / (1+self.ρ_h)
         V_ss = ((self.γ-1)/self.γ) * (1-self.α) * S_ss / (1 - Ψ * Rtilde_inv)
         
-        
         Abar_ss_cornfull = ssf.Abar_SS_corn(self.α, self.λ, r_tilde, ξ_0, self.Θ)
         Abar_ss_corn = np.array([Abar_ss_cornfull[1], Abar_ss_cornfull[3]])
         r_tilde_corn = np.array([r_tilde[1], r_tilde[3], r_tilde[-1]])
