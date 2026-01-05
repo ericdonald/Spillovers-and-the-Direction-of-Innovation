@@ -56,6 +56,7 @@ where `XX` is the user's API key for the relevant data source.
 ### Python
 
 All of the replication codes run on Python `3.11.13`. Prior to running the codes, install the following packages:
+
 | Package | Version |
 |---------|---------|
 | linearmodels | 0.0.0 |
