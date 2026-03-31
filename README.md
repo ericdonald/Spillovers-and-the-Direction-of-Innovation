@@ -71,4 +71,18 @@ All of the replication codes run on Python `3.11.13`. Prior to running the codes
 
 ## Description of Code:
 
+### Setup Instructions
+
+Before running the code, create the following folders in the repository root:
+
+```
+Raw Data/
+Clean Data/
+Results/
+Results/Tables/
+Results/Figures/
+```
+
+Download the [raw data](https://github.com/ericdonald/Spillovers-and-the-Direction-of-Innovation/releases/download/v1.0.0/Raw.Data.zip), unzip, and place the file(s) directly in Raw Data/.
+
 ## List of Tables and Figures:
