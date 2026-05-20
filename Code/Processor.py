@@ -758,6 +758,7 @@ class Processor:
         img = ax.matshow(φ_tilde_0[:-1,:])
         ax.set_xticks([0,1,2,3,4])
         ax.set_xticklabels(tech_label_list)
+        ax.tick_params(axis='x', which='both', bottom=False, top=True)
         ax.set_yticks([0,1,2,3])
         ax.set_yticklabels(tech_label_list[:-1])
         ax.set(xlabel='Sender', ylabel='Receiver')
@@ -773,9 +774,10 @@ class Processor:
         
         tech_label_list = ['Clean Car', 'Dirty Car', 'Clean Elec', 'Dirty Elec', 'Other']
         fig, ax = plt.subplots(1,1)
-        img = ax.matshow(φ_tilde_0[:,:])
+        img = ax.matshow(φ_tilde_0)
         ax.set_xticks([0,1,2,3,4])
         ax.set_xticklabels(tech_label_list)
+        ax.tick_params(axis='x', which='both', bottom=False, top=True)
         ax.set_yticks([0,1,2,3,4])
         ax.set_yticklabels(tech_label_list)
         ax.set(xlabel='Sender', ylabel='Receiver')
@@ -1100,6 +1102,90 @@ class Processor:
         df_pivot.fillna(0, inplace=True)
         
         disagg_spill_matrix = df_pivot.values
+        
+        
+        # -------- #
+        # Heat Map #
+        # -------- #
+        
+        CLIMATE_DISPLAY = {
+            'car_clean_patent':  'Clean Car',
+            'car_dirty_patent':  'Dirty Car',
+            'elec_clean_patent': 'Clean Elec',
+            'elec_dirty_patent': 'Dirty Elec',
+        }
+         
+        def plot_disagg_spillover_heatmap(
+            disagg_spill_matrix: np.ndarray,
+            ordered_classes: list,
+            save_path: str = f'{self.Directory}/Results/Figures/Spillover_Network_disagg.png',
+            dpi: int = 300,
+            figsize: tuple = None,
+            cmap: str = 'viridis',
+            show_cpc_ticks: bool = True,
+        ):
+            
+            N = len(ordered_classes)
+            n_clim = len(priority_order)
+         
+            # Build display labels (short form for CPC codes)
+            def display_label(cls):
+                return CLIMATE_DISPLAY.get(cls, cls)
+         
+            labels = [display_label(c) for c in ordered_classes]
+         
+            # Auto figure size: scale with matrix dimension
+            if figsize is None:
+                base = max(8, N * 0.12)
+                figsize = (base + 2, base + 1)
+         
+            fig, ax = plt.subplots(figsize=figsize)
+         
+            img = ax.matshow(disagg_spill_matrix, cmap=cmap, aspect='auto')
+         
+            # ---- colorbar ----
+            cbar = fig.colorbar(img, ax=ax, fraction=0.03, pad=0.02)
+            cbar.set_label('Citation share', fontsize=9)
+            cbar.ax.tick_params(labelsize=8)
+         
+            # ---- axis ticks ----
+            tick_positions = list(range(N))
+            ax.set_xticks(tick_positions)
+            ax.set_yticks(tick_positions)
+            ax.tick_params(axis='x', which='both', bottom=False, top=True)
+         
+            if show_cpc_ticks:
+                ax.set_xticklabels(labels, rotation=90, fontsize=5 if N > 30 else 8, ha='center')
+                ax.set_yticklabels(labels, fontsize=5 if N > 30 else 8)
+            else:
+                # Always show climate labels; hide CPC labels
+                xtick_labels = [
+                    labels[i] if i < n_clim else '' for i in range(N)
+                ]
+                ytick_labels = [
+                    labels[i] if i < n_clim else '' for i in range(N)
+                ]
+                ax.set_xticklabels(xtick_labels, rotation=90, fontsize=8, ha='center')
+                ax.set_yticklabels(ytick_labels, fontsize=8)
+         
+            # ---- dividing lines between climate block and CPC block ----
+            line_kw = dict(color='white', linewidth=1.5, linestyle='--')
+            ax.axhline(n_clim - 0.5, **line_kw)
+            ax.axvline(n_clim - 0.5, **line_kw)
+         
+            # ---- axis labels ----
+            ax.set_xlabel('Sender', fontsize=10, labelpad=6)
+            ax.xaxis.set_label_position('top')
+            ax.set_ylabel('Receiver', fontsize=10, labelpad=6)
+         
+            plt.tight_layout()
+            plt.savefig(save_path, bbox_inches='tight', pad_inches=0.05, dpi=dpi)
+            plt.show()
+         
+        plot_disagg_spillover_heatmap(
+            disagg_spill_matrix=disagg_spill_matrix,
+            ordered_classes=ordered_classes,
+        )
         
         
         # ---------------------- #
