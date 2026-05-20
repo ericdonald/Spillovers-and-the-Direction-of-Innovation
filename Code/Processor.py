@@ -712,6 +712,7 @@ class Processor:
         Output: Clean Data/citation_shares.npy
                 Clean Data/citation_shares_applicant.npy
                 Results/Figures/Spillover_Network.png
+                Figures/Spillover_Network_full.png
                 Results/Tables/Stability_Regressions.tex
                 Results/Figures/Clean_Centrality.csv
                 Results/Tables/Disagg_Results.csv
@@ -752,7 +753,7 @@ class Processor:
 
         # ----------------------------------------------------------------
 
-        tech_label_list = ['Clean Car', 'Dirty Car', 'Clean Elec', 'Dirty Elec', 'Gen']
+        tech_label_list = ['Clean Car', 'Dirty Car', 'Clean Elec', 'Dirty Elec', 'Other']
         fig, ax = plt.subplots(1,1)
         img = ax.matshow(φ_tilde_0[:-1,:])
         ax.set_xticks([0,1,2,3,4])
@@ -763,6 +764,24 @@ class Processor:
         ax.xaxis.set_label_position('top')
         fig.colorbar(img)
         plt.savefig(f'{self.Directory}/Results/Figures/Spillover_Network.png', bbox_inches='tight', pad_inches=0.01, dpi=666)
+        plt.show()
+        
+        
+        # ------------- #
+        # Full Heat Map #
+        # ------------- #
+        
+        tech_label_list = ['Clean Car', 'Dirty Car', 'Clean Elec', 'Dirty Elec', 'Other']
+        fig, ax = plt.subplots(1,1)
+        img = ax.matshow(φ_tilde_0[:,:])
+        ax.set_xticks([0,1,2,3,4])
+        ax.set_xticklabels(tech_label_list)
+        ax.set_yticks([0,1,2,3,4])
+        ax.set_yticklabels(tech_label_list)
+        ax.set(xlabel='Sender', ylabel='Receiver')
+        ax.xaxis.set_label_position('top')
+        fig.colorbar(img)
+        plt.savefig(f'{self.Directory}/Results/Figures/Spillover_Network_full.png', bbox_inches='tight', pad_inches=0.01, dpi=666)
         plt.show()
         
         
