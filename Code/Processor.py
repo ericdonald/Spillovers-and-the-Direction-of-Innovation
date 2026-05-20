@@ -776,7 +776,7 @@ class Processor:
         fig, ax = plt.subplots(1,1)
         img = ax.matshow(φ_tilde_0)
         ax.set_xticks([0,1,2,3,4])
-        ax.set_xticklabels(tech_label_list)
+        ax.set_xticklabels(tech_label_list, rotation=45, ha='left')
         ax.tick_params(axis='x', which='both', bottom=False, top=True)
         ax.set_yticks([0,1,2,3,4])
         ax.set_yticklabels(tech_label_list)
@@ -1119,7 +1119,7 @@ class Processor:
             disagg_spill_matrix: np.ndarray,
             ordered_classes: list,
             save_path: str = f'{self.Directory}/Results/Figures/Spillover_Network_disagg.png',
-            dpi: int = 300,
+            dpi: int = 1000,
             figsize: tuple = None,
             cmap: str = 'viridis',
             show_cpc_ticks: bool = True,
