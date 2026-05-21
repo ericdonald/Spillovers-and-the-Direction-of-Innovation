@@ -1763,7 +1763,7 @@ class Processor:
         # ---------------------- #
         # Derive Simulated Paths #
         # ---------------------- #
-        (q_θc, q_θc_low, A_start, ξ_0, ξ_0low) = self.E.TensMatch(Year_start, Year_end)
+        (q_θc, q_θc_low, q_θc_half, q_θc_LF, q_θc_low_LF, q_θc_half_LF, A_start, ξ_0, ξ_0low, ξ_0half) = self.E.TensMatch(Year_start, Year_end)
         
         
         # -------------- #
@@ -1785,8 +1785,14 @@ class Processor:
         # ------------------------------- #
         # Plot Quantity Share Predictions #
         # ------------------------------- #
-        DF_tens = pd.DataFrame(np.hstack((np.arange(Year_start, Year_end+1).reshape((-1,1)), q_car_clean.reshape((-1,1)), q_elec_clean.reshape((-1,1)), q_θc, q_θc_low, q_θc_p5, q_θc_low_p5, q_θc_p10, q_θc_low_p10)), 
-                             columns=['Year', 'Data_Transport', 'Data_Electricity', 'Model_Transport', 'Model_Electricity', 'Model_Transport_Low', 'Model_Electricity_Low', 'Model_Transport_p5', 'Model_Electricity_p5', 'Model_Transport_Low_p5', 'Model_Electricity_Low_p5', 'Model_Transport_p10', 'Model_Electricity_p10', 'Model_Transport_Low_p10', 'Model_Electricity_Low_p10'])
+        DF_tens = pd.DataFrame(np.hstack((np.arange(Year_start, Year_end+1).reshape((-1,1)), q_car_clean.reshape((-1,1)), q_elec_clean.reshape((-1,1)),
+                                          q_θc, q_θc_low, q_θc_half,
+                                          q_θc_LF, q_θc_low_LF, q_θc_half_LF,
+                                          q_θc_p5, q_θc_low_p5, q_θc_p10, q_θc_low_p10)), 
+                             columns=['Year', 'Data_Transport', 'Data_Electricity', 
+                                      'Model_Transport', 'Model_Electricity', 'Model_Transport_Low', 'Model_Electricity_Low', 'Model_Transport_Half', 'Model_Electricity_Half',
+                                      'Model_Transport_LF', 'Model_Electricity_LF', 'Model_Transport_Low_LF', 'Model_Electricity_Low_LF', 'Model_Transport_Half_LF', 'Model_Electricity_Half_LF',
+                                      'Model_Transport_p5', 'Model_Electricity_p5', 'Model_Transport_Low_p5', 'Model_Electricity_Low_p5', 'Model_Transport_p10', 'Model_Electricity_p10', 'Model_Transport_Low_p10', 'Model_Electricity_Low_p10'])
         DF_tens.to_csv(f'{self.Directory}/Results/Figures/2010s_Transition.csv', index=False)
 
         
@@ -1884,6 +1890,10 @@ class Processor:
         Tens_Results.add('2010s Innovation Subsidy for Dirty Transport (No Spillover)', gpf.clean_round(ξ_0low[1], 3))
         Tens_Results.add('2010s Innovation Subsidy for Clean Electricity (No Spillover)', gpf.clean_round(ξ_0low[2], 3))
         Tens_Results.add('2010s Innovation Subsidy for Dirty Electricity (No Spillover)', gpf.clean_round(ξ_0low[3], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Clean Transport (Half Spillover)', gpf.clean_round(ξ_0half[0], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Dirty Transport (Half Spillover)', gpf.clean_round(ξ_0half[1], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Clean Electricity (Half Spillover)', gpf.clean_round(ξ_0half[2], 3))
+        Tens_Results.add('2010s Innovation Subsidy for Dirty Electricity (Half Spillover)', gpf.clean_round(ξ_0half[3], 3))
         
         Tens_Results.add('2021 Clean Quantity Share for Transport (Data)', gpf.clean_round(100*q_car_clean[-1,0], 1))
         Tens_Results.add('2021 Clean Quantity Share for Electricity (Data)', gpf.clean_round(100*q_elec_clean[-1,0], 1))

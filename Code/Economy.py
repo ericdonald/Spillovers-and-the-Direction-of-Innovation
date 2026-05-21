@@ -215,6 +215,7 @@ class Economy:
         J = 2*self.Θ + 1
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
+        ξ_lf = np.ones(J)
     
     
         # ------------------ #
@@ -265,6 +266,15 @@ class Economy:
         ξ_0low = np.ones(J)
         ξ_0low[:-1] = ξ_init_low.x
         
+        φ_half = self.φ_tilde_0/2 + (1-1/2) * np.eye(J)
+        
+        ξ_init_half = sp.optimize.root(cf.ξ0_root, ξ_0[:-1],
+                      args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, φ_half, self.χ, self.γ, self.o),
+                      method='lm')
+       
+        ξ_0half = np.ones(J)
+        ξ_0half[:-1] = ξ_init_half.x
+        
         
         # -------------------------- #
         # Simulate Equilibrium Paths #
@@ -273,16 +283,31 @@ class Economy:
         
         A_ten = of.Eqbm_Path(A_start, T_plus, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0, self.Θ, self.o)[1]
         A_ten_low = of.Eqbm_Path(A_start, T_plus, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0low, self.Θ, self.o)[1]
+        A_ten_half = of.Eqbm_Path(A_start, T_plus, self.η, φ_half, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0half, self.Θ, self.o)[1]
+        
+        A_ten_LF = of.Eqbm_Path(A_start, T_plus, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, self.r, ξ_lf, self.Θ, self.o)[1]
+        A_ten_low_LF = of.Eqbm_Path(A_start, T_plus, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, self.r, ξ_lf, self.Θ, self.o)[1]
+        A_ten_half_LF = of.Eqbm_Path(A_start, T_plus, self.η, φ_half, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, self.r, ξ_lf, self.Θ, self.o)[1]
 
         T_year = Year_end - Year_start + 1
         q_θc = np.zeros((T_year, self.Θ))
         q_θc_low = np.zeros((T_year, self.Θ))
+        q_θc_half = np.zeros((T_year, self.Θ))
+        
+        q_θc_LF = np.zeros((T_year, self.Θ))
+        q_θc_low_LF = np.zeros((T_year, self.Θ))
+        q_θc_half_LF = np.zeros((T_year, self.Θ))
         for t in range(T_year):
             q_θc[t,:] = pf.q_c(r_tilde, A_ten[t,:], self.α, self.σ, self.Θ)
             q_θc_low[t,:] = pf.q_c(r_tilde, A_ten_low[t,:], self.α, self.σ, self.Θ)
+            q_θc_half[t,:] = pf.q_c(r_tilde, A_ten_half[t,:], self.α, self.σ, self.Θ)
+            
+            q_θc_LF[t,:] = pf.q_c(self.r, A_ten_LF[t,:], self.α, self.σ, self.Θ)
+            q_θc_low_LF[t,:] = pf.q_c(self.r, A_ten_low_LF[t,:], self.α, self.σ, self.Θ)
+            q_θc_half_LF[t,:] = pf.q_c(self.r, A_ten_half_LF[t,:], self.α, self.σ, self.Θ)
         
         
-        return (q_θc, q_θc_low, A_start, ξ_0, ξ_0low)
+        return (q_θc, q_θc_low, q_θc_half, q_θc_LF, q_θc_low_LF, q_θc_half_LF, A_start, ξ_0, ξ_0low, ξ_0half)
     
     
     
