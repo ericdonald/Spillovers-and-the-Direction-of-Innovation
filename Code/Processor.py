@@ -1821,7 +1821,7 @@ class Processor:
     
         η_var = np.linspace(0.25, 0.75, P)
         λ_var = np.linspace(0.05, 0.5, P)
-        σ_var = np.linspace(1.25, 3, P)
+        σ_var = np.linspace(1.25, 2.6, P)
         
         spec_η = np.zeros(P)
         spec_λ = np.zeros(P)
