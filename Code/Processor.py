@@ -1752,6 +1752,7 @@ class Processor:
         Graph Match of 2010s Experience
         
         Output: Results/Figures/2010s_Transition.csv
+                Results/Figures/Cal_Robust.csv
                 Results/Figures/BasinsTax.csv
                 Results/Figures/BasinsSub.csv
                 Results/Tables/Tens_Results.csv
@@ -1812,6 +1813,41 @@ class Processor:
         Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o) 
         κ_low = np.linalg.eig(Jake_low)[0]
         
+        
+        # -------------------------- #
+        # Robustness for η, λ, and σ #
+        # -------------------------- #
+        P = 200
+    
+        η_var = np.linspace(0.25, 0.75, P)
+        λ_var = np.linspace(0.05, 0.5, P)
+        σ_var = np.linspace(1.25, 3, P)
+        
+        spec_η = np.zeros(P)
+        spec_λ = np.zeros(P)
+        spec_σ = np.zeros(P)
+        
+        for p in range(P):
+            Abar_ss_η = ssf.Abar_SS(η_var[p], self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_0, self.E.Θ, self.E.o)
+            Jake_η = ssf.Jacob(Abar_ss_η, η_var[p], self.E.φ_hat, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            spec_η[p] = np.max(np.abs(np.linalg.eig(Jake_η)[0]))
+            
+            Abar_ss_λ = ssf.Abar_SS(self.E.η, self.E.φ_hat, self.E.α, self.E.σ, λ_var[p], self.E.ν, r_tilde, ξ_0, self.E.Θ, self.E.o)
+            Jake_λ = ssf.Jacob(Abar_ss_λ, self.E.η, self.E.φ_hat, self.E.α, self.E.σ, λ_var[p], r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            spec_λ[p] = np.max(np.abs(np.linalg.eig(Jake_λ)[0]))
+            
+            Abar_ss_σ = ssf.Abar_SS(self.E.η, self.E.φ_hat, self.E.α, σ_var[p], self.E.λ, self.E.ν, r_tilde, ξ_0, self.E.Θ, self.E.o)
+            Jake_σ = ssf.Jacob(Abar_ss_σ, self.E.η, self.E.φ_hat, self.E.α, σ_var[p], self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            spec_σ[p] = np.max(np.abs(np.linalg.eig(Jake_σ)[0]))
+            
+        DF_rob = pd.DataFrame(np.hstack((η_var.reshape((-1,1)), λ_var.reshape((-1,1)), σ_var.reshape((-1,1)),
+                                        spec_η.reshape((-1,1)), spec_λ.reshape((-1,1)), spec_σ.reshape((-1,1)))), 
+                             columns=['eta_var', 'lambda_var', 'sigma_var',
+                                      'spec_eta' ,'spec_lambda', 'spec_sigma'])
+        DF_rob.to_csv(f'{self.Directory}/Results/Figures/Cal_Robust.csv', index=False)
+        
+        Tens_Results.add('Sigma for Path Dependence', gpf.clean_round(σ_var[np.argmin(np.abs(spec_σ-1))], 2))  
+       
         
         # ----------------------------------- #
         # Basins of Attraction by Policy Tool #
