@@ -321,9 +321,80 @@ def var_bar(v, J):
     
     return v_bar
     
-    
 
+
+def _to_sigma_vec(σ, Θ):
+    s = np.asarray(σ)
+    if s.ndim == 0:
+        return np.ones(Θ + 1) * s.item()
+    return s
+ 
     
+ 
+def _pseudo_p_theta(p_j, σ_vec, Θ):
+    p_θ = np.empty(Θ + 1)
+    for θ in range(Θ):
+        s = σ_vec[θ]
+        c_idx = 2 * θ
+        d_idx = 2 * θ + 1
+        p_θ[θ] = (p_j[c_idx] ** (1 - s) + p_j[d_idx] ** (1 - s)) ** (1.0 / (1 - s))
+    p_θ[Θ] = p_j[2 * Θ]
+    return p_θ
+
+
+
+def Shares_e_robust(r_tilde, A, α, σ, Θ):
+   
+    σ_vec = _to_sigma_vec(σ, Θ)
+    p_j = PseudoP_j(r_tilde, A, α)
+    p_θ   = _pseudo_p_theta(p_j, σ_vec, Θ)
+ 
+    J   = 2 * Θ + 1
+    S_e = np.empty(J)
+ 
+    for θ in range(Θ):
+        s     = σ_vec[θ]
+        p_sec = p_θ[θ]
+        c_idx = 2 * θ
+        d_idx = 2 * θ + 1
+        S_e[c_idx] = (p_j[c_idx] / p_sec) ** (1 - s)
+        S_e[d_idx] = (p_j[d_idx] / p_sec) ** (1 - s)
+ 
+    S_e[2 * Θ] = 1.0
+    return S_e
+
+
+
+def Output_j_robust(r_tilde, A, α, σ, λ, ν, Ω, L, Θ):
+    
+    σ_vec = _to_sigma_vec(σ, Θ)
+    p_j = PseudoP_j(r_tilde, A, α)
+    p_θ   = _pseudo_p_theta(p_j, σ_vec, Θ)
+ 
+    P_inner = 0.0
+    for θ in range(Θ + 1):
+        P_inner += ν[θ] * p_θ[θ] ** (1 - λ)
+    P = (Ω ** (-1)) * P_inner ** (1.0 / (1 - λ))
+ 
+    Y = (α ** (α / (1 - α))) * L * (P ** (-1.0 / (1 - α)))
+ 
+    J   = 2 * Θ + 1
+    Y_j = np.empty(J)
+ 
+    for θ in range(Θ):
+        s     = σ_vec[θ]
+        S_θ   = ν[θ] * (p_θ[θ] / P) ** (1 - λ)
+        E_θ   = (S_θ / p_θ[θ]) * P * Y
+        c_idx = 2 * θ
+        d_idx = 2 * θ + 1
+        Y_j[c_idx] = E_θ * (p_θ[θ] / p_j[c_idx]) ** s
+        Y_j[d_idx] = E_θ * (p_θ[θ] / p_j[d_idx]) ** s
+ 
+    S_θ_gen    = ν[Θ] * (p_θ[Θ] / P) ** (1 - λ)
+    E_θ_gen    = (S_θ_gen / p_θ[Θ]) * P * Y
+    Y_j[2 * Θ] = E_θ_gen
+ 
+    return Y_j
     
     
     

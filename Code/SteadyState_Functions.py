@@ -28,7 +28,6 @@ def Abar_SS(η, φ_hat, α, σ, λ, ν, r_tilde, ξ, Θ, o):
 
 
 
-@njit
 def SS_root(Abar_g, η, φ_hat, α, σ, λ, ν, r_tilde, ξ, Θ, o):
     "Descriptive Interior Steady-State Relative Technology Root"
     
@@ -36,7 +35,7 @@ def SS_root(Abar_g, η, φ_hat, α, σ, λ, ν, r_tilde, ξ, Θ, o):
     A_g = np.append(Abar_g,1)
     
     ν_j = pf.Θ_Expand(ν, Θ)
-    Y_j = pf.Output_j(r_tilde, A_g, α, σ, λ, ν, 1, 100, Θ)
+    Y_j = pf.Output_j_robust(r_tilde, A_g, α, σ, λ, ν, 1, 100, Θ)
     phi_spill = rf.Spill(φ_hat, A_g, o)
 
     Ξ = pf.var_bar(ξ, J)
@@ -172,12 +171,14 @@ def Sigma(Abar_ss, r_tilde, α, σ, λ, Θ):
     
     A_ss = np.append(Abar_ss, 1)
     
-    fS_Eθe = 1 - pf.Shares_e(r_tilde, A_ss, α, σ, Θ)
+    fS_Eθe = 1 - pf.Shares_e_robust(r_tilde, A_ss, α, σ, Θ)
     
+    sigma_arr = np.ones(Θ) * σ if np.isscalar(σ) else np.array(σ)
     Σ = np.array([])
     for θ in range(Θ):
-        ε = np.array([(σ-λ)*fS_Eθe[2*θ],
-                      (λ-σ)*fS_Eθe[2*θ+1]])
+        σ_θ = sigma_arr[θ]
+        ε = np.array([(σ_θ-λ)*fS_Eθe[2*θ],
+                      (λ-σ_θ)*fS_Eθe[2*θ+1]])
         Σ_tilde = λ*np.eye(2) + np.vstack((ε,-ε))
         Σ = sp.linalg.block_diag(Σ,Σ_tilde)
     Σ = Σ[1:,:]
