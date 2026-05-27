@@ -155,5 +155,41 @@ def star(p):
     elif p < 0.1: return "*"
     else: return ""
     
+
+
+def bisect_scalar(func, a, b, args, tol=1e-8):
+    "Scalar Bisection"
     
+    # ------------- #
+    # Find Interval #
+    # ------------- #
+    for _ in range(10):
+        fa, fb = func(a, *args), func(b, *args)
+        if fa*fb < 0.0:
+            break
+        a *= 0.5
+        b *= 2.0
+        
+    if fa * fb > 0:
+        raise ValueError("Bisection interval does not bracket a root.")
+
+
+    # ----------------- #
+    # Classic Bisection #
+    # ----------------- #
+    while abs(fa) > tol:
+        c  = 0.5 * (a + b)
+        fc = func(c, *args)
+        if fa * fc <= 0:          # root is in [a,c]
+            b, fb = c, fc
+        else:                     # root is in (c,b]
+            a, fa = c, fc
+    return 0.5 * (a + b)
+
+
+
+
+
+
+
     

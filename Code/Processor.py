@@ -1755,6 +1755,7 @@ class Processor:
                 Results/Figures/Cal_Robust.csv
                 Results/Figures/BasinsTax.csv
                 Results/Figures/BasinsSub.csv
+                Results/Figures/CleanElec_thresholds.csv
                 Results/Tables/Tens_Results.csv
         """""
         
@@ -1918,6 +1919,52 @@ class Processor:
         DF_subbasin = pd.DataFrame(np.hstack((ξ_clean_pd.reshape((-1,1)), ΔB_fan_low_subpd)), 
                              columns=['ξ_clean_pd', 'ΔB_fan_low_subpd_Transport', 'ΔB_fan_low_subpd_Electricity'])
         DF_subbasin.to_csv(f'{self.Directory}/Results/Figures/BasinsSub.csv', index=False)
+        
+        
+        #Clean Electricity Thresholds
+        P = 200
+        B_bar = np.linspace(0.1, 2, P)
+        
+        def dB_bar_tau(τ, A_start):
+            τ_mod = (self.E.Y0 / Y_start) * τ * (self.CO2_C**(-1))
+            Abar_start = pf.var_bar(A_start, J)
+            
+            r_tilde = self.E.r + self.E.ω * τ_mod
+            Abar_ss_low = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, r_tilde, ξ_lf, self.E.Θ, self.E.o)
+            Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, r_tilde, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            A_fan_low = np.log(Abar_start) - np.log(Abar_ss_low)
+            ΔB_fan_low = X @ (Jake_low - I) @ A_fan_low
+            
+            return ΔB_fan_low[1]
+        
+        def dB_bar_xi(ξ_elec, A_start):
+            Abar_start = pf.var_bar(A_start, J)
+            ξ = ξ_lf.copy()
+            ξ[2] = ξ_elec
+            
+            Abar_ss_low = ssf.Abar_SS(self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.ν, self.E.r, ξ, self.E.Θ, self.E.o)
+            Jake_low = ssf.Jacob(Abar_ss_low, self.E.η, φ_hat_low, self.E.α, self.E.σ, self.E.λ, self.E.r, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
+            A_fan_low = np.log(Abar_start) - np.log(Abar_ss_low)
+            ΔB_fan_low = X @ (Jake_low - I) @ A_fan_low
+            
+            return ΔB_fan_low[1]
+        
+        τ_change = np.zeros(P)
+        ξ_change = np.zeros(P)
+        q_c = np.zeros(P)
+        for p in range(P):
+            A_start_mod = A_start.copy()
+            A_start_mod[2] = A_start[2] * B_bar[p]
+            
+            arg = (A_start_mod,)
+            τ_change[p] = gpf.bisect_scalar(dB_bar_tau, 0, 5000, arg)
+            ξ_change[p] = gpf.bisect_scalar(dB_bar_xi, 0, 5, arg)
+            
+            q_c[p] = pf.q_c(self.E.r, A_start_mod, self.E.α, self.E.σ, self.E.Θ)[1]
+        
+        DF_cleanelec = pd.DataFrame(np.hstack((q_c.reshape((-1,1)), τ_change.reshape((-1,1)), ξ_change.reshape((-1,1)))), 
+                             columns=['q_share', 'carbon_price', 'subsidy'])
+        DF_cleanelec.to_csv(f'{self.Directory}/Results/Figures/CleanElec_thresholds.csv', index=False)
         
         
         # -------------- #
