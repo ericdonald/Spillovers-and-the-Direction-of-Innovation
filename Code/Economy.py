@@ -224,6 +224,8 @@ class Economy:
     
         if Country == 'US':
             
+            T_plus = int(np.ceil(Year_end - Year_start))
+            
             # ------------------ #
             # Initial Technology #
             # ------------------ #
@@ -282,6 +284,7 @@ class Economy:
             
             ETS = 15 #DDV ETS Price
             EUR_DOL = 1.5 #ECB Exchange Rate
+            T_plus = int(np.ceil(Year_end - Year_place))
             
             # ------------------ #
             # Initial Technology #
@@ -321,6 +324,7 @@ class Economy:
             BS_D = 0.08 #Banares-Sanchez et al. Demand Subsidy
             BS_P = 0.16 #Banares-Sanchez et al. Production Subsidy
             BS_I = 0.12 #Banares-Sanchez et al. Demand Subsidy
+            T_plus = int(np.ceil(Year_end - Year_place))
         
             # ------------------ #
             # Initial Technology #
@@ -358,7 +362,6 @@ class Economy:
         # -------------------------- #
         # Simulate Equilibrium Paths #
         # -------------------------- #
-        T_plus = int(np.ceil(Year_end - Year_start))
         
         A_ten = of.Eqbm_Path(A_start, T_plus, self.η, self.φ_hat, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0, self.Θ, self.o)[1]
         A_ten_low = of.Eqbm_Path(A_start, T_plus, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, r_tilde, ξ_0low, self.Θ, self.o)[1]
@@ -368,7 +371,7 @@ class Economy:
         A_ten_low_LF = of.Eqbm_Path(A_start, T_plus, self.η, φ_hat_low, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, self.r, ξ_lf, self.Θ, self.o)[1]
         A_ten_half_LF = of.Eqbm_Path(A_start, T_plus, self.η, φ_half, self.χ, self.γ, self.α, self.λ, self.ν, self.σ, self.L, self.r, ξ_lf, self.Θ, self.o)[1]
 
-        T_year = Year_end - Year_start + 1
+        T_year = T_plus + 1
         q_θc = np.zeros((T_year, self.Θ))
         q_θc_low = np.zeros((T_year, self.Θ))
         q_θc_half = np.zeros((T_year, self.Θ))

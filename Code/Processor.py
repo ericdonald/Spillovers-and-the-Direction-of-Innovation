@@ -1769,7 +1769,8 @@ class Processor:
                 Results/Figures/BasinsTax.csv
                 Results/Figures/BasinsSub.csv
                 Results/Figures/CleanElec_thresholds.csv
-                Results/Figures/Foreign_Simulations.csv
+                Results/Figures/EU_Simulation.csv
+                Results/Figures/China_Simulation.csv
                 Results/Tables/Tens_Results.csv
         """""
         
@@ -1985,7 +1986,6 @@ class Processor:
         DF_cleanelec.to_csv(f'{self.Directory}/Results/Figures/CleanElec_thresholds.csv', index=False)
         
         #EU and China Simulations
-        T_year = Year_end - Year_start
         Year_EU = 2005
         Year_China = 2007
         
@@ -1996,20 +1996,22 @@ class Processor:
         
         clean_elec_panel = pd.read_pickle(f'{self.Directory}/Clean Data/OWID_clean_elec.pkl')
         
-        q_elec_clean_EU = clean_elec_panel.loc[(clean_elec_panel['year'] >= Year_EU) & (clean_elec_panel['year'] <= Year_EU+T_year) & 
+        q_elec_clean_EU = clean_elec_panel.loc[(clean_elec_panel['year'] >= Year_EU) & (clean_elec_panel['year'] <= Year_end) & 
                                            (clean_elec_panel['code'] == 'OWID_EU27'), ['clean_elec_share']].to_numpy()
         
-        q_elec_clean_CHN = clean_elec_panel.loc[(clean_elec_panel['year'] >= Year_China) & (clean_elec_panel['year'] <= Year_China+T_year) &
+        q_elec_clean_CHN = clean_elec_panel.loc[(clean_elec_panel['year'] >= Year_China) & (clean_elec_panel['year'] <= Year_end) &
                                             (clean_elec_panel['code'] == 'CHN'), ['clean_elec_share']].to_numpy()
         
     
-        DF_foreign = pd.DataFrame(np.hstack((np.arange(Year_EU, Year_EU+T_year+1).reshape((-1,1)), 
-                                             q_elec_clean_EU.reshape((-1,1)), q_c_EU.reshape((-1,1)), q_c_EU_low.reshape((-1,1)),
-                                             np.arange(Year_China, Year_China+T_year+1).reshape((-1,1)), 
+        DF_EU = pd.DataFrame(np.hstack((np.arange(Year_EU, Year_end+1).reshape((-1,1)), 
+                                             q_elec_clean_EU.reshape((-1,1)), q_c_EU.reshape((-1,1)), q_c_EU_low.reshape((-1,1)))), 
+                             columns=['Year_EU', 'Data_EU', 'Model_EU', 'Model_EU_low'])
+        DF_EU.to_csv(f'{self.Directory}/Results/Figures/EU_Simulation.csv', index=False)
+        
+        DF_CHN = pd.DataFrame(np.hstack((np.arange(Year_China, Year_end+1).reshape((-1,1)), 
                                              q_elec_clean_CHN.reshape((-1,1)), q_c_CHN.reshape((-1,1)), q_c_CHN_low.reshape((-1,1)))), 
-                             columns=['Year_EU', 'Data_EU', 'Model_EU', 'Model_EU_low',
-                                      'Year_CHN', 'Data_CHN', 'Model_CHN', 'Model_CHN_low'])
-        DF_foreign.to_csv(f'{self.Directory}/Results/Figures/Foreign_Simulations.csv', index=False)
+                             columns=['Year_CHN', 'Data_CHN', 'Model_CHN', 'Model_CHN_low'])
+        DF_CHN.to_csv(f'{self.Directory}/Results/Figures/China_Simulation.csv', index=False)
         
         
         # -------------- #
