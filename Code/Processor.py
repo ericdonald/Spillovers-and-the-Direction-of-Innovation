@@ -72,7 +72,7 @@ class Processor:
         Clean Data
         
         Output: Results/Figures/OWID_solar.csv
-                Clean Data/OWID_clean_elec.csv
+                Clean Data/OWID_clean_elec.pkl
                 Raw Data/Patent_CPC.pkl
                 Raw Data/Patent_Citations.pkl
                 Raw Data/Patent_Inventors.pkl
@@ -292,7 +292,7 @@ class Processor:
         OWID_elec_share_df = OWID_elec_share_df.rename(columns={"low_carbon_share_of_electricity__pct": "clean_elec_share"})
         OWID_elec_share_df["clean_elec_share"] = OWID_elec_share_df["clean_elec_share"] / 100
         
-        OWID_solar_df.to_csv(f'{self.Directory}/Clean Data/OWID_clean_elec.csv', index=False)
+        OWID_elec_share_df.to_pickle(f'{self.Directory}/Clean Data/OWID_clean_elec.pkl')
 
 
         # -------------------------------------- #

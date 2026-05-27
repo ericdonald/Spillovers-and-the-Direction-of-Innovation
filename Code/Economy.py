@@ -46,6 +46,7 @@ class Economy:
         self.o = 1 #Elasticity of Substitution of Spillover Function
         
         J = 2*self.Θ+1
+        self.CO2_C = 12/44 #CO2 to Carbon Conversion
         
         # -------------------------- #
         # Define Calibration Moments #
@@ -209,71 +210,151 @@ class Economy:
         
 
 
-    def TensMatch(self, Year_start, Year_end):
+    def TensMatch(self, Year_start, Year_end, Country='US'):
         "Output Match of 2010s Experience"    
         
         J = 2*self.Θ + 1
         cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/cal_panel.pkl')
         clim_cal_panel = pd.read_pickle(f'{self.Directory}/Clean Data/clim_cal_panel.pkl')
+        clean_elec_panel = pd.read_pickle(f'{self.Directory}/Clean Data/OWID_clean_elec.pkl')
         ξ_lf = np.ones(J)
-    
-    
-        # ------------------ #
-        # Initial Technology #
-        # ------------------ #
-        S_A0 = cal_panel.loc[cal_panel.year == Year_start, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
-        Mom_A0 = np.mean(S_A0, 0)
         
-        r_tilde = (1-self.ξbar_0)*self.r
-        
-        C_0 = np.mean(clim_cal_panel.loc[clim_cal_panel.year == Year_start, ['C_stock']].to_numpy())
-        Ω_0 = pf.Damage(C_0, self.C_bar, self.var_ρ)
-
-        A_0g = np.ones(J)
-    
-        A_0 = sp.optimize.root(cf.A0_root, A_0g,
-                      args=(Mom_A0, self.Y0, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, Ω_0),
-                      method='lm')
-        
-        A_start = A_0.x
-        
-        
-        # ------------------------------- #
-        # Status Quo Innovation Subsidies #
-        # ------------------------------- #
-        S_ξ = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= 2015), ['car_clean_RD_relsub', 'car_dirty_RD_relsub', 'elec_clean_RD_relsub', 'elec_dirty_RD_relsub']].to_numpy()
-        Mom_ξ = np.mean(S_ξ, 0) #IEA innovation subsidy data stop after 2015
-        
-        ξ_0g = np.ones(J-1)
-    
-        ξ_init = sp.optimize.root(cf.ξ0_root, ξ_0g,
-                      args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, self.φ_hat, self.χ, self.γ, self.o),
-                      method='lm')
-       
-        ξ_0 = np.ones(J)
-        ξ_0[:-1] = ξ_init.x
-        
-        
-        # ----------------------------------- #
-        # Calibration for Low Spillover Model #
-        # ----------------------------------- #
         φ_hat_low = np.eye(J)
-        
-        ξ_init_low = sp.optimize.root(cf.ξ0_root, ξ_0[:-1],
-                      args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, φ_hat_low, self.χ, self.γ, self.o),
-                      method='lm')
-       
-        ξ_0low = np.ones(J)
-        ξ_0low[:-1] = ξ_init_low.x
-        
         φ_half = self.φ_tilde_0/2 + (1-1/2) * np.eye(J)
+    
+        if Country == 'US':
+            
+            # ------------------ #
+            # Initial Technology #
+            # ------------------ #
+            S_A0 = cal_panel.loc[cal_panel.year == Year_start, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
+            Mom_A0 = np.mean(S_A0, 0)
+            
+            r_tilde = (1-self.ξbar_0)*self.r
+            
+            C_0 = np.mean(clim_cal_panel.loc[clim_cal_panel.year == Year_start, ['C_stock']].to_numpy())
+            Ω_0 = pf.Damage(C_0, self.C_bar, self.var_ρ)
+    
+            A_0g = np.ones(J)
         
-        ξ_init_half = sp.optimize.root(cf.ξ0_root, ξ_0[:-1],
-                      args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, φ_half, self.χ, self.γ, self.o),
-                      method='lm')
-       
-        ξ_0half = np.ones(J)
-        ξ_0half[:-1] = ξ_init_half.x
+            A_0 = sp.optimize.root(cf.A0_root, A_0g,
+                          args=(Mom_A0, self.Y0, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, Ω_0),
+                          method='lm')
+            
+            A_start = A_0.x
+            
+            
+            # ------------------------------- #
+            # Status Quo Innovation Subsidies #
+            # ------------------------------- #
+            S_ξ = cal_panel.loc[(cal_panel.year >= Year_start) & (cal_panel.year <= 2015), ['car_clean_RD_relsub', 'car_dirty_RD_relsub', 'elec_clean_RD_relsub', 'elec_dirty_RD_relsub']].to_numpy()
+            Mom_ξ = np.mean(S_ξ, 0) #IEA innovation subsidy data stop after 2015
+            
+            ξ_0g = np.ones(J-1)
+        
+            ξ_init = sp.optimize.root(cf.ξ0_root, ξ_0g,
+                          args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, self.φ_hat, self.χ, self.γ, self.o),
+                          method='lm')
+           
+            ξ_0 = np.ones(J)
+            ξ_0[:-1] = ξ_init.x
+            
+            
+            # ----------------------------------- #
+            # Calibration for Low Spillover Model #
+            # ----------------------------------- #
+            ξ_init_low = sp.optimize.root(cf.ξ0_root, ξ_0[:-1],
+                          args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, φ_hat_low, self.χ, self.γ, self.o),
+                          method='lm')
+           
+            ξ_0low = np.ones(J)
+            ξ_0low[:-1] = ξ_init_low.x
+            
+            ξ_init_half = sp.optimize.root(cf.ξ0_root, ξ_0[:-1],
+                          args=(Mom_ξ, A_start, Year_start, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, self.η, φ_half, self.χ, self.γ, self.o),
+                          method='lm')
+           
+            ξ_0half = np.ones(J)
+            ξ_0half[:-1] = ξ_init_half.x
+            
+            
+        if Country == 'EU':
+            
+            year_EU = 2005
+            ETS = 15 #DDV ETS Price
+            EUR_DOL = 1.5 #ECB Exchange Rate
+            
+            # ------------------ #
+            # Initial Technology #
+            # ------------------ #
+            S_A0 = cal_panel.loc[cal_panel.year == Year_start, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
+            Mom_A0 = np.mean(S_A0, 0)
+            Mom_A0[1] = clean_elec_panel.loc[(clean_elec_panel['year'] == year_EU) &
+                                             (clean_elec_panel['code'] == 'OWID_EU27'),
+                                                 'clean_elec_share'].values[0]
+            
+            τ_dol = ETS * EUR_DOL / cal_panel.loc[cal_panel['year'] == year_EU, 'CPI'].values[0]
+            Y_start = cal_panel.loc[cal_panel.year == Year_start, ['GDP']].to_numpy()[0,0]
+            τ_mod = (self.Y0 / Y_start) * τ_dol * (self.CO2_C**(-1))
+            r_tilde = self.r + self.ω * τ_mod
+            
+            C_0 = np.mean(clim_cal_panel.loc[clim_cal_panel.year == Year_start, ['C_stock']].to_numpy())
+            Ω_0 = pf.Damage(C_0, self.C_bar, self.var_ρ)
+    
+            A_0g = np.ones(J)
+        
+            A_0 = sp.optimize.root(cf.A0_root, A_0g,
+                          args=(Mom_A0, self.Y0, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, Ω_0),
+                          method='lm')
+            
+            A_start = A_0.x
+            
+            # ------------------------------- #
+            # Status Quo Innovation Subsidies #
+            # ------------------------------- #
+            ξ_0 = ξ_lf
+            ξ_0low = ξ_lf
+            ξ_0half = ξ_lf
+            
+            
+        if Country == 'China':
+            
+            year_China = 2007
+            BS_D = 0.08 #Banares-Sanchez et al. Demand Subsidy
+            BS_P = 0.16 #Banares-Sanchez et al. Production Subsidy
+            BS_I = 0.12 #Banares-Sanchez et al. Demand Subsidy
+        
+            # ------------------ #
+            # Initial Technology #
+            # ------------------ #
+            S_A0 = cal_panel.loc[cal_panel.year == Year_start, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
+            Mom_A0 = np.mean(S_A0, 0)
+            Mom_A0[1] = clean_elec_panel.loc[(clean_elec_panel['year'] == year_China) &
+                                             (clean_elec_panel['code'] == 'CHN'),
+                                                 'clean_elec_share'].values[0]
+            ξbar_CHN = np.zeros(J)
+            ξbar_CHN[2] = 1 - (1 - BS_P) * (1 - BS_D)**(1 / self.α)
+            
+            r_tilde = (1-ξbar_CHN)*self.r
+            
+            C_0 = np.mean(clim_cal_panel.loc[clim_cal_panel.year == Year_start, ['C_stock']].to_numpy())
+            Ω_0 = pf.Damage(C_0, self.C_bar, self.var_ρ)
+    
+            A_0g = np.ones(J)
+        
+            A_0 = sp.optimize.root(cf.A0_root, A_0g,
+                          args=(Mom_A0, self.Y0, r_tilde, self.α, self.Θ, self.σ, self.λ, self.ν, self.L, Ω_0),
+                          method='lm')
+            
+            A_start = A_0.x
+            
+            # ------------------------------- #
+            # Status Quo Innovation Subsidies #
+            # ------------------------------- #
+            ξ_0 = ξ_lf
+            ξ_0[2] = 1 / (1 - BS_I)
+            ξ_0low = ξ_0
+            ξ_0half = ξ_0
         
         
         # -------------------------- #
