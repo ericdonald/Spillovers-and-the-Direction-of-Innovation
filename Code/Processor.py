@@ -72,6 +72,7 @@ class Processor:
         Clean Data
         
         Output: Results/Figures/OWID_solar.csv
+                Clean Data/OWID_clean_elec.csv
                 Raw Data/Patent_CPC.pkl
                 Raw Data/Patent_Citations.pkl
                 Raw Data/Patent_Inventors.pkl
@@ -202,8 +203,8 @@ class Processor:
         # -------------------------------- #
         OWID_CO2_Ind_df = pd.read_csv("https://ourworldindata.org/grapher/annual-co2-emissions-per-country.csv?v=1&csvType=filtered&useColumnShortNames=true&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
         
-        OWID_CO2_Ind_df = OWID_CO2_Ind_df[['Year', 'emissions_total']]
-        OWID_CO2_Ind_df = OWID_CO2_Ind_df.rename(columns={"Year": "year", "emissions_total": "C_em_fossil"})
+        OWID_CO2_Ind_df = OWID_CO2_Ind_df[['year', 'emissions_total']]
+        OWID_CO2_Ind_df = OWID_CO2_Ind_df.rename(columns={"emissions_total": "C_em_fossil"})
         
         OWID_CO2_Ind_df['C_em_fossil'] = OWID_CO2_Ind_df['C_em_fossil'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
                 
@@ -213,8 +214,8 @@ class Processor:
         # ------------------------------ #
         OWID_CO2_LU_df = pd.read_csv("https://ourworldindata.org/grapher/co2-land-use.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
         
-        OWID_CO2_LU_df = OWID_CO2_LU_df[['Year', 'emissions_from_land_use_change']]
-        OWID_CO2_LU_df = OWID_CO2_LU_df.rename(columns={"Year": "year", "emissions_from_land_use_change": "C_em_LU"})
+        OWID_CO2_LU_df = OWID_CO2_LU_df[['year', 'emissions_from_land_use_change']]
+        OWID_CO2_LU_df = OWID_CO2_LU_df.rename(columns={"emissions_from_land_use_change": "C_em_LU"})
         
         OWID_CO2_LU_df['C_em_LU'] = OWID_CO2_LU_df['C_em_LU'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
         
@@ -245,7 +246,7 @@ class Processor:
         # ------------------------ #
         OWID_solar_price_df = pd.read_csv("https://ourworldindata.org/grapher/solar-pv-prices.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
 
-        OWID_solar_price_df = OWID_solar_price_df[['Year', 'Solar photovoltaic module price']]
+        OWID_solar_price_df = OWID_solar_price_df[['Year', 'Solar PV module cost']]
         OWID_solar_price_df = OWID_solar_price_df.rename(columns={"Year": "year", "Solar photovoltaic module price": "solar_price"})
         
         roser_row = pd.DataFrame({'year': [1956], 'solar_price': [1865]}) #Manually add 1956 from Roser
@@ -264,12 +265,12 @@ class Processor:
         
         
         # -------------------------------------- #
-        # OWID Solar Share of GLobal Electricity #
+        # OWID Solar Share of Global Electricity #
         # -------------------------------------- #
         OWID_solar_share_df = pd.read_csv("https://ourworldindata.org/grapher/share-electricity-solar.csv?v=1&csvType=filtered&useColumnShortNames=false&tab=line&time=1985..2024&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
 
-        OWID_solar_share_df = OWID_solar_share_df[['Year', 'Solar - % electricity']]
-        OWID_solar_share_df = OWID_solar_share_df.rename(columns={"Year": "year", "Solar - % electricity": "solar_share"})
+        OWID_solar_share_df = OWID_solar_share_df[['Year', 'Solar']]
+        OWID_solar_share_df = OWID_solar_share_df.rename(columns={"Year": "year", "Solar": "solar_share"})
         OWID_solar_share_df["solar_share"] = OWID_solar_share_df["solar_share"] / 100
         
         OWID_solar_df = pd.merge(OWID_solar_price_df,
@@ -280,6 +281,18 @@ class Processor:
         OWID_solar_df["solar_share"] = OWID_solar_df["solar_share"].fillna(0)
         
         OWID_solar_df.to_csv(f'{self.Directory}/Results/Figures/OWID_solar.csv', index=False)
+        
+        
+        # --------------------------------- #
+        # OWID Low-Carbon Electricity Share #
+        # --------------------------------- #
+        OWID_elec_share_df = pd.read_csv("https://ourworldindata.org/grapher/share-electricity-low-carbon.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=OWID_EU27~CHN~USA", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+
+        OWID_elec_share_df = OWID_elec_share_df[['code', 'year', 'low_carbon_share_of_electricity__pct']]
+        OWID_elec_share_df = OWID_elec_share_df.rename(columns={"low_carbon_share_of_electricity__pct": "clean_elec_share"})
+        OWID_elec_share_df["clean_elec_share"] = OWID_elec_share_df["clean_elec_share"] / 100
+        
+        OWID_solar_df.to_csv(f'{self.Directory}/Clean Data/OWID_clean_elec.csv', index=False)
 
 
         # -------------------------------------- #
