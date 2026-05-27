@@ -1769,6 +1769,7 @@ class Processor:
                 Results/Figures/BasinsTax.csv
                 Results/Figures/BasinsSub.csv
                 Results/Figures/CleanElec_thresholds.csv
+                Results/Figures/Foreign_Simulations.csv
                 Results/Tables/Tens_Results.csv
         """""
         
@@ -1934,6 +1935,10 @@ class Processor:
         DF_subbasin.to_csv(f'{self.Directory}/Results/Figures/BasinsSub.csv', index=False)
         
         
+        # --------------- #
+        # Foreign Factors #
+        # --------------- #
+        
         #Clean Electricity Thresholds
         P = 200
         B_bar = np.linspace(0.1, 2, P)
@@ -1978,6 +1983,33 @@ class Processor:
         DF_cleanelec = pd.DataFrame(np.hstack((q_c.reshape((-1,1)), τ_change.reshape((-1,1)), ξ_change.reshape((-1,1)))), 
                              columns=['q_share', 'carbon_price', 'subsidy'])
         DF_cleanelec.to_csv(f'{self.Directory}/Results/Figures/CleanElec_thresholds.csv', index=False)
+        
+        #EU and China Simulations
+        T_year = Year_end - Year_start
+        Year_EU = 2005
+        Year_China = 2007
+        
+        (q_c_EU, q_c_EU_low) = self.E.TensMatch(Year_start, Year_end, 'EU', Year_EU)[:2]
+        (q_c_EU, q_c_EU_low) = (q_c_EU[:,1], q_c_EU_low[:,1])
+        (q_c_CHN, q_c_CHN_low) = self.E.TensMatch(Year_start, Year_end, 'China', Year_China)[:2]
+        (q_c_CHN, q_c_CHN_low) = (q_c_CHN[:,1], q_c_CHN_low[:,1])
+        
+        clean_elec_panel = pd.read_pickle(f'{self.Directory}/Clean Data/OWID_clean_elec.pkl')
+        
+        q_elec_clean_EU = clean_elec_panel.loc[(clean_elec_panel['year'] >= Year_EU) & (clean_elec_panel['year'] <= Year_EU+T_year) & 
+                                           (clean_elec_panel['code'] == 'OWID_EU27'), ['clean_elec_share']].to_numpy()
+        
+        q_elec_clean_CHN = clean_elec_panel.loc[(clean_elec_panel['year'] >= Year_China) & (clean_elec_panel['year'] <= Year_China+T_year) &
+                                            (clean_elec_panel['code'] == 'CHN'), ['clean_elec_share']].to_numpy()
+        
+    
+        DF_foreign = pd.DataFrame(np.hstack((np.arange(Year_EU, Year_EU+T_year+1).reshape((-1,1)), 
+                                             q_elec_clean_EU.reshape((-1,1)), q_c_EU.reshape((-1,1)), q_c_EU_low.reshape((-1,1)),
+                                             np.arange(Year_China, Year_China+T_year+1).reshape((-1,1)), 
+                                             q_elec_clean_CHN.reshape((-1,1)), q_c_CHN.reshape((-1,1)), q_c_CHN_low.reshape((-1,1)))), 
+                             columns=['Year_EU', 'Data_EU', 'Model_EU', 'Model_EU_low',
+                                      'Year_CHN', 'Data_CHN', 'Model_CHN', 'Model_CHN_low'])
+        DF_foreign.to_csv(f'{self.Directory}/Results/Figures/Foreign_Simulations.csv', index=False)
         
         
         # -------------- #

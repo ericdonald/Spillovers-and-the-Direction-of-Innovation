@@ -210,7 +210,7 @@ class Economy:
         
 
 
-    def TensMatch(self, Year_start, Year_end, Country='US'):
+    def TensMatch(self, Year_start, Year_end, Country='US', Year_place=0):
         "Output Match of 2010s Experience"    
         
         J = 2*self.Θ + 1
@@ -280,7 +280,6 @@ class Economy:
             
         if Country == 'EU':
             
-            year_EU = 2005
             ETS = 15 #DDV ETS Price
             EUR_DOL = 1.5 #ECB Exchange Rate
             
@@ -289,11 +288,11 @@ class Economy:
             # ------------------ #
             S_A0 = cal_panel.loc[cal_panel.year == Year_start, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
             Mom_A0 = np.mean(S_A0, 0)
-            Mom_A0[1] = clean_elec_panel.loc[(clean_elec_panel['year'] == year_EU) &
+            Mom_A0[1] = clean_elec_panel.loc[(clean_elec_panel['year'] == Year_place) &
                                              (clean_elec_panel['code'] == 'OWID_EU27'),
                                                  'clean_elec_share'].values[0]
             
-            τ_dol = ETS * EUR_DOL / cal_panel.loc[cal_panel['year'] == year_EU, 'CPI'].values[0]
+            τ_dol = ETS * EUR_DOL / cal_panel.loc[cal_panel['year'] == Year_place, 'CPI'].values[0]
             Y_start = cal_panel.loc[cal_panel.year == Year_start, ['GDP']].to_numpy()[0,0]
             τ_mod = (self.Y0 / Y_start) * τ_dol * (self.CO2_C**(-1))
             r_tilde = self.r + self.ω * τ_mod
@@ -319,7 +318,6 @@ class Economy:
             
         if Country == 'China':
             
-            year_China = 2007
             BS_D = 0.08 #Banares-Sanchez et al. Demand Subsidy
             BS_P = 0.16 #Banares-Sanchez et al. Production Subsidy
             BS_I = 0.12 #Banares-Sanchez et al. Demand Subsidy
@@ -329,7 +327,7 @@ class Economy:
             # ------------------ #
             S_A0 = cal_panel.loc[cal_panel.year == Year_start, ['q_car_clean','q_elec_clean','S_car','S_elec']].to_numpy()
             Mom_A0 = np.mean(S_A0, 0)
-            Mom_A0[1] = clean_elec_panel.loc[(clean_elec_panel['year'] == year_China) &
+            Mom_A0[1] = clean_elec_panel.loc[(clean_elec_panel['year'] == Year_place) &
                                              (clean_elec_panel['code'] == 'CHN'),
                                                  'clean_elec_share'].values[0]
             ξbar_CHN = np.zeros(J)
