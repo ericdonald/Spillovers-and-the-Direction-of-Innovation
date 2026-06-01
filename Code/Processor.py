@@ -1985,6 +1985,13 @@ class Processor:
                              columns=['q_share', 'carbon_price', 'subsidy'])
         DF_cleanelec.to_csv(f'{self.Directory}/Results/Figures/CleanElec_thresholds.csv', index=False)
         
+        ξ_hat_CHN = gpf.clean_round((1 - 1/ξ_change[np.argmin(np.abs(q_c-0.17))])*100, 1)
+        τ_CHN = int(τ_change[np.argmin(np.abs(q_c-0.17))])
+        
+        Tens_Results.add('Clean Innovation Subsidy for Clean Growth in China', ξ_hat_CHN)
+        Tens_Results.add('Carbon Price for Clean Growth in China', τ_CHN)
+        
+        
         #EU and China Simulations
         Year_EU = 2005
         Year_China = 2007
