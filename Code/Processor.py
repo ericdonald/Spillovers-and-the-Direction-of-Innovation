@@ -49,15 +49,15 @@ class Processor:
                             ("car",  "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P", "Y02T10/12", "Y02T10/40"]}
         #Classes follow both CPC and IPC classifications, but there is no discordance between CPC and IPC for these classes.
         
-        self.CPC_classes_tables = {("car", "clean"): ["B60K1", "B60K6", "B60L3", "B60L7", "B60L11", "B60L15",
-                                                      "B60R16", "B60S5", "B60W10", "B60W20", "H01M"],
-                                   ("car", "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P"],
-                                   ("elec", "clean"): ["Y02E10", "Y02E30", "E02B9/08", "F03B13/10",
-                                                       "F03B13/12", "F03B13/14", "F03B13/16", "F03B13/18", "F03B13/20", "F03B13/22", "F03B13/24", "F03B13/26",
-                                                       "F03D", "F03G4", "F03G6", "F03G7/05",
-                                                       "F24J2", "F24J3/08", "F26B3/28"],
-                                   ("elec", "dirty"): ["C10G1", "C10L1", "C10J", "E02B",
-                                                       "F01K", "F02C", "F22", "F23", "F24J", "F27", "F28"]}
+        self.CPC_classes_DMM = {("car", "clean"): ["B60K1", "B60K6", "B60L3", "B60L7", "B60L11", "B60L15",
+                                                   "B60R16", "B60S5", "B60W10", "B60W20", "H01M"],
+                                ("car", "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P"],
+                                ("elec", "clean"): ["Y02E10", "Y02E30", "E02B9/08", "F03B13/10",
+                                                    "F03B13/12", "F03B13/14", "F03B13/16", "F03B13/18", "F03B13/20", "F03B13/22", "F03B13/24", "F03B13/26",
+                                                    "F03D", "F03G4", "F03G6", "F03G7/05",
+                                                    "F24J2", "F24J3/08", "F26B3/28"],
+                                ("elec", "dirty"): ["C10G1", "C10L1", "C10J", "E02B",
+                                                    "F01K", "F02C", "F22", "F23", "F24J", "F27", "F28"]}
         
         self.IED_classes = {("elec", "clean"): ["RENEWABLE", "NUCLEAR", "34BIOFUE"],
                             ("elec", "dirty"): ["21OILGAS", "22COAL"],
@@ -589,6 +589,8 @@ class Processor:
             
             Rel_Pats_df = Rel_Pats_df[['patent_id', 'gen_patent', 'car_clean_patent', 'car_dirty_patent', 'elec_clean_patent', 'elec_dirty_patent', 'year']]
         
+            return Rel_Pats_df
+        
         Rel_Pats_df = relevant(self.CPC_classes)
         Rel_Pats_df.to_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
@@ -740,6 +742,7 @@ class Processor:
         Spillover Network Analysis
         
         Output: Clean Data/citation_shares.npy
+                Clean Data/citation_shares_DMM.npy
                 Clean Data/citation_shares_applicant.npy
                 Results/Figures/Spillover_Network.png
                 Figures/Spillover_Network_full.png
@@ -761,6 +764,15 @@ class Processor:
         
         np.save(f'{self.Directory}/Clean Data/citation_shares.npy', φ_tilde_0)
         
+        
+        # --------------------- #
+        # DMM Spillover Network #
+        # --------------------- #
+        relevant_DMM_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents_DMM.pkl')
+        
+        φ_tilde_DMM = gpf.citation_shares(citations_df, relevant_DMM_df, self.classes, self.types)
+        
+        np.save(f'{self.Directory}/Clean Data/citation_shares_DMM.npy', φ_tilde_DMM)
         
         # ----------------------------------------------------------------
 
