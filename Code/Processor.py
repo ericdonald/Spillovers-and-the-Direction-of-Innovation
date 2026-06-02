@@ -49,6 +49,16 @@ class Processor:
                             ("car",  "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P", "Y02T10/12", "Y02T10/40"]}
         #Classes follow both CPC and IPC classifications, but there is no discordance between CPC and IPC for these classes.
         
+        self.CPC_classes_tables = {("car", "clean"): ["B60K1", "B60K6", "B60L3", "B60L7", "B60L11", "B60L15",
+                                                      "B60R16", "B60S5", "B60W10", "B60W20", "H01M"],
+                                   ("car", "dirty"): ["F02B", "F02D", "F02F", "F02M", "F02N", "F02P"],
+                                   ("elec", "clean"): ["Y02E10", "Y02E30", "E02B9/08", "F03B13/10",
+                                                       "F03B13/12", "F03B13/14", "F03B13/16", "F03B13/18", "F03B13/20", "F03B13/22", "F03B13/24", "F03B13/26",
+                                                       "F03D", "F03G4", "F03G6", "F03G7/05",
+                                                       "F24J2", "F24J3/08", "F26B3/28"],
+                                   ("elec", "dirty"): ["C10G1", "C10L1", "C10J", "E02B",
+                                                       "F01K", "F02C", "F22", "F23", "F24J", "F27", "F28"]}
+        
         self.IED_classes = {("elec", "clean"): ["RENEWABLE", "NUCLEAR", "34BIOFUE"],
                             ("elec", "dirty"): ["21OILGAS", "22COAL"],
                             ("car",  "clean"): ["1311VBAT", "1312ADVA", "1314INFR"],
@@ -81,6 +91,7 @@ class Processor:
                 Clean Data/state_rd_price.pkl
                 Clean Data/compustat.pkl
                 Clean Data/relevant_patents.pkl
+                Clean Data/relevant_patents_DMM.pkl
                 Clean Data/cal_panel.pkl
                 Clean Data/clim_cal_panel.pkl
         """""
@@ -546,37 +557,43 @@ class Processor:
 
         # ----------------------------------------------------------------
         
-        Rel_Pats_df = PV_CPC_df.copy()
+        def relevant(CPC_classes):
+            
+            Rel_Pats_df = PV_CPC_df.copy()
+            
+            Rel_Pats_df["cpc_group5"] = Rel_Pats_df["cpc_group"].str[:5]
+            Rel_Pats_df["cpc_group6"] = Rel_Pats_df["cpc_group"].str[:6]
+            Rel_Pats_df["gen_patent"] = 1
+            
+            for c in self.classes:
+                for t in self.types:
+                    col = f"{c}_{t}"
+                    codes = set(CPC_classes[(c, t)])
+                    Rel_Pats_df[col] = (Rel_Pats_df["cpc_class"].isin(codes)
+                                    | Rel_Pats_df["cpc_subclass"].isin(codes)
+                                    | Rel_Pats_df["cpc_group"].isin(codes)
+                                    | Rel_Pats_df["cpc_group5"].isin(codes)
+                                    | Rel_Pats_df["cpc_group6"].isin(codes)).astype(np.int8)
+                    
+                    col_pat = f"{c}_{t}_patent"
+                    Rel_Pats_df[col_pat] = Rel_Pats_df.groupby("patent_id")[col].transform("max")
+                    Rel_Pats_df.loc[Rel_Pats_df[col_pat] == 1, "gen_patent"] = 0
+                    
+            Rel_Pats_df = Rel_Pats_df.drop_duplicates(subset='patent_id', keep='first')
+            
+            Rel_Pats_df = pd.merge(Rel_Pats_df,
+                                 PV_applications_df,
+                                 on='patent_id',
+                                 how='inner'
+                                 )
+            
+            Rel_Pats_df = Rel_Pats_df[['patent_id', 'gen_patent', 'car_clean_patent', 'car_dirty_patent', 'elec_clean_patent', 'elec_dirty_patent', 'year']]
         
-        Rel_Pats_df["cpc_group5"] = Rel_Pats_df["cpc_group"].str[:5]
-        Rel_Pats_df["cpc_group6"] = Rel_Pats_df["cpc_group"].str[:6]
-        Rel_Pats_df["gen_patent"] = 1
-        
-        for c in self.classes:
-            for t in self.types:
-                col = f"{c}_{t}"
-                codes = set(self.CPC_classes[(c, t)])
-                Rel_Pats_df[col] = (Rel_Pats_df["cpc_class"].isin(codes)
-                                | Rel_Pats_df["cpc_subclass"].isin(codes)
-                                | Rel_Pats_df["cpc_group"].isin(codes)
-                                | Rel_Pats_df["cpc_group5"].isin(codes)
-                                | Rel_Pats_df["cpc_group6"].isin(codes)).astype(np.int8)
-                
-                col_pat = f"{c}_{t}_patent"
-                Rel_Pats_df[col_pat] = Rel_Pats_df.groupby("patent_id")[col].transform("max")
-                Rel_Pats_df.loc[Rel_Pats_df[col_pat] == 1, "gen_patent"] = 0
-                
-        Rel_Pats_df = Rel_Pats_df.drop_duplicates(subset='patent_id', keep='first')
-        
-        Rel_Pats_df = pd.merge(Rel_Pats_df,
-                             PV_applications_df,
-                             on='patent_id',
-                             how='inner'
-                             )
-        
-        Rel_Pats_df = Rel_Pats_df[['patent_id', 'gen_patent', 'car_clean_patent', 'car_dirty_patent', 'elec_clean_patent', 'elec_dirty_patent', 'year']]
-        
+        Rel_Pats_df = relevant(self.CPC_classes)
         Rel_Pats_df.to_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
+        
+        Rel_Pats_DMM_df = relevant(self.CPC_classes_DMM)
+        Rel_Pats_DMM_df.to_pickle(f'{self.Directory}/Clean Data/relevant_patents_DMM.pkl')
         
         
         # ----------------------------------------------------------------
