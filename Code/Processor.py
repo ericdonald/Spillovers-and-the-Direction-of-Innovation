@@ -2550,6 +2550,7 @@ class Processor:
                 Results/Figures/IAMPolicy_spilllow.csv
                 Results/Figures/IAMPolicy_dischigh.csv
                 Results/Figures/IAMPolicy_damhigh.csv
+                Results/Figures/IAMPolicy_DMM.csv
                 Results/Figures/TempPathIAM.csv
                 Results/Tables/IAM_Results.csv
                 Results/Clean_Growth.pkl
@@ -2781,6 +2782,94 @@ class Processor:
         DF_policy_damhigh = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), τ_damhigh_dollar, ξ_hat_damhigh)), 
                              columns=['Year', 'τ_damhigh_dollar', 'ξ_hat_damhigh_Transport', 'ξ_hat_damhigh_Electricity'])
         DF_policy_damhigh.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy_damhigh.csv', index=False)
+        
+        
+        # ----------------------------------------------------------------
+
+        # Dechezleprêtre, Martin, and Mohnen robustness.
+
+        # ----------------------------------------------------------------
+        
+        φ_hat_IAM_DMM = np.load(f'{self.Directory}/Clean Data/citation_shares_DMM.npy')
+        
+        clean_α = 1 / (φ_hat_IAM_DMM[:,0] + φ_hat_IAM_DMM[:,2])
+        φ_hat_IAM_extreme = np.zeros((J,J))
+        
+        φ_hat_IAM_extreme[:,0] = clean_α * φ_hat_IAM_DMM[:,0]
+        φ_hat_IAM_extreme[:,2] = clean_α * φ_hat_IAM_DMM[:,2]
+        
+        φ_hat_IAM_DMM_95 = 0.95 * φ_hat_IAM_DMM + (1-0.95) * φ_hat_IAM_extreme
+        φ_hat_IAM_DMM_90 = 0.9 * φ_hat_IAM_DMM + (1-0.9) * φ_hat_IAM_extreme
+        
+        κ_DMM = np.linalg.eig(φ_hat_IAM_DMM.T)[0]
+        unit_DMM = np.argmin(np.abs(κ_DMM-1))
+        Cent_DMM = np.linalg.eig(φ_hat_IAM_DMM.T)[1][:,unit_DMM]
+        Cent_DMM = Cent_DMM / np.sum(Cent_DMM)*100
+        IAM_Results.add('Eigenvector Centrality for Clean Transport DMM', gpf.clean_round(Cent_DMM[0], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Transport DMM', gpf.clean_round(Cent_DMM[1], 2))
+        IAM_Results.add('Eigenvector Centrality for Clean Electricity DMM', gpf.clean_round(Cent_DMM[2], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Electricity DMM', gpf.clean_round(Cent_DMM[3], 2))
+        
+        κ_DMM_95 = np.linalg.eig(φ_hat_IAM_DMM_95.T)[0]
+        unit_DMM_95 = np.argmin(np.abs(κ_DMM_95-1))
+        Cent_DMM_95 = np.linalg.eig(φ_hat_IAM_DMM_95.T)[1][:,unit_DMM_95]
+        Cent_DMM_95 = Cent_DMM_95 / np.sum(Cent_DMM_95)*100
+        IAM_Results.add('Eigenvector Centrality for Clean Transport DMM_95', gpf.clean_round(Cent_DMM_95[0], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Transport DMM_95', gpf.clean_round(Cent_DMM_95[1], 2))
+        IAM_Results.add('Eigenvector Centrality for Clean Electricity DMM_95', gpf.clean_round(Cent_DMM_95[2], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Electricity DMM_95', gpf.clean_round(Cent_DMM_95[3], 2))
+        
+        κ_DMM_90 = np.linalg.eig(φ_hat_IAM_DMM_90.T)[0]
+        unit_DMM_90 = np.argmin(np.abs(κ_DMM_90-1))
+        Cent_DMM_90 = np.linalg.eig(φ_hat_IAM_DMM_90.T)[1][:,unit_DMM_90]
+        Cent_DMM_90 = Cent_DMM_90 / np.sum(Cent_DMM_90)*100
+        IAM_Results.add('Eigenvector Centrality for Clean Transport DMM_90', gpf.clean_round(Cent_DMM_90[0], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Transport DMM_90', gpf.clean_round(Cent_DMM_90[1], 2))
+        IAM_Results.add('Eigenvector Centrality for Clean Electricity DMM_90', gpf.clean_round(Cent_DMM_90[2], 2))
+        IAM_Results.add('Eigenvector Centrality for Dirty Electricity DMM_90', gpf.clean_round(Cent_DMM_90[3], 2))
+        
+        
+        # ----------------- #
+        # Load Policy Paths #
+        # ----------------- #
+        (τ_DMM, C_DMM, ξtilde_DMM, A_DMM) = self.E.IAM(Periods, T_time, 1, 0, 0, 0, 1)
+        (τ_DMM_95, C_DMM_95, ξtilde_DMM_95, A_DMM_95) = self.E.IAM(Periods, T_time, 1, 0, 0, 0, 1, 0.95)
+        (τ_DMM_90, C_DMM_90, ξtilde_DMM_90, A_DMM_90) = self.E.IAM(Periods, T_time, 1, 0, 0, 0, 1, 0.9)
+        
+        τ_adjust_DMM = τ_DMM @ X_τ
+        r_tilde_DMM = r_adjust + ω_adjust*τ_adjust_DMM
+        
+        τ_adjust_DMM_95 = τ_DMM_95 @ X_τ
+        r_tilde_DMM_95 = r_adjust + ω_adjust*τ_adjust_DMM_95
+        
+        τ_adjust_DMM_90 = τ_DMM_90 @ X_τ
+        r_tilde_DMM_90 = r_adjust + ω_adjust*τ_adjust_DMM_90
+        
+        S_j_DMM = pf.Shares_j(r_tilde_DMM, A_DMM, self.E.α, self.E.σ, self.E.λ, ν_adjust, self.E.Θ)
+        (ξtilde_ss_DMM, Abar_ss_DMM) = ssf.Opt_SS(self.E.r, self.E.α, self.E.λ, self.E.γ, self.E.χ, self.E.ν, self.E.η, φ_hat_IAM_DMM, ρ_l, self.E.var_θ, self.E.Θ, self.E.o)
+        g_ss_DMM = ssf.Growth_SS(Abar_ss_DMM, φ_hat_IAM_DMM, self.E.η, self.E.ν, self.E.γ, self.E.χ, self.E.Θ, self.E.o)
+        R_tilde_inv_DMM = (1+g_ss_DMM)**(1-self.E.var_θ) / (1+ρ_l)
+        ξ_hat_DMM = ((self.E.γ-1) * (1-R_tilde_inv_DMM) * ξtilde_DMM / S_j_DMM) @ Xs
+        
+        S_j_DMM_95 = pf.Shares_j(r_tilde_DMM_95, A_DMM_95, self.E.α, self.E.σ, self.E.λ, ν_adjust, self.E.Θ)
+        (ξtilde_ss_DMM_95, Abar_ss_DMM_95) = ssf.Opt_SS(self.E.r, self.E.α, self.E.λ, self.E.γ, self.E.χ, self.E.ν, self.E.η, φ_hat_IAM_DMM_95, ρ_l, self.E.var_θ, self.E.Θ, self.E.o)
+        g_ss_DMM_95 = ssf.Growth_SS(Abar_ss_DMM_95, φ_hat_IAM_DMM_95, self.E.η, self.E.ν, self.E.γ, self.E.χ, self.E.Θ, self.E.o)
+        R_tilde_inv_DMM_95 = (1+g_ss_DMM_95)**(1-self.E.var_θ) / (1+ρ_l)
+        ξ_hat_DMM_95 = ((self.E.γ-1) * (1-R_tilde_inv_DMM_95) * ξtilde_DMM_95 / S_j_DMM_95) @ Xs
+        
+        S_j_DMM_90 = pf.Shares_j(r_tilde_DMM_90, A_DMM_90, self.E.α, self.E.σ, self.E.λ, ν_adjust, self.E.Θ)
+        (ξtilde_ss_DMM_90, Abar_ss_DMM_90) = ssf.Opt_SS(self.E.r, self.E.α, self.E.λ, self.E.γ, self.E.χ, self.E.ν, self.E.η, φ_hat_IAM_DMM_90, ρ_l, self.E.var_θ, self.E.Θ, self.E.o)
+        g_ss_DMM_90 = ssf.Growth_SS(Abar_ss_DMM_90, φ_hat_IAM_DMM_90, self.E.η, self.E.ν, self.E.γ, self.E.χ, self.E.Θ, self.E.o)
+        R_tilde_inv_DMM_90 = (1+g_ss_DMM_90)**(1-self.E.var_θ) / (1+ρ_l)
+        ξ_hat_DMM_90 = ((self.E.γ-1) * (1-R_tilde_inv_DMM_90) * ξtilde_DMM_90 / S_j_DMM_90) @ Xs
+        
+        
+        # ----------------- #
+        # Plot Policy Paths #
+        # ----------------- #
+        DF_policy_DMM = pd.DataFrame(np.hstack((np.arange(self.E.Year_0+1, self.E.Year_0+T_time+1).reshape((-1,1)), ξ_hat_DMM, ξ_hat_DMM_95, ξ_hat_DMM_90)), 
+                             columns=['Year', 'ξ_hat_DMM_Transport', 'ξ_hat_DMM_Electricity', 'ξ_hat_DMM_95_Transport', 'ξ_hat_DMM_95_Electricity', 'ξ_hat_DMM_90_Transport', 'ξ_hat_DMM_90_Electricity'])
+        DF_policy_DMM.to_csv(f'{self.Directory}/Results/Figures/IAMPolicy_DMM.csv', index=False)
         
         
         # ----------------------------------------------------------------
