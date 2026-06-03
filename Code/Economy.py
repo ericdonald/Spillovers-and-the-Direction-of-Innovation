@@ -524,7 +524,7 @@ class Economy:
         
     
     
-    def IAM(self, Periods, T_time, SCC_frac, disc_high, spill_low, dam_high):
+    def IAM(self, Periods, T_time, SCC_frac, disc_high, spill_low, dam_high, DMM=0):
         "Simulation of IAM"
         
         J = 2*self.Θ + 1
@@ -543,10 +543,13 @@ class Economy:
         # ------------------------ #
         # Select Spillover Network #
         # ------------------------ #
-        if spill_low == 1:
-            φ_hat_IAM = np.eye(J)
+        if DMM == 1:
+            φ_hat_IAM = np.load(f'{self.Directory}/Clean Data/citation_shares_DMM.npy')
         else:
-            φ_hat_IAM = self.φ_hat
+            if spill_low == 1:
+                φ_hat_IAM = np.eye(J)
+            else:
+                φ_hat_IAM = self.φ_hat
             
             
         # -------------- #

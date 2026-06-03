@@ -753,10 +753,13 @@ class Processor:
         
         # ----------------------------------------------------------------
 
-        # Estimate baseline spillover network.
+        # Estimate spillover network.
 
         # ----------------------------------------------------------------
         
+        # -------- #
+        # Baseline #
+        # -------- #
         citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
         
@@ -768,25 +771,37 @@ class Processor:
         # --------------------- #
         # DMM Spillover Network #
         # --------------------- #
-        relevant_DMM_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents_DMM.pkl')
-        
-        φ_tilde_DMM = gpf.citation_shares(citations_df, relevant_DMM_df, self.classes, self.types)
-        
-        np.save(f'{self.Directory}/Clean Data/citation_shares_DMM.npy', φ_tilde_DMM)
-        
-        # ----------------------------------------------------------------
-
-        # Estimate applicant only spillover network.
-
-        # ----------------------------------------------------------------
-        
         citations_applicant_df = citations_df[citations_df["citation_category"] != "cited by applicant"]
         
         φ_tilde_app = gpf.citation_shares(citations_applicant_df, relevant_df, self.classes, self.types)
         
         np.save(f'{self.Directory}/Clean Data/citation_shares_applicant.npy', φ_tilde_app)
+                
+        del citations_df, relevant_df
+
+
+        # --- #
+        # DMM #
+        # --- #
+        relevant_DMM_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents_DMM.pkl')
+        inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
         
-        del citations_df, citations_applicant_df, relevant_df
+        merged = citations_applicant_df.merge(inventors_df.rename(columns={'patent_id': 'patent_id', 'inventor_id': 'citer_inventor'}),
+                                                                  on='patent_id')
+
+        merged = merged.merge(inventors_df.rename(columns={'patent_id': 'citation_patent_id', 'inventor_id': 'citee_inventor'}),
+                                                  on='citation_patent_id')
+        
+        shared = merged[merged['citer_inventor'] == merged['citee_inventor']][['patent_id', 'citation_patent_id']].drop_duplicates()
+        
+        citations_no_self = citations_applicant_df.merge(shared, on=['patent_id', 'citation_patent_id'], how='left', indicator=True
+                                                         ).query('_merge == "left_only"').drop(columns='_merge').reset_index(drop=True)
+
+        φ_tilde_DMM = gpf.citation_shares(citations_no_self, relevant_DMM_df, self.classes, self.types)
+        
+        np.save(f'{self.Directory}/Clean Data/citation_shares_DMM.npy', φ_tilde_DMM)
+        
+        del citations_applicant_df, citations_no_self, relevant_DMM_df, inventors_df, merged, shared
         
         
         # ----------------------------------------------------------------
