@@ -1253,10 +1253,18 @@ class Processor:
         Cent = np.real(np.linalg.eig(disagg_spill_matrix.T)[1][:,unit])
         Cent = Cent / np.sum(Cent)*100
         
+        Avg = gpf.clean_round(100 / Cent.size, 2)
+        Med = gpf.clean_round(np.median(Cent), 2)
+        Percentile = gpf.clean_round((Cent > Cent[0].mean()), 2)
+        
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Transport', gpf.clean_round(Cent[0], 2))
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Transport', gpf.clean_round(Cent[1], 2))
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Electricity', gpf.clean_round(Cent[2], 2))
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Electricity', gpf.clean_round(Cent[3], 2))
+        
+        Disagg_Results.add('Average Centrality for CPC Network', Avg)
+        Disagg_Results.add('Median Centrality for CPC Network', Med)
+        Disagg_Results.add('Disaggregated Centrality Percentile for Clean Transport', Percentile)
         
         Disagg_Results.to_csv(f'{self.Directory}/Results/Tables/Disagg_Results.csv')
         
