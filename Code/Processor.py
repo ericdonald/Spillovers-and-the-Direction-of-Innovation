@@ -786,22 +786,23 @@ class Processor:
         relevant_DMM_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents_DMM.pkl')
         inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
         
-        merged = citations_applicant_df.merge(inventors_df.rename(columns={'patent_id': 'patent_id', 'inventor_id': 'citer_inventor'}),
-                                                                  on='patent_id')
+        patent_inventors = inventors_df.groupby('patent_id')['inventor_id'].apply(set)
 
-        merged = merged.merge(inventors_df.rename(columns={'patent_id': 'citation_patent_id', 'inventor_id': 'citee_inventor'}),
-                                                  on='citation_patent_id')
+        citer_inventors = citations_applicant_df['patent_id'].map(patent_inventors)
+        citee_inventors = citations_applicant_df['citation_patent_id'].map(patent_inventors)
         
-        shared = merged[merged['citer_inventor'] == merged['citee_inventor']][['patent_id', 'citation_patent_id']].drop_duplicates()
+        citer_inventors = citer_inventors.apply(lambda x: x if isinstance(x, set) else set())
+        citee_inventors = citee_inventors.apply(lambda x: x if isinstance(x, set) else set())
         
-        citations_no_self = citations_applicant_df.merge(shared, on=['patent_id', 'citation_patent_id'], how='left', indicator=True
-                                                         ).query('_merge == "left_only"').drop(columns='_merge').reset_index(drop=True)
+        shared = citer_inventors.combine(citee_inventors, lambda a, b: bool(a & b))
+        
+        citations_no_self = citations_applicant_df[~shared].reset_index(drop=True)
 
         φ_tilde_DMM = gpf.citation_shares(citations_no_self, relevant_DMM_df, self.classes, self.types)
         
         np.save(f'{self.Directory}/Clean Data/citation_shares_DMM.npy', φ_tilde_DMM)
         
-        del citations_applicant_df, citations_no_self, relevant_DMM_df, inventors_df, merged, shared
+        del citations_applicant_df, citations_no_self, relevant_DMM_df, inventors_df
         
         
         # ----------------------------------------------------------------
