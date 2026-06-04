@@ -60,15 +60,15 @@ All of the replication codes run on Python `3.11.13`. Prior to running the codes
 
 | Package | Version |
 |---------|---------|
-| linearmodels | 0.0.0 |
-| matplotlib | 3.10.5 |
-| numba | 0.61.2 |
-| numpy | 2.2.6 |
+| linearmodels | 7.0 |
+| matplotlib | 3.10.8 |
+| numba | 0.63.1 |
+| numpy | 2.3.5 |
 | openpyxl | 3.1.5 |
-| pandas | 2.3.2 |
+| pandas | 2.3.3 |
 | quantecon | 0.10.1 |
-| scipy | 1.16.1 |
-| statsmodels | 0.14.5 |
+| scipy | 1.17.0 |
+| statsmodels | 0.14.6 |
 
 ## Description of Code:
 
