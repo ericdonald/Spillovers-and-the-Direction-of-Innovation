@@ -1256,7 +1256,7 @@ class Processor:
         
         Avg = gpf.clean_round(100 / Cent.size, 2)
         Med = gpf.clean_round(np.median(Cent), 2)
-        Percentile = gpf.clean_round((Cent > Cent[0]).mean(), 2)
+        Percentile = gpf.clean_round((Cent < Cent[0]).mean()*100, 2)
         
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Transport', gpf.clean_round(Cent[0], 2))
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Transport', gpf.clean_round(Cent[1], 2))
