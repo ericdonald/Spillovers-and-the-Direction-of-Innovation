@@ -258,7 +258,7 @@ class Processor:
         OWID_solar_price_df = pd.read_csv("https://ourworldindata.org/grapher/solar-pv-prices.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
 
         OWID_solar_price_df = OWID_solar_price_df[['Year', 'Solar PV module cost']]
-        OWID_solar_price_df = OWID_solar_price_df.rename(columns={"Year": "year", "Solar photovoltaic module price": "solar_price"})
+        OWID_solar_price_df = OWID_solar_price_df.rename(columns={"Year": "year", "Solar PV module cost": "solar_price"})
         
         roser_row = pd.DataFrame({'year': [1956], 'solar_price': [1865]}) #Manually add 1956 from Roser
         roser_row['solar_price'] = roser_row['solar_price'] *  FRED_CPI_df.loc[FRED_CPI_df['year'] == 2024, 'CPI'].values[0] / FRED_CPI_df.loc[FRED_CPI_df['year'] == 2019, 'CPI'].values[0] #Adjust from 2019 to 2024 prices
