@@ -56,7 +56,7 @@ where `XX` is the user's API key for the relevant data source.
 
 ### Python
 
-All of the replication codes run on Python `3.11.13`. Prior to running the codes, install the following packages:
+All of the replication codes run on Python `3.11.14`. Prior to running the codes, install the following packages:
 
 | Package | Version |
 |---------|---------|
