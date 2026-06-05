@@ -1043,21 +1043,14 @@ class Processor:
         # ----------------------- #
         # Compute Citation Shares #
         # ----------------------- #
+        climate_cols = ['car_clean_patent', 'car_dirty_patent', 'elec_clean_patent', 'elec_dirty_patent']
+        
         cpc_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
         cpc_df = cpc_df[['patent_id', 'cpc_class']]
         
         relevant_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents.pkl')
-        relevant_df = relevant_df[
-            [
-                'patent_id',
-                'gen_patent',
-                'car_clean_patent',
-                'car_dirty_patent',
-                'elec_clean_patent',
-                'elec_dirty_patent'
-            ]
-        ]
-        
+        relevant_df = relevant_df[['patent_id', 'gen_patent'] + climate_cols]
+
         df_tech = pd.merge(
             relevant_df,
             cpc_df,
@@ -1073,29 +1066,25 @@ class Processor:
         
         del df_tech, df_clim, df_gen
         
-        df_merged['citee_weight'] = 1 / df_merged.groupby('patent_id')['patent_id'].transform('count')
+        df_merged['n_climate_cats'] = df_merged[climate_cols].sum(axis=1)
+        df_merged['citee_weight'] = np.where(df_merged['gen_patent'] == 1,
+                                             1 / df_merged.groupby('patent_id')['patent_id'].transform('count'),
+                                             1 / df_merged['n_climate_cats'])
         
-     
         long_data = []
         for _, row in df_merged.iterrows():
             if row['gen_patent'] == 1:
                 long_data.append((row['patent_id'], row['cpc_class'], row['citee_weight']))
             else:
-                if row['car_clean_patent'] == 1:
-                    long_data.append((row['patent_id'], 'car_clean_patent', row['citee_weight']))
-                if row['car_dirty_patent'] == 1:
-                    long_data.append((row['patent_id'], 'car_dirty_patent', row['citee_weight']))
-                if row['elec_clean_patent'] == 1:
-                    long_data.append((row['patent_id'], 'elec_clean_patent', row['citee_weight']))
-                if row['elec_dirty_patent'] == 1:
-                    long_data.append((row['patent_id'], 'elec_dirty_patent', row['citee_weight']))
+                for tech in climate_cols:
+                    if row[tech] == 1:
+                        long_data.append((row['patent_id'], tech, row['citee_weight']))
         
         df_long = pd.DataFrame(long_data, columns=['patent_id', 'tech_class', 'citee_weight'])
         
         del df_merged, long_data
         
-        
-        df_citations  = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        df_citations = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
         df_citations = df_citations[['patent_id', 'citation_patent_id']]
         
         df_cite_matrix = pd.merge(
