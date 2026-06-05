@@ -768,9 +768,9 @@ class Processor:
         np.save(f'{self.Directory}/Clean Data/citation_shares.npy', φ_tilde_0)
         
         
-        # --------------------- #
-        # DMM Spillover Network #
-        # --------------------- #
+        # -------------------------------- #
+        # Applicant Only Spillover Network #
+        # -------------------------------- #
         citations_applicant_df = citations_df[citations_df["citation_category"] != "cited by applicant"]
         
         φ_tilde_app = gpf.citation_shares(citations_applicant_df, relevant_df, self.classes, self.types)
@@ -780,9 +780,9 @@ class Processor:
         del citations_df, relevant_df
 
 
-        # --- #
-        # DMM #
-        # --- #
+        # --------------------- #
+        # DMM Spillover Network #
+        # --------------------- #
         relevant_DMM_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents_DMM.pkl')
         inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
         
