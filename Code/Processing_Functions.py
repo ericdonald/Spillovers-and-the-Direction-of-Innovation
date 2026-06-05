@@ -37,7 +37,7 @@ class ResultsTable:
         
         
         
-def clean_round(number, decimals):
+def clean_round(number, decimals=0):
     "Cut a Hanging Zero"
     
     rounded_number = np.round(number, decimals)

@@ -1337,7 +1337,7 @@ class Processor:
         
         Avg = gpf.clean_round(100 / Cent.size, 2)
         Med = gpf.clean_round(np.median(Cent), 2)
-        Percentile = int((Cent < Cent[0]).mean()*100)
+        Percentile = gpf.clean_round((Cent < Cent[0]).mean()*100)
         
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Clean Transport', gpf.clean_round(Cent[0], 2))
         Disagg_Results.add('Disaggregated Eigenvector Centrality for Dirty Transport', gpf.clean_round(Cent[1], 2))
@@ -2033,8 +2033,8 @@ class Processor:
             A_fan_low_pd[p,:] = np.log(Abar_start) - np.log(Abar_ss_low_pd[p,:])
             ΔB_fan_low_pd[p,:] = X @ (Jake_low_pd[p,:,:] - I) @ A_fan_low_pd[p,:] * 100
         
-        Tens_Results.add('Carbon Price for Clean Growth in Transport (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,0]))]))
-        Tens_Results.add('Carbon Price for Clean Growth in Electricity (No Spillover)', int(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,1]))]))
+        Tens_Results.add('Carbon Price for Clean Growth in Transport (No Spillover)', gpf.clean_round(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,0]))]))
+        Tens_Results.add('Carbon Price for Clean Growth in Electricity (No Spillover)', gpf.clean_round(τ_dollar_pd[np.argmin(np.abs(ΔB_fan_low_pd[:,1]))]))
     
         τ_dollar_pd = τ_dollar_pd[:500]
         ΔB_fan_low_pd = ΔB_fan_low_pd[:500,:]
@@ -2120,7 +2120,7 @@ class Processor:
         DF_cleanelec.to_csv(f'{self.Directory}/Results/Figures/CleanElec_thresholds.csv', index=False)
         
         ξ_hat_CHN = gpf.clean_round((1 - 1/ξ_change[np.argmin(np.abs(q_c-0.17))])*100, 1)
-        τ_CHN = int(τ_change[np.argmin(np.abs(q_c-0.17))])
+        τ_CHN = gpf.clean_round(τ_change[np.argmin(np.abs(q_c-0.17))])
         
         Tens_Results.add('Clean Innovation Subsidy for Clean Growth in China', ξ_hat_CHN)
         Tens_Results.add('Carbon Price for Clean Growth in China', τ_CHN)
@@ -2490,27 +2490,27 @@ class Processor:
         Jake_nogen = ssf.Jacob(Abar_ss_nogen, self.E.η, φtilde_nogen, self.E.α, self.E.σ, self.E.λ, r_tilde_low, self.E.χ, self.E.γ, self.E.Θ, self.E.ν, self.E.o)
         κ_nogen = np.linalg.eig(Jake_nogen)[0]
         
-        PolicyX_Results.add('Half-Life for ES1', int(t_half[0]))
-        PolicyX_Results.add('Half-Life for ES2', int(t_half[1]))
-        PolicyX_Results.add('Half-Life for ES3', int(t_half[2]))
-        PolicyX_Results.add('Half-Life for ES4', int(t_half[3]))
-        PolicyX_Results.add('Half-Life for Transportation', int(t_half[4]))
-        PolicyX_Results.add('Half-Life for Electricity', int(t_half[5]))
+        PolicyX_Results.add('Half-Life for ES1', gpf.clean_round(t_half[0]))
+        PolicyX_Results.add('Half-Life for ES2', gpf.clean_round(t_half[1]))
+        PolicyX_Results.add('Half-Life for ES3', gpf.clean_round(t_half[2]))
+        PolicyX_Results.add('Half-Life for ES4', gpf.clean_round(t_half[3]))
+        PolicyX_Results.add('Half-Life for Transportation', gpf.clean_round(t_half[4]))
+        PolicyX_Results.add('Half-Life for Electricity', gpf.clean_round(t_half[5]))
         PolicyX_Results.add('Percent Difference in Half-Lives', gpf.clean_round(Δ_half,1))
         
-        PolicyX_Results.add('Half-Life for ES1 (No Sector Spillovers)', int(t_half_noθ[0]))
-        PolicyX_Results.add('Half-Life for ES2 (No Sector Spillovers)', int(t_half_noθ[1]))
-        PolicyX_Results.add('Half-Life for ES3 (No Sector Spillovers)', int(t_half_noθ[2]))
-        PolicyX_Results.add('Half-Life for ES4 (No Sector Spillovers)', int(t_half_noθ[3]))
-        PolicyX_Results.add('Half-Life for Transportation (No Sector Spillovers)', int(t_half_noθ[4]))
-        PolicyX_Results.add('Half-Life for Electricity (No Sector Spillovers)', int(t_half_noθ[5]))
+        PolicyX_Results.add('Half-Life for ES1 (No Sector Spillovers)', gpf.clean_round(t_half_noθ[0]))
+        PolicyX_Results.add('Half-Life for ES2 (No Sector Spillovers)', gpf.clean_round(t_half_noθ[1]))
+        PolicyX_Results.add('Half-Life for ES3 (No Sector Spillovers)', gpf.clean_round(t_half_noθ[2]))
+        PolicyX_Results.add('Half-Life for ES4 (No Sector Spillovers)', gpf.clean_round(t_half_noθ[3]))
+        PolicyX_Results.add('Half-Life for Transportation (No Sector Spillovers)', gpf.clean_round(t_half_noθ[4]))
+        PolicyX_Results.add('Half-Life for Electricity (No Sector Spillovers)', gpf.clean_round(t_half_noθ[5]))
         
-        PolicyX_Results.add('Half-Life for ES1 (Double Spillovers)', int(t_half_Dub[0]))
-        PolicyX_Results.add('Half-Life for ES2 (Double Spillovers)', int(t_half_Dub[1]))
-        PolicyX_Results.add('Half-Life for ES3 (Double Spillovers)', int(t_half_Dub[2]))
-        PolicyX_Results.add('Half-Life for ES4 (Double Spillovers)', int(t_half_Dub[3]))
-        PolicyX_Results.add('Half-Life for Transportation (Double Spillovers)', int(t_half_Dub[4]))
-        PolicyX_Results.add('Half-Life for Electricity (Double Spillovers)', int(t_half_Dub[5]))
+        PolicyX_Results.add('Half-Life for ES1 (Double Spillovers)', gpf.clean_round(t_half_Dub[0]))
+        PolicyX_Results.add('Half-Life for ES2 (Double Spillovers)', gpf.clean_round(t_half_Dub[1]))
+        PolicyX_Results.add('Half-Life for ES3 (Double Spillovers)', gpf.clean_round(t_half_Dub[2]))
+        PolicyX_Results.add('Half-Life for ES4 (Double Spillovers)', gpf.clean_round(t_half_Dub[3]))
+        PolicyX_Results.add('Half-Life for Transportation (Double Spillovers)', gpf.clean_round(t_half_Dub[4]))
+        PolicyX_Results.add('Half-Life for Electricity (Double Spillovers)', gpf.clean_round(t_half_Dub[5]))
         
         PolicyX_Results.add('Spectral Radius (No Sector Spillovers)', gpf.clean_round(np.max(np.abs(κ_noθ)), 3))
         PolicyX_Results.add('Spectral Radius (No General Spillovers)', gpf.clean_round(np.max(np.abs(κ_nogen)), 3))
@@ -2535,10 +2535,10 @@ class Processor:
         A_fan_0_Dub_high = np.log(Abar_0) - np.log(Abar_ss_Dub_high)
         β_Dub_high = np.linalg.inv(Q_Dub_high) @ A_fan_0_Dub_high
         t_half_tech_Dub_high = ssf.Half_Life(Q_Dub_high, κ_Dub_high, β_Dub_high, self.E.Θ)
-        PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price)', int(t_half_tech_high[0]))
-        PolicyX_Results.add('Half-Life for Electricity (High Biden Carbon Price)', int(t_half_tech_high[1]))
-        PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price, Double Spillovers)', int(t_half_tech_Dub_high[0]))
-        PolicyX_Results.add('Half-Life for Electricity (High Biden Carbon Price, Double Spillovers)', int(t_half_tech_Dub_high[1]))
+        PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price)', gpf.clean_round(t_half_tech_high[0]))
+        PolicyX_Results.add('Half-Life for Electricity (High Biden Carbon Price)', gpf.clean_round(t_half_tech_high[1]))
+        PolicyX_Results.add('Half-Life for Transportation (High Biden Carbon Price, Double Spillovers)', gpf.clean_round(t_half_tech_Dub_high[0]))
+        PolicyX_Results.add('Half-Life for Electricity (High Biden Carbon Price, Double Spillovers)', gpf.clean_round(t_half_tech_Dub_high[1]))
     
         
         # -------------------------------------------------------- #
