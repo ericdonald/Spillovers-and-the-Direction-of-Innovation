@@ -1066,10 +1066,7 @@ class Processor:
         
         del df_tech, df_clim, df_gen
         
-        df_merged['n_climate_cats'] = df_merged[climate_cols].sum(axis=1)
-        df_merged['citee_weight'] = np.where(df_merged['gen_patent'] == 1,
-                                             1 / df_merged.groupby('patent_id')['patent_id'].transform('count'),
-                                             1 / df_merged['n_climate_cats'])
+        df_merged['citee_weight'] = 1 / df_merged.groupby('patent_id')['patent_id'].transform('count')
         
         long_data = []
         for _, row in df_merged.iterrows():
@@ -1119,25 +1116,19 @@ class Processor:
         df_cite_matrix['pairwise_cite_share'] = df_cite_matrix['pairwise_cites'] / df_cite_matrix['total_cites']
         
         df_cite_matrix = df_cite_matrix[['citer_tech_class', 'citee_tech_class', 'pairwise_cite_share']]
-        df_cite_matrix = df_cite_matrix.drop_duplicates()
+        df_cite_matrix = df_cite_matrix.drop_duplicates(subset=['citer_tech_class', 'citee_tech_class'])
         
         
         # ------------------------ #
         # Gross Spillover Matrices #
         # ------------------------ #
-        priority_order = [
-            'car_clean_patent',
-            'car_dirty_patent',
-            'elec_clean_patent',
-            'elec_dirty_patent'
-        ]
         
         all_tech_classes = set(df_cite_matrix['citer_tech_class']).union(
             df_cite_matrix['citee_tech_class']
         )
         
-        non_priority_classes = sorted(all_tech_classes - set(priority_order))
-        ordered_classes = priority_order + non_priority_classes
+        non_priority_classes = sorted(all_tech_classes - set(climate_cols))
+        ordered_classes = climate_cols + non_priority_classes
         
         df_pivot = df_cite_matrix.pivot(
             index='citer_tech_class',
@@ -1173,7 +1164,7 @@ class Processor:
         ):
             
             N = len(ordered_classes)
-            n_clim = len(priority_order)
+            n_clim = len(climate_cols)
          
             # Build display labels (short form for CPC codes)
             def display_label(cls):
