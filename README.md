@@ -71,6 +71,7 @@ All of the replication codes run on Python `3.11.14`. Prior to running the codes
 | openpyxl | 3.1.5 |
 | pandas | 2.3.3 |
 | quantecon | 0.10.1 |
+| requests | 2.32.5 |
 | scipy | 1.17.0 |
 | statsmodels | 0.14.6 |
 
