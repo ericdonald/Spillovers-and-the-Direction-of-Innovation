@@ -414,7 +414,7 @@ class Processor:
         # PatentsView Applications #
         # ------------------------ #
         if API == 1:
-            PV_applications_df = gpf.Extract_PatentsView('g_application')
+            PV_applications_df = gpf.Extract_PatentsView('g_application', self.USPTO_API)
             
             PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], format="%Y-%m-%d", errors="coerce").dt.year
             PV_applications_df = PV_applications_df.dropna(subset=["year"])
@@ -430,7 +430,7 @@ class Processor:
         # PatentsView Citations #
         # --------------------- #
         if API == 1:
-            PV_citations_df = gpf.Extract_PatentsView('g_us_patent_citation')
+            PV_citations_df = gpf.Extract_PatentsView('g_us_patent_citation', self.USPTO_API)
             
             PV_citations_df['patent_id'] = PV_citations_df['patent_id'].astype(str)
             PV_citations_df['citation_patent_id'] = PV_citations_df['citation_patent_id'].astype(str)
@@ -446,11 +446,11 @@ class Processor:
         # Patentsview Inventors #
         # --------------------- #
         if API == 1:
-            PV_inventors_df = gpf.Extract_PatentsView('g_inventor_disambiguated')
+            PV_inventors_df = gpf.Extract_PatentsView('g_inventor_disambiguated', self.USPTO_API)
             
             PV_inventors_df['patent_id'] = PV_inventors_df['patent_id'].astype(str)
             
-            PV_location_df = gpf.Extract_PatentsView('g_location_disambiguated')
+            PV_location_df = gpf.Extract_PatentsView('g_location_disambiguated', self.USPTO_API)
             
             PV_inventors_df = pd.merge(PV_inventors_df,
                                        PV_location_df[['location_id', 'disambig_state', 'state_fips']],
