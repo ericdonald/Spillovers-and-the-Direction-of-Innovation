@@ -74,6 +74,7 @@ class Processor:
         
         self.FRED_API = keys.get("FRED_API")
         self.EIA_API = keys.get("EIA_API")
+        self.USPTO_API = keys.get("USPTO_API")
 
         
         
@@ -400,7 +401,7 @@ class Processor:
         # PatentsView CPC Codes #
         # --------------------- #
         if API == 1:
-            PV_CPC_df = gpf.Extract_PatentsView('g_cpc_current')
+            PV_CPC_df = gpf.Extract_PatentsView('g_cpc_current', self.USPTO_API)
             
             PV_CPC_df['patent_id'] = PV_CPC_df['patent_id'].astype(str)
             
