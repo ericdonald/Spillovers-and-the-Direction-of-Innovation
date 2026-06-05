@@ -2,17 +2,21 @@
 
 ## Data Sources:
 
-Below is the list of all data sources required for replication. The first group are those programmatically retrieved via APIs or direct download, the second group are those contained in the Raw Data folder, and the third group are those that require the user to have a license. The links below are for reference only; a user does not need to visit these sites to extract the data.
+Below is the list of all data sources required for replication. All raw data files are included in the Raw Data folder, so the replication code can be run immediately with `API=0`. Setting `API=1` will re-download the data from the original sources, which may produce small numerical differences if the underlying databases have been updated since the archived data was collected.
+
+The first group are those programmatically retrieved via APIs or direct download, the second group are those contained exclusively in the Raw Data folder and do not require any API access, and the third group are those that require the user to have a license. The links below are for reference only; a user does not need to visit these sites to extract the data.
+
 To make use of the API commands, the user will need to make a `.keys` file with the following lines:
 
 ```
 FRED_API = XX
 EIA_API = XX
+USPTO_API = XX
 ```
 
 where `XX` is the user's API key for the relevant data source.
 
-### API/Web Acessible:
+### API/Web Accessible:
 
 - FRED
   - [CPI](https://fred.stlouisfed.org/series/CPIAUCSL)
@@ -33,11 +37,11 @@ where `XX` is the user's API key for the relevant data source.
 - NOAA
   - [Atmospheric Carbon Concentrations](https://gml.noaa.gov/ccgg/trends/data.html)
 - PatentsView
-  - [CPC Codes](https://patentsview.org/download/data-download-tables)
-  - [Applications](https://patentsview.org/download/data-download-tables)
-  - [Citations](https://patentsview.org/download/data-download-tables)
-  - [Inventors](https://patentsview.org/download/data-download-tables)
-  - [Location Crosswalk](https://patentsview.org/download/data-download-tables)
+  - [CPC Codes](https://data.uspto.gov/bulkdata/datasets/pvgpatdis)
+  - [Applications](https://data.uspto.gov/bulkdata/datasets/pvgpatdis)
+  - [Citations](https://data.uspto.gov/bulkdata/datasets/pvgpatdis)
+  - [Inventors](https://data.uspto.gov/bulkdata/datasets/pvgpatdis)
+  - [Location Crosswalk](https://data.uspto.gov/bulkdata/datasets/pvgpatdis)
 - [Transportation Energy Data Book: Table 6.02](https://tedb.ornl.gov/data/)
 
 ### Contained in Raw Data:
