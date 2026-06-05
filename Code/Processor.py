@@ -77,15 +77,29 @@ class Processor:
 
         
         
-    def Cleaner(self, ind_year=1800, CPI_year=2021):
+    def Cleaner(self, API, ind_year=1800, CPI_year=2021):
         """""
         Clean Data
         
-        Output: Results/Figures/OWID_solar.csv
-                Clean Data/OWID_clean_elec.pkl
+        Output: Raw Data/FRED_CPI.pkl
+                Raw Data/FRED_VR.pkl
+                Raw Data/FRED_Y.pkl
+                Raw Data/FRED_RD.pkl
+                Raw Data/EIA_Rev.pkl
+                Raw Data/EIA_Q.pkl
+                Raw Data/EPA.pkl
+                Raw Data/OWID_CO2_Ind.pkl
+                Raw Data/OWID_CO2_LU.pkl
+                Raw Data/OWID_solar_price.pkl
+                Raw Data/OWID_solar_share.pkl
+                Raw Data/NOAA.pkl
                 Raw Data/Patent_CPC.pkl
+                Raw Data/PV_applications.pkl
                 Raw Data/Patent_Citations.pkl
                 Raw Data/Patent_Inventors.pkl
+                Raw Data/TEDB.pkl
+                Results/Figures/OWID_solar.csv
+                Clean Data/OWID_clean_elec.pkl
                 Clean Data/RICE.pkl
                 Clean Data/pat_firm_crosswalk.pkl
                 Clean Data/state_rd_price.pkl
@@ -106,183 +120,238 @@ class Processor:
         # -------- #
         # FRED CPI #
         # -------- #
-        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&api_key={self.FRED_API}&file_type=json')
-        data = FRED.json()['observations']
-        filtered_data = [{'year': entry['date'], 'CPI': entry['value']} for entry in data]
-        FRED_CPI_df = pd.DataFrame(filtered_data)
+        if API == 1:
+            FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&frequency=a&api_key={self.FRED_API}&file_type=json')
+            data = FRED.json()['observations']
+            filtered_data = [{'year': entry['date'], 'CPI': entry['value']} for entry in data]
+            FRED_CPI_df = pd.DataFrame(filtered_data)
+            
+            FRED_CPI_df['year'] = pd.to_datetime(FRED_CPI_df['year']).dt.year
+            FRED_CPI_df['CPI'] = pd.to_numeric(FRED_CPI_df['CPI'], errors='coerce')
+            FRED_CPI_df['CPI'] = FRED_CPI_df['CPI'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
+                    
+            FRED_CPI_df.to_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
+        else:
+            FRED_CPI_df = pd.read_pickle(f'{self.Directory}/Raw Data/FRED_CPI.pkl')
         
-        FRED_CPI_df['year'] = pd.to_datetime(FRED_CPI_df['year']).dt.year
-        FRED_CPI_df['CPI'] = pd.to_numeric(FRED_CPI_df['CPI'], errors='coerce')
-        FRED_CPI_df['CPI'] = FRED_CPI_df['CPI'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == CPI_year, 'CPI'].values[0] #CPI indexed to 1 in CPI_year
-                
         
         # ------------------------- #
         # FRED Motor Vehicle Output #
         # ------------------------- #
-        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
-        data = FRED.json()['observations']
-        filtered_data = [{'year': entry['date'], 'car_revenue': entry['value']} for entry in data]
-        FRED_VR_df = pd.DataFrame(filtered_data)
+        if API == 1:
+            FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=A953RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
+            data = FRED.json()['observations']
+            filtered_data = [{'year': entry['date'], 'car_revenue': entry['value']} for entry in data]
+            FRED_VR_df = pd.DataFrame(filtered_data)
+            
+            FRED_VR_df['year'] = pd.to_datetime(FRED_VR_df['year']).dt.year
+            FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce') #Nominal US vehicle revenue in billions of dollars
+            
+            FRED_VR_df.to_pickle(f'{self.Directory}/Raw Data/FRED_VR.pkl')
+        else:
+            FRED_VR_df = pd.read_pickle(f'{self.Directory}/Raw Data/FRED_VR.pkl')
         
-        FRED_VR_df['year'] = pd.to_datetime(FRED_VR_df['year']).dt.year
-        FRED_VR_df['car_revenue'] = pd.to_numeric(FRED_VR_df['car_revenue'], errors='coerce') #Nominal US vehicle revenue in billions of dollars
-                
         
         # -------- #
         # FRED GDP #
         # -------- #
-        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=GDP&frequency=a&api_key={self.FRED_API}&file_type=json')
-        data = FRED.json()['observations']
-        filtered_data = [{'year': entry['date'], 'GDP': entry['value']} for entry in data]
-        FRED_Y_df = pd.DataFrame(filtered_data)
-        
-        FRED_Y_df['year'] = pd.to_datetime(FRED_Y_df['year']).dt.year
-        FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce') #Nominal US GDP in billions of dollars
+        if API == 1:
+            FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=GDP&frequency=a&api_key={self.FRED_API}&file_type=json')
+            data = FRED.json()['observations']
+            filtered_data = [{'year': entry['date'], 'GDP': entry['value']} for entry in data]
+            FRED_Y_df = pd.DataFrame(filtered_data)
+            
+            FRED_Y_df['year'] = pd.to_datetime(FRED_Y_df['year']).dt.year
+            FRED_Y_df['GDP'] = pd.to_numeric(FRED_Y_df['GDP'], errors='coerce') #Nominal US GDP in billions of dollars
                 
+            FRED_Y_df.to_pickle(f'{self.Directory}/Raw Data/FRED_Y.pkl')
+        else:
+            FRED_Y_df = pd.read_pickle(f'{self.Directory}/Raw Data/FRED_Y.pkl')
+            
         
         # ----------------------- #
         # FRED Total R&D Spending #
         # ----------------------- #
-        FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=Y694RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
-        data = FRED.json()['observations']
-        filtered_data = [{'year': entry['date'], 'RD': entry['value']} for entry in data]
-        FRED_RD_df = pd.DataFrame(filtered_data)
-        
-        FRED_RD_df['year'] = pd.to_datetime(FRED_RD_df['year']).dt.year
-        FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce') #Nominal US R&D in billions of dollars
+        if API == 1:
+            FRED = api.get(f'https://api.stlouisfed.org/fred/series/observations?series_id=Y694RC1Q027SBEA&frequency=a&api_key={self.FRED_API}&file_type=json')
+            data = FRED.json()['observations']
+            filtered_data = [{'year': entry['date'], 'RD': entry['value']} for entry in data]
+            FRED_RD_df = pd.DataFrame(filtered_data)
+            
+            FRED_RD_df['year'] = pd.to_datetime(FRED_RD_df['year']).dt.year
+            FRED_RD_df['RD'] = pd.to_numeric(FRED_RD_df['RD'], errors='coerce') #Nominal US R&D in billions of dollars
+            
+            FRED_RD_df.to_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl')
+        else:
+            FRED_RD_df = pd.read_pickle(f'{self.Directory}/Raw Data/FRED_RD.pkl')
                 
         
         # ----------------------- #
         # EIA Electricity Revenue #
         # ----------------------- #
-        EIA = api.get(f'https://api.eia.gov/v2/electricity/retail-sales/data/?api_key={self.EIA_API}&frequency=annual&data[0]=revenue&facets[stateid][]=US&facets[sectorid][]=ALL&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
-        data = EIA.json()["response"]["data"]
-        filtered_data = [{'year': entry['period'], 'elec_revenue': entry['revenue']} for entry in data]
-        EIA_Rev_df = pd.DataFrame(filtered_data)
-        
-        EIA_Rev_df['year'] = pd.to_datetime(EIA_Rev_df['year']).dt.year
-        EIA_Rev_df['elec_revenue'] = pd.to_numeric(EIA_Rev_df['elec_revenue'], errors='coerce')
-        
-        EIA_Rev_df['elec_revenue'] = EIA_Rev_df['elec_revenue'] / 1000 #Nominal US electricity revenue in billions of dollars
+        if API == 1:
+            EIA = api.get(f'https://api.eia.gov/v2/electricity/retail-sales/data/?api_key={self.EIA_API}&frequency=annual&data[0]=revenue&facets[stateid][]=US&facets[sectorid][]=ALL&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
+            data = EIA.json()["response"]["data"]
+            filtered_data = [{'year': entry['period'], 'elec_revenue': entry['revenue']} for entry in data]
+            EIA_Rev_df = pd.DataFrame(filtered_data)
+            
+            EIA_Rev_df['year'] = pd.to_datetime(EIA_Rev_df['year']).dt.year
+            EIA_Rev_df['elec_revenue'] = pd.to_numeric(EIA_Rev_df['elec_revenue'], errors='coerce')
+            
+            EIA_Rev_df['elec_revenue'] = EIA_Rev_df['elec_revenue'] / 1000 #Nominal US electricity revenue in billions of dollars
+            
+            EIA_Rev_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Rev.pkl')
+        else:
+            EIA_Rev_df = pd.read_pickle(f'{self.Directory}/Raw Data/EIA_Rev.pkl')
         
         
         # -------------------------- #
         # EIA Electricity Quantities #
         # -------------------------- #
-        EIA = api.get(f'https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?api_key={self.EIA_API}&frequency=annual&data[0]=generation&facets[fueltypeid][]=ALL&facets[fueltypeid][]=FOS&facets[location][]=US&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
-        data = EIA.json()["response"]["data"]
-        filtered_data = [{'year': entry['period'], 'type':entry['fueltypeid'], 'MWh': entry['generation']} for entry in data]
-        EIA_Q_df = pd.DataFrame(filtered_data)
-        
-        EIA_Q_df['year'] = pd.to_datetime(EIA_Q_df['year']).dt.year
-        EIA_Q_df['MWh'] = pd.to_numeric(EIA_Q_df['MWh'], errors='coerce')
-        
-        EIA_Q_df = EIA_Q_df.pivot(index="year", columns="type", values="MWh").reset_index()
-        EIA_Q_df['q_elec_clean'] = 1 - EIA_Q_df['FOS'] / EIA_Q_df['ALL'] #US clean electricity quantity share
-        EIA_Q_df = EIA_Q_df[['year', 'q_elec_clean']]
+        if API == 1:
+            EIA = api.get(f'https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?api_key={self.EIA_API}&frequency=annual&data[0]=generation&facets[fueltypeid][]=ALL&facets[fueltypeid][]=FOS&facets[location][]=US&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000')
+            data = EIA.json()["response"]["data"]
+            filtered_data = [{'year': entry['period'], 'type':entry['fueltypeid'], 'MWh': entry['generation']} for entry in data]
+            EIA_Q_df = pd.DataFrame(filtered_data)
+            
+            EIA_Q_df['year'] = pd.to_datetime(EIA_Q_df['year']).dt.year
+            EIA_Q_df['MWh'] = pd.to_numeric(EIA_Q_df['MWh'], errors='coerce')
+            
+            EIA_Q_df = EIA_Q_df.pivot(index="year", columns="type", values="MWh").reset_index()
+            EIA_Q_df['q_elec_clean'] = 1 - EIA_Q_df['FOS'] / EIA_Q_df['ALL'] #US clean electricity quantity share
+            EIA_Q_df = EIA_Q_df[['year', 'q_elec_clean']]
+            
+            EIA_Q_df.to_pickle(f'{self.Directory}/Raw Data/EIA_Q.pkl')
+        else:
+            EIA_Q_df = pd.read_pickle(f'{self.Directory}/Raw Data/EIA_Q.pkl')
                 
         
         # ---------------------------- #
         # EPA Greenhouse Gas Inventory #
         # ---------------------------- #
-        r = api.get("https://www.epa.gov/system/files/other-files/2024-04/executive-summary.zip", headers={"User-Agent": "Mozilla/5.0"})
-        
-        with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-            target = next(p for p in z.namelist() if p.lower().endswith("table es-5.csv"))
-            with z.open(target) as f:
-                EPA_df = pd.read_csv(f, skiprows=1, nrows=8)  
-       
-        EPA_df = EPA_df.set_index(EPA_df.columns[0]).T.reset_index(drop=False)
-        EPA_df = EPA_df.rename(columns={"index": "year",
-                                        "Transportation": "car_C_em",
-                                        "Electric Power Industry": "elec_C_em",
-                                        "Total Gross Emissions (Sources)": "total_C_em"})
-        
-        EPA_df['year'] = pd.to_numeric(EPA_df['year'], errors='coerce')
-        
-        EPA_df['car_C_em'] = EPA_df['car_C_em'] * self.CO2_C / 1000
-        EPA_df['elec_C_em'] = EPA_df['elec_C_em'] * self.CO2_C / 1000
-        EPA_df['total_C_em'] = EPA_df['total_C_em'] * self.CO2_C / 1000
-        #Carbon emissions equivalent in gigatons
-        
-        EPA_df = EPA_df.dropna(subset=["year"])
-        EPA_df = EPA_df[["year", "car_C_em", "elec_C_em", "total_C_em"]]
+        if API == 1:
+            r = api.get("https://www.epa.gov/system/files/other-files/2024-04/executive-summary.zip", headers={"User-Agent": "Mozilla/5.0"})
+            
+            with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+                target = next(p for p in z.namelist() if p.lower().endswith("table es-5.csv"))
+                with z.open(target) as f:
+                    EPA_df = pd.read_csv(f, skiprows=1, nrows=8)  
+           
+            EPA_df = EPA_df.set_index(EPA_df.columns[0]).T.reset_index(drop=False)
+            EPA_df = EPA_df.rename(columns={"index": "year",
+                                            "Transportation": "car_C_em",
+                                            "Electric Power Industry": "elec_C_em",
+                                            "Total Gross Emissions (Sources)": "total_C_em"})
+            
+            EPA_df['year'] = pd.to_numeric(EPA_df['year'], errors='coerce')
+            
+            EPA_df['car_C_em'] = EPA_df['car_C_em'] * self.CO2_C / 1000
+            EPA_df['elec_C_em'] = EPA_df['elec_C_em'] * self.CO2_C / 1000
+            EPA_df['total_C_em'] = EPA_df['total_C_em'] * self.CO2_C / 1000
+            #Carbon emissions equivalent in gigatons
+            
+            EPA_df = EPA_df.dropna(subset=["year"])
+            EPA_df = EPA_df[["year", "car_C_em", "elec_C_em", "total_C_em"]]
+            
+            EPA_df.to_pickle(f'{self.Directory}/Raw Data/EPA.pkl')
+        else:
+            EPA_df = pd.read_pickle(f'{self.Directory}/Raw Data/EPA.pkl')
         
         
         # -------------------------------- #
         # OWID Global Industrial Emissions #
         # -------------------------------- #
-        OWID_CO2_Ind_df = pd.read_csv("https://ourworldindata.org/grapher/annual-co2-emissions-per-country.csv?v=1&csvType=filtered&useColumnShortNames=true&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
-        
-        OWID_CO2_Ind_df = OWID_CO2_Ind_df[['year', 'emissions_total']]
-        OWID_CO2_Ind_df = OWID_CO2_Ind_df.rename(columns={"emissions_total": "C_em_fossil"})
-        
-        OWID_CO2_Ind_df['C_em_fossil'] = OWID_CO2_Ind_df['C_em_fossil'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
+        if API == 1:
+            OWID_CO2_Ind_df = pd.read_csv("https://ourworldindata.org/grapher/annual-co2-emissions-per-country.csv?v=1&csvType=filtered&useColumnShortNames=true&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+            
+            OWID_CO2_Ind_df = OWID_CO2_Ind_df[['year', 'emissions_total']]
+            OWID_CO2_Ind_df = OWID_CO2_Ind_df.rename(columns={"emissions_total": "C_em_fossil"})
+            
+            OWID_CO2_Ind_df['C_em_fossil'] = OWID_CO2_Ind_df['C_em_fossil'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
+            
+            OWID_CO2_Ind_df.to_pickle(f'{self.Directory}/Raw Data/OWID_CO2_Ind.pkl')
+        else:
+            OWID_CO2_Ind_df = pd.read_pickle(f'{self.Directory}/Raw Data/OWID_CO2_Ind.pkl')
                 
         
         # ------------------------------ #
         # OWID Global Land-Use Emissions #
         # ------------------------------ #
-        OWID_CO2_LU_df = pd.read_csv("https://ourworldindata.org/grapher/co2-land-use.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
-        
-        OWID_CO2_LU_df = OWID_CO2_LU_df[['year', 'emissions_from_land_use_change']]
-        OWID_CO2_LU_df = OWID_CO2_LU_df.rename(columns={"emissions_from_land_use_change": "C_em_LU"})
-        
-        OWID_CO2_LU_df['C_em_LU'] = OWID_CO2_LU_df['C_em_LU'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
-        
-        #Extrapolate linear trend from 1850–1950 back to 1800
-        fit_slice = OWID_CO2_LU_df[(OWID_CO2_LU_df['year'] >= 1850) & (OWID_CO2_LU_df['year'] <= 1950)].dropna(subset=['C_em_LU'])
-        x = fit_slice['year'].values.astype(float)
-        y = fit_slice['C_em_LU'].values.astype(float)
-        
-        a, b = np.polyfit(x, y, deg=1)
-        
-        years_back = np.arange(ind_year, 1850)
-        y_hat_back = a * years_back + b
-        
-        extrap_df = pd.DataFrame({'year': years_back, 'C_em_LU': y_hat_back})
-        
-        have_years = set(OWID_CO2_LU_df['year'])
-        extrap_df = extrap_df[~extrap_df['year'].isin(have_years)]
-        
-        OWID_CO2_LU_df = (
-            pd.concat([OWID_CO2_LU_df, extrap_df], ignore_index=True)
-              .sort_values('year')
-              .reset_index(drop=True)
-        )
+        if API == 1:
+            OWID_CO2_LU_df = pd.read_csv("https://ourworldindata.org/grapher/co2-land-use.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+            
+            OWID_CO2_LU_df = OWID_CO2_LU_df[['year', 'emissions_from_land_use_change']]
+            OWID_CO2_LU_df = OWID_CO2_LU_df.rename(columns={"emissions_from_land_use_change": "C_em_LU"})
+            
+            OWID_CO2_LU_df['C_em_LU'] = OWID_CO2_LU_df['C_em_LU'] * self.CO2_C / 1000000000 #Carbon emissions in gigatons
+            
+            #Extrapolate linear trend from 1850–1950 back to 1800
+            fit_slice = OWID_CO2_LU_df[(OWID_CO2_LU_df['year'] >= 1850) & (OWID_CO2_LU_df['year'] <= 1950)].dropna(subset=['C_em_LU'])
+            x = fit_slice['year'].values.astype(float)
+            y = fit_slice['C_em_LU'].values.astype(float)
+            
+            a, b = np.polyfit(x, y, deg=1)
+            
+            years_back = np.arange(ind_year, 1850)
+            y_hat_back = a * years_back + b
+            
+            extrap_df = pd.DataFrame({'year': years_back, 'C_em_LU': y_hat_back})
+            
+            have_years = set(OWID_CO2_LU_df['year'])
+            extrap_df = extrap_df[~extrap_df['year'].isin(have_years)]
+            
+            OWID_CO2_LU_df = (
+                pd.concat([OWID_CO2_LU_df, extrap_df], ignore_index=True)
+                  .sort_values('year')
+                  .reset_index(drop=True)
+            )
+            
+            OWID_CO2_LU_df.to_pickle(f'{self.Directory}/Raw Data/OWID_CO2_LU.pkl')
+        else:
+            OWID_CO2_LU_df = pd.read_pickle(f'{self.Directory}/Raw Data/OWID_CO2_LU.pkl')
            
         
         # ------------------------ #
         # OWID Photovoltaic Prices #
         # ------------------------ #
-        OWID_solar_price_df = pd.read_csv("https://ourworldindata.org/grapher/solar-pv-prices.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
-
-        OWID_solar_price_df = OWID_solar_price_df[['Year', 'Solar PV module cost']]
-        OWID_solar_price_df = OWID_solar_price_df.rename(columns={"Year": "year", "Solar PV module cost": "solar_price"})
-        
-        roser_row = pd.DataFrame({'year': [1956], 'solar_price': [1865]}) #Manually add 1956 from Roser
-        roser_row['solar_price'] = roser_row['solar_price'] *  FRED_CPI_df.loc[FRED_CPI_df['year'] == 2024, 'CPI'].values[0] / FRED_CPI_df.loc[FRED_CPI_df['year'] == 2019, 'CPI'].values[0] #Adjust from 2019 to 2024 prices
-        OWID_solar_price_df = pd.concat([roser_row, OWID_solar_price_df], ignore_index=True)
-        
-        OWID_solar_price_df['solar_price'] = OWID_solar_price_df['solar_price'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == 2024, 'CPI'].values[0] #Series is in 2024 prices
-        
-        x = OWID_solar_price_df['year'].values.astype(float)
-        y = np.log(OWID_solar_price_df['solar_price'].values.astype(float))
-        
-        a, b = np.polyfit(x, y, deg=1)
-        OWID_solar_price_df['solar_price_hat'] = np.exp(a * OWID_solar_price_df['year'] + b)
-        
-        OWID_solar_price_df = OWID_solar_price_df[['year', 'solar_price', 'solar_price_hat']]
+        if API == 1:
+            OWID_solar_price_df = pd.read_csv("https://ourworldindata.org/grapher/solar-pv-prices.csv?v=1&csvType=full&useColumnShortNames=false", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+    
+            OWID_solar_price_df = OWID_solar_price_df[['Year', 'Solar PV module cost']]
+            OWID_solar_price_df = OWID_solar_price_df.rename(columns={"Year": "year", "Solar PV module cost": "solar_price"})
+            
+            roser_row = pd.DataFrame({'year': [1956], 'solar_price': [1865]}) #Manually add 1956 from Roser
+            roser_row['solar_price'] = roser_row['solar_price'] *  FRED_CPI_df.loc[FRED_CPI_df['year'] == 2024, 'CPI'].values[0] / FRED_CPI_df.loc[FRED_CPI_df['year'] == 2019, 'CPI'].values[0] #Adjust from 2019 to 2024 prices
+            OWID_solar_price_df = pd.concat([roser_row, OWID_solar_price_df], ignore_index=True)
+            
+            OWID_solar_price_df['solar_price'] = OWID_solar_price_df['solar_price'] / FRED_CPI_df.loc[FRED_CPI_df['year'] == 2024, 'CPI'].values[0] #Series is in 2024 prices
+            
+            x = OWID_solar_price_df['year'].values.astype(float)
+            y = np.log(OWID_solar_price_df['solar_price'].values.astype(float))
+            
+            a, b = np.polyfit(x, y, deg=1)
+            OWID_solar_price_df['solar_price_hat'] = np.exp(a * OWID_solar_price_df['year'] + b)
+            
+            OWID_solar_price_df = OWID_solar_price_df[['year', 'solar_price', 'solar_price_hat']]
+            
+            OWID_solar_price_df.to_pickle(f'{self.Directory}/Raw Data/OWID_solar_price.pkl')
+        else:
+            OWID_solar_price_df = pd.read_pickle(f'{self.Directory}/Raw Data/OWID_solar_price.pkl')
         
         
         # -------------------------------------- #
         # OWID Solar Share of Global Electricity #
         # -------------------------------------- #
-        OWID_solar_share_df = pd.read_csv("https://ourworldindata.org/grapher/share-electricity-solar.csv?v=1&csvType=filtered&useColumnShortNames=false&tab=line&time=1985..2024&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
-
-        OWID_solar_share_df = OWID_solar_share_df[['Year', 'Solar']]
-        OWID_solar_share_df = OWID_solar_share_df.rename(columns={"Year": "year", "Solar": "solar_share"})
-        OWID_solar_share_df["solar_share"] = OWID_solar_share_df["solar_share"] / 100
+        if API == 1:
+            OWID_solar_share_df = pd.read_csv("https://ourworldindata.org/grapher/share-electricity-solar.csv?v=1&csvType=filtered&useColumnShortNames=false&tab=line&time=1985..2024&country=~OWID_WRL&overlay=download-data", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+    
+            OWID_solar_share_df = OWID_solar_share_df[['Year', 'Solar']]
+            OWID_solar_share_df = OWID_solar_share_df.rename(columns={"Year": "year", "Solar": "solar_share"})
+            OWID_solar_share_df["solar_share"] = OWID_solar_share_df["solar_share"] / 100
+            
+            OWID_solar_share_df.to_pickle(f'{self.Directory}/Raw Data/OWID_solar_share.pkl')
+        else:
+            OWID_solar_share_df = pd.read_pickle(f'{self.Directory}/Raw Data/OWID_solar_share.pkl')
         
         OWID_solar_df = pd.merge(OWID_solar_price_df,
                                        OWID_solar_share_df,
@@ -297,11 +366,16 @@ class Processor:
         # --------------------------------- #
         # OWID Low-Carbon Electricity Share #
         # --------------------------------- #
-        OWID_elec_share_df = pd.read_csv("https://ourworldindata.org/grapher/share-electricity-low-carbon.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=OWID_EU27~CHN~USA", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
-
-        OWID_elec_share_df = OWID_elec_share_df[['code', 'year', 'low_carbon_share_of_electricity__pct']]
-        OWID_elec_share_df = OWID_elec_share_df.rename(columns={"low_carbon_share_of_electricity__pct": "clean_elec_share"})
-        OWID_elec_share_df["clean_elec_share"] = OWID_elec_share_df["clean_elec_share"] / 100
+        if API == 1:
+            OWID_elec_share_df = pd.read_csv("https://ourworldindata.org/grapher/share-electricity-low-carbon.csv?v=1&csvType=filtered&useColumnShortNames=true&tab=line&country=OWID_EU27~CHN~USA", storage_options = {'User-Agent': 'Our World In Data data fetch/1.0'})
+    
+            OWID_elec_share_df = OWID_elec_share_df[['code', 'year', 'low_carbon_share_of_electricity__pct']]
+            OWID_elec_share_df = OWID_elec_share_df.rename(columns={"low_carbon_share_of_electricity__pct": "clean_elec_share"})
+            OWID_elec_share_df["clean_elec_share"] = OWID_elec_share_df["clean_elec_share"] / 100
+            
+            OWID_elec_share_df.to_pickle(f'{self.Directory}/Raw Data/OWID_elec_share.pkl')
+        else:
+            OWID_elec_share_df = pd.read_pickle(f'{self.Directory}/Raw Data/OWID_elec_share.pkl')
         
         OWID_elec_share_df.to_pickle(f'{self.Directory}/Clean Data/OWID_clean_elec.pkl')
 
@@ -309,105 +383,131 @@ class Processor:
         # -------------------------------------- #
         # NOAA Atmospheric Carbon Concentrations #
         # -------------------------------------- #
-        NOAA_df = pd.read_csv("https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.csv",
-                              skiprows=43,
-                              usecols=[0, 1])
-        
-        NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
-        NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
+        if API == 1:
+            NOAA_df = pd.read_csv("https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.csv",
+                                  skiprows=43,
+                                  usecols=[0, 1])
+            
+            NOAA_df = NOAA_df.rename(columns={"mean": "C_stock"})
+            NOAA_df['C_stock'] = NOAA_df['C_stock'] * self.PPM_C #Atmospheric carbon concentrations in gigatons
+            
+            NOAA_df.to_pickle(f'{self.Directory}/Raw Data/NOAA.pkl')
+        else:
+            NOAA_df = pd.read_pickle(f'{self.Directory}/Raw Data/NOAA.pkl')
         
         
         # --------------------- #
         # PatentsView CPC Codes #
         # --------------------- #
-        PV_CPC_df = gpf.Extract_PatentsView('g_cpc_current')
-        
-        PV_CPC_df['patent_id'] = PV_CPC_df['patent_id'].astype(str)
-        
-        PV_CPC_df.to_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        if API == 1:
+            PV_CPC_df = gpf.Extract_PatentsView('g_cpc_current')
+            
+            PV_CPC_df['patent_id'] = PV_CPC_df['patent_id'].astype(str)
+            
+            PV_CPC_df.to_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
+        else:
+            PV_CPC_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_CPC.pkl')
         
         
         # ------------------------ #
         # PatentsView Applications #
         # ------------------------ #
-        PV_applications_df = gpf.Extract_PatentsView('g_application')
-        
-        PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], format="%Y-%m-%d", errors="coerce").dt.year
-        PV_applications_df = PV_applications_df.dropna(subset=["year"])
-        PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
-        PV_applications_df['patent_id'] = PV_applications_df['patent_id'].astype(str)
+        if API == 1:
+            PV_applications_df = gpf.Extract_PatentsView('g_application')
+            
+            PV_applications_df["year"] = pd.to_datetime(PV_applications_df["filing_date"], format="%Y-%m-%d", errors="coerce").dt.year
+            PV_applications_df = PV_applications_df.dropna(subset=["year"])
+            PV_applications_df = PV_applications_df[(PV_applications_df["year"] >= 1900) & (PV_applications_df["year"] <= datetime.now().year)]
+            PV_applications_df['patent_id'] = PV_applications_df['patent_id'].astype(str)
+            
+            PV_applications_df.to_pickle(f'{self.Directory}/Raw Data/PV_applications.pkl')
+        else:
+            PV_applications_df = pd.read_pickle(f'{self.Directory}/Raw Data/PV_applications.pkl')
                 
         
         # --------------------- #
         # PatentsView Citations #
         # --------------------- #
-        PV_citations_df = gpf.Extract_PatentsView('g_us_patent_citation')
-        
-        PV_citations_df['patent_id'] = PV_citations_df['patent_id'].astype(str)
-        PV_citations_df['citation_patent_id'] = PV_citations_df['citation_patent_id'].astype(str)
-        
-        PV_citations_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
-        
+        if API == 1:
+            PV_citations_df = gpf.Extract_PatentsView('g_us_patent_citation')
+            
+            PV_citations_df['patent_id'] = PV_citations_df['patent_id'].astype(str)
+            PV_citations_df['citation_patent_id'] = PV_citations_df['citation_patent_id'].astype(str)
+            
+            PV_citations_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+        else:
+            PV_citations_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Citations.pkl')
+            
         del PV_citations_df
         
         
         # --------------------- #
         # Patentsview Inventors #
         # --------------------- #
-        PV_inventors_df = gpf.Extract_PatentsView('g_inventor_disambiguated')
+        if API == 1:
+            PV_inventors_df = gpf.Extract_PatentsView('g_inventor_disambiguated')
+            
+            PV_inventors_df['patent_id'] = PV_inventors_df['patent_id'].astype(str)
+            
+            PV_location_df = gpf.Extract_PatentsView('g_location_disambiguated')
+            
+            PV_inventors_df = pd.merge(PV_inventors_df,
+                                       PV_location_df[['location_id', 'disambig_state', 'state_fips']],
+                                       on='location_id',
+                                       how='inner'
+                                        )
+            
+            PV_inventors_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
+            
+            del PV_location_df
+        else:
+            PV_inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
         
-        PV_inventors_df['patent_id'] = PV_inventors_df['patent_id'].astype(str)
-        
-        PV_location_df = gpf.Extract_PatentsView('g_location_disambiguated')
-        
-        PV_inventors_df = pd.merge(PV_inventors_df,
-                                   PV_location_df[['location_id', 'disambig_state', 'state_fips']],
-                                   on='location_id',
-                                   how='inner'
-                                    )
-        
-        PV_inventors_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
-        
-        del PV_inventors_df, PV_location_df
+        del PV_inventors_df
         
         
         # ------------------------------------------- #
         # Transportation Energy Data Book: Table 6.02 #
         # ------------------------------------------- #
-        url = "https://tedb.ornl.gov/wp-content/uploads/2022/06/Table6_02_06012022.xlsx"
-
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r = api.get(url, headers=headers)
+        if API == 1:
+            url = "https://tedb.ornl.gov/wp-content/uploads/2022/06/Table6_02_06012022.xlsx"
         
-        TEDB_df = pd.read_excel(io.BytesIO(r.content),
-                                sheet_name="TEDB Edition 40",
-                                header=0,        
-                                usecols="B:I",   
-                                skiprows=7,      
-                                nrows=24         
-                            )
-        
-        TEDB_df = TEDB_df.rename(columns={
-                    "Calendar year": "year",
-                    "All light vehicle sales (thousands)": "Q_car" #Light vehicle quantity in thousands
-                })
-        
-        TEDB_df['Hybrid vehicle sales (thousands)'] = pd.to_numeric(TEDB_df['Hybrid vehicle sales (thousands)'], errors='coerce')
-        TEDB_df = TEDB_df.dropna(subset=["year"])
-        
-        TEDB_df["Q_car_clean"] = (
-                        TEDB_df["Hybrid vehicle sales (thousands)"].fillna(0)
-                      + TEDB_df["Plug-in hybrid vehicle sales (thousands)"].fillna(0)
-                      + TEDB_df["All-electric vehicle sales (thousands)"].fillna(0)
-                    ) #US clean vehicle quantity in thousands
-        
-        TEDB_df["q_car_clean"] = (
-                        TEDB_df["Hybrid share of all light vehicles"].fillna(0)
-                      + TEDB_df["Plug-in hybrid share of \nall light vehicles"].fillna(0)
-                      + TEDB_df["All-electric share of all light vehicles"].fillna(0)
-                    ) #US clean vehicle quantity share
-        
-        TEDB_df = TEDB_df[["year", "Q_car", "Q_car_clean", "q_car_clean"]]
+            headers = {"User-Agent": "Mozilla/5.0"}
+            r = api.get(url, headers=headers)
+            
+            TEDB_df = pd.read_excel(io.BytesIO(r.content),
+                                    sheet_name="TEDB Edition 40",
+                                    header=0,        
+                                    usecols="B:I",   
+                                    skiprows=7,      
+                                    nrows=24         
+                                )
+            
+            TEDB_df = TEDB_df.rename(columns={
+                        "Calendar year": "year",
+                        "All light vehicle sales (thousands)": "Q_car" #Light vehicle quantity in thousands
+                    })
+            
+            TEDB_df['Hybrid vehicle sales (thousands)'] = pd.to_numeric(TEDB_df['Hybrid vehicle sales (thousands)'], errors='coerce')
+            TEDB_df = TEDB_df.dropna(subset=["year"])
+            
+            TEDB_df["Q_car_clean"] = (
+                            TEDB_df["Hybrid vehicle sales (thousands)"].fillna(0)
+                          + TEDB_df["Plug-in hybrid vehicle sales (thousands)"].fillna(0)
+                          + TEDB_df["All-electric vehicle sales (thousands)"].fillna(0)
+                        ) #US clean vehicle quantity in thousands
+            
+            TEDB_df["q_car_clean"] = (
+                            TEDB_df["Hybrid share of all light vehicles"].fillna(0)
+                          + TEDB_df["Plug-in hybrid share of \nall light vehicles"].fillna(0)
+                          + TEDB_df["All-electric share of all light vehicles"].fillna(0)
+                        ) #US clean vehicle quantity share
+            
+            TEDB_df = TEDB_df[["year", "Q_car", "Q_car_clean", "q_car_clean"]]
+            
+            TEDB_df.to_pickle(f'{self.Directory}/Raw Data/TEDB.pkl')
+        else:
+            TEDB_df = pd.read_pickle(f'{self.Directory}/Raw Data/TEDB.pkl')
         
         
         # --------- #
