@@ -89,6 +89,6 @@ Results/Tables/
 Results/Figures/
 ```
 
-Download the [raw data](https://github.com/ericdonald/Spillovers-and-the-Direction-of-Innovation/releases/download/v1.0.0/Raw.Data.zip), unzip, and place the file(s) directly in Raw Data/.
+Download the [raw data](https://github.com/ericdonald/Spillovers-and-the-Direction-of-Innovation/releases/download/v1.0.0/Raw.Data.zip), unzip, and place the file(s) directly in `Raw Data/`.
 
 ## List of Tables and Figures:
