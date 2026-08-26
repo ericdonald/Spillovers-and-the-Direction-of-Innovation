@@ -99,6 +99,7 @@ class Processor:
                 Raw Data/Patent_Citations.pkl
                 Raw Data/Patent_Inventors.pkl
                 Raw Data/Inventor_Locations.pkl
+                Clean Data/Patent_Inventors.pkl
                 Raw Data/TEDB.pkl
                 Results/Figures/OWID_solar.csv
                 Clean Data/OWID_clean_elec.pkl
@@ -465,6 +466,7 @@ class Processor:
                                    on='location_id',
                                    how='inner'
                                     )
+        PV_inventors_df.to_pickle(f'{self.Directory}/Clean Data/Patent_Inventors.pkl')
         
         del PV_inventors_df, PV_location_df
         
@@ -887,7 +889,7 @@ class Processor:
         # DMM Spillover Network #
         # --------------------- #
         relevant_DMM_df = pd.read_pickle(f'{self.Directory}/Clean Data/relevant_patents_DMM.pkl')
-        inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
+        inventors_df = pd.read_pickle(f'{self.Directory}/Clean Data/Patent_Inventors.pkl')
         
         patent_inventors = inventors_df.groupby('patent_id')['inventor_id'].apply(set)
 
@@ -1552,7 +1554,7 @@ class Processor:
         # ------------------------ #
         # State R&D Price Exposure #
         # ------------------------ #
-        inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
+        inventors_df = pd.read_pickle(f'{self.Directory}/Clean Data/Patent_Inventors.pkl')
         state_rdp_df = pd.read_pickle(f'{self.Directory}/Clean Data/state_rd_price.pkl')
         
         firm_invent_df = pd.merge(pat_panel_df,
