@@ -449,10 +449,10 @@ class Processor:
         # --------------------- #
         if API == 1:
             PV_inventors_df = gpf.Extract_PatentsView('g_inventor_disambiguated', self.USPTO_API)
-            
             PV_inventors_df['patent_id'] = PV_inventors_df['patent_id'].astype(str)
             
             PV_location_df = gpf.Extract_PatentsView('g_location_disambiguated', self.USPTO_API)
+            PV_location_df = PV_location_df.dropna(subset=['state_fips'])
             
             PV_inventors_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
             PV_location_df.to_pickle(f'{self.Directory}/Raw Data/Inventor_Locations.pkl')
