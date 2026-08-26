@@ -98,6 +98,7 @@ class Processor:
                 Raw Data/PV_applications.pkl
                 Raw Data/Patent_Citations.pkl
                 Raw Data/Patent_Inventors.pkl
+                Raw Data/Inventor_Locations.pkl
                 Raw Data/TEDB.pkl
                 Results/Figures/OWID_solar.csv
                 Clean Data/OWID_clean_elec.pkl
@@ -452,19 +453,20 @@ class Processor:
             
             PV_location_df = gpf.Extract_PatentsView('g_location_disambiguated', self.USPTO_API)
             
-            PV_inventors_df = pd.merge(PV_inventors_df,
-                                       PV_location_df[['location_id', 'disambig_state', 'state_fips']],
-                                       on='location_id',
-                                       how='inner'
-                                        )
-            
             PV_inventors_df.to_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
+            PV_location_df.to_pickle(f'{self.Directory}/Raw Data/Inventor_Locations.pkl')
             
-            del PV_location_df
         else:
             PV_inventors_df = pd.read_pickle(f'{self.Directory}/Raw Data/Patent_Inventors.pkl')
+            PV_location_df = pd.read_pickle(f'{self.Directory}/Raw Data/Inventor_Locations.pkl')
         
-        del PV_inventors_df
+        PV_inventors_df = pd.merge(PV_inventors_df,
+                                   PV_location_df[['location_id', 'disambig_state', 'state_fips']],
+                                   on='location_id',
+                                   how='inner'
+                                    )
+        
+        del PV_inventors_df, PV_location_df
         
         
         # ------------------------------------------- #
