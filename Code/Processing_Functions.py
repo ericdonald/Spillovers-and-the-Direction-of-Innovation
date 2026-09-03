@@ -46,7 +46,7 @@ def clean_round(number, decimals=0):
             return int(rounded_number)
     elif decimals > 0:
         if rounded_number == np.round(rounded_number, decimals-1):
-            return np.round(rounded_number, decimals-1)
+            return clean_round(rounded_number, decimals-1)
     return rounded_number
     
 
